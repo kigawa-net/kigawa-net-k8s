@@ -22,4 +22,22 @@ spec:
           ports:
             - containerPort: 80
               protocol: TCP
+          env:
+            - name: SPRING_DATA_MONGODB_HOST
+              value: mongodb
+            - name: SPRING_DATA_MONGODB_PORT
+              value: "27017"
+            - name: SPRING_DATA_MONGODB_DATABASE
+              value: keruta
+            - name: SPRING_DATA_MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: mongo
+            - name: SPRING_DATA_MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: mongo
       restartPolicy: Always
+      
