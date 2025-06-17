@@ -24,7 +24,7 @@ spec:
               protocol: TCP
           env:
             - name: SPRING_DATA_MONGODB_HOST
-              value: mongodb
+              value: mongodb-svc
             - name: SPRING_DATA_MONGODB_PORT
               value: "27017"
             - name: SPRING_DATA_MONGODB_DATABASE
