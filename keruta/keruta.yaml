@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keruta
+  labels:
+    app: keruta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keruta
+  template:
+    metadata:
+      name: keruta
+      labels:
+        app: keruta
+    spec:
+      containers:
+        - name: keruta
+          image: harbor.kigawa.net/library/kigawa-net-keruta:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              protocol: TCP
+      restartPolicy: Always
+      
