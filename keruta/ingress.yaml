@@ -17,4 +17,4 @@ spec:
               service:
                 name: keruta-svc
                 port:
-                  number: 80
+                  number: 8080
