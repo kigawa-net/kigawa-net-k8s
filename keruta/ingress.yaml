@@ -5,6 +5,7 @@ kind: Ingress
 metadata:
   name: keruta-ingress
 spec:
+  ingressClassName: haproxy
   rules:
     - host: keruta.kigawa.net
       http:
