@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: keruta
-          image: harbor.kigawa.net/library/keruta:main-48c908afd966deb76833820dc7b9225e5bbb89d4
+          image: harbor.kigawa.net/library/keruta:main-7d90fed170e8f6b9802c4d02179b3823d6cf5708
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -40,4 +40,3 @@ spec:
                   key: pass
                   name: mongo
       restartPolicy: Always
-      
