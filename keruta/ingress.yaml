@@ -3,9 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: keruta-svc
-  labels:
-    app: keruta
+  name: keruta-ingress
 spec:
   rules:
     - host: keruta.kigawa.net
