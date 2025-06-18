@@ -23,6 +23,15 @@ spec:
             - containerPort: 8080
               protocol: TCP
           env:
+            - name: KEYCLOAK_URL
+              value: mongodb-svc
+            - name: KEYCLOAK_REALM
+              value: mongodb-svc
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: secret
+                  name: keycloak
             - name: SPRING_DATA_MONGODB_HOST
               value: mongodb-svc
             - name: SPRING_DATA_MONGODB_PORT
