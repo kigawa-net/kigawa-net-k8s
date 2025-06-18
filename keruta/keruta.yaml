@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: keruta
-          image: harbor.kigawa.net/library/keruta:main-aad51955d574320aecf24376f1d451fdbea74ee1
+          image: harbor.kigawa.net/library/keruta:main-88e5ed53fff058f84cc0ae911a49f9e272de3bdc
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
