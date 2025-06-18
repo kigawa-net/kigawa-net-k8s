@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: keruta
-          image: harbor.kigawa.net/library/keruta:main-8d0bcc87e64d2909455287e36f9ef3e02930b895
+          image: harbor.kigawa.net/library/keruta:main-ae35224a0b1f627542aff877ce9e75832cbc243f
           imagePullPolicy: IfNotPresent
           livenessProbe:
             httpGet:
