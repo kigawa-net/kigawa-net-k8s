@@ -12,6 +12,8 @@ spec:
   template:
     metadata:
       name: keruta
+      labels:
+        app: keruta
     spec:
       containers:
         - name: keruta
