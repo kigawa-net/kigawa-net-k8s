@@ -20,7 +20,7 @@ spec:
           image: harbor.kigawa.net/library/keruta:main-cbcf3663b638b2f151e09e2f9cf5cab1749920e4
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               protocol: TCP
           env:
             - name: SPRING_DATA_MONGODB_HOST
