@@ -24,9 +24,9 @@ spec:
               protocol: TCP
           env:
             - name: KEYCLOAK_URL
-              value: mongodb-svc
+              value: https://user.kigawa.net
             - name: KEYCLOAK_REALM
-              value: mongodb-svc
+              value: manage
             - name: KEYCLOAK_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
