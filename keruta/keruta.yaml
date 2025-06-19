@@ -19,6 +19,10 @@ spec:
         - name: keruta
           image: harbor.kigawa.net/library/keruta:main-8d0bcc87e64d2909455287e36f9ef3e02930b895
           imagePullPolicy: IfNotPresent
+          startupProbe:
+            httpGet:
+              port: 8080
+              path: /api/health
           livenessProbe:
             httpGet:
               path: /api/health
