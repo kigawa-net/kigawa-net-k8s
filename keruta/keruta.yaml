@@ -15,6 +15,7 @@ spec:
       labels:
         app: keruta
     spec:
+      serviceAccountName: keruta-sa
       containers:
         - name: keruta
           image: harbor.kigawa.net/library/keruta:main-160a930c77415f5cc34ebab0839f2e1abf04ecb2
