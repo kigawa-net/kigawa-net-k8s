@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fomage
+  labels:
+    app: fomage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fomage
+  template:
+    metadata:
+      name: fomage
+      labels:
+        app: fomage
+    spec:
+      containers:
+        - name: fomage
+          image: harbor.kigawa.net/library/fomage:latest
+          imagePullPolicy: IfNotPresent
+          startupProbe:
+            httpGet:
+              port: 8080
+              path: /health
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: MONGODB_URI
+              value: mongodb://mongodb-svc.fonsole.svc.cluster.local:27017/fomage
+            - name: MONGODB_DATABASE
+              value: fomage
+            - name: SERVER_PORT
+              value: "8080"
+            - name: LOG_LEVEL
+              value: INFO
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: mongo
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: mongo
+      restartPolicy: Always
