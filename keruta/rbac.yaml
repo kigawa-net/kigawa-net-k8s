@@ -11,7 +11,7 @@ metadata:
   namespace: kigawa-net-keruta
 rules:
 - apiGroups: [""]
-  resources: ["pods"]
+  resources: ["jobs"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
