@@ -32,7 +32,7 @@ spec:
               protocol: TCP
           env:
             - name: MONGODB_URI
-              value: mongodb://mongodb-svc.fonsole.svc.cluster.local:27017/fomage
+              value: mongodb://mongo-svc.fonsole.svc.cluster.local:27017/fomage
             - name: MONGODB_DATABASE
               value: fomage
             - name: SERVER_PORT
