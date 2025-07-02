@@ -50,6 +50,11 @@ spec:
             - name: SPRING_DATA_MONGODB_USERNAME
               valueFrom:
                 secretKeyRef:
+                  key: secret
+                  name: app-secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
                   key: user
                   name: mongo
             - name: SPRING_DATA_MONGODB_PASSWORD
