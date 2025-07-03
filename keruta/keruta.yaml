@@ -62,4 +62,18 @@ spec:
                 secretKeyRef:
                   key: pass
                   name: mongo
+            - name: AUTH_API_USERNAME
+              value: "keruta-api"
+            - name: AUTH_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: api-password
+                  name: app-pass
+            - name: AUTH_ADMIN_USERNAME
+              value: "admin"
+            - name: AUTH_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: admin-password
+                  name: app-pass
       restartPolicy: Always
