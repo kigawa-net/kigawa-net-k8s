@@ -23,10 +23,10 @@ spec:
           startupProbe:
             httpGet:
               port: 8080
-              path: /api/health
+              path: /api/v1/health
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v1/health
               port: 8080
           ports:
             - containerPort: 8080
