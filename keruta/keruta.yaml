@@ -76,4 +76,14 @@ spec:
                 secretKeyRef:
                   key: admin-password
                   name: app-pass
+            - name: SPRING_WEB_CORS_ALLOWED_ORIGINS
+              value: "https://admin.kigawa.net,http://localhost:3000,https://keruta-admin.kigawa.net"
+            - name: SPRING_WEB_CORS_ALLOWED_METHODS
+              value: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+            - name: SPRING_WEB_CORS_ALLOWED_HEADERS
+              value: "Authorization,Content-Type,X-Requested-With,Accept,Origin,Access-Control-Request-Method,Access-Control-Request-Headers"
+            - name: SPRING_WEB_CORS_ALLOW_CREDENTIALS
+              value: "true"
+            - name: SPRING_WEB_CORS_MAX_AGE
+              value: "3600"
       restartPolicy: Always
