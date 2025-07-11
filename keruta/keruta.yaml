@@ -18,7 +18,7 @@ spec:
       serviceAccountName: keruta-sa
       containers:
         - name: keruta
-          image: harbor.kigawa.net/library/keruta:main-614b3ce5d63e0a70ccaaf8e530417913362a0dc7
+          image: harbor.kigawa.net/library/keruta:main-461bc9f695df2039de8792262df5fb0670963826
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
