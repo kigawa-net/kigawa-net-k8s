@@ -37,4 +37,6 @@ spec:
               value: manage
             - name: API_URL
               value: http://keruta-svc:8080
+            - name: PUBLIC_API_URL
+              value: https://keruta-api.kigawa.net/tasks
       restartPolicy: Always
