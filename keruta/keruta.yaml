@@ -88,4 +88,28 @@ spec:
               value: "3600"
             - name: SPRING_WEB_CORS_SPECIFIC_ORIGINS
               value: "http://localhost:3000,http://localhost:3001,https://keruta.kigawa.net"
+            # Coder Integration Configuration
+            - name: CODER_BASE_URL
+              value: "https://coder.kigawa.net"
+            - name: CODER_SESSION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: session-token
+                  name: coder
+            - name: CODER_ORGANIZATION
+              value: "default"
+            - name: CODER_USER
+              value: "admin"
+            - name: CODER_DEFAULT_TEMPLATE_ID
+              valueFrom:
+                secretKeyRef:
+                  key: default-template-id
+                  name: coder
+                  optional: true
+            - name: CODER_CONNECTION_TIMEOUT
+              value: "10000"
+            - name: CODER_READ_TIMEOUT
+              value: "30000"
+            - name: CODER_ENABLE_SSL_VERIFICATION
+              value: "true"
       restartPolicy: Always
