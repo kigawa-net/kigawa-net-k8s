@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: keruta-admin
-          image: harbor.kigawa.net/library/keruta-admin:main-d927f15a9439a66d0f9104e8f1a69459416103c5
+          image: harbor.kigawa.net/library/keruta-admin:main-173001bd0efcc63c0fb6b4ae3da2108ca95a19e6
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
