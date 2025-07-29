@@ -18,7 +18,7 @@ spec:
       serviceAccountName: keruta-sa
       containers:
         - name: keruta-executor
-          image: harbor.kigawa.net/library/keruta-executor:main-323e861a4ccd5ca7abd8a05fa2be5260ba5da964
+          image: harbor.kigawa.net/library/keruta-executor:main-5e27fd65c534aac4ea8f8a3b9d6f1e5bfa4fe3c8
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
