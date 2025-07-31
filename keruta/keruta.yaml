@@ -114,5 +114,5 @@ spec:
               value: "true"
             # Keruta Executor Configuration
             - name: KERUTA_EXECUTOR_BASE_URL
-              value: "http://keruta-executor-svc:8081"
+              value: "http://keruta-executor-svc:8080"
       restartPolicy: Always
