@@ -65,7 +65,7 @@ spec:
             - name: CODER_TOKEN
               valueFrom:
                 secretKeyRef:
-                  key: token
-                  name: coder-token
+                  key: session-token
+                  name: coder
                   optional: true
       restartPolicy: Always
