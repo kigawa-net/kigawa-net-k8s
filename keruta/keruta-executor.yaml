@@ -58,8 +58,14 @@ spec:
               value: "/tmp/coder"
             - name: KERUTA_EXECUTOR_CODER_TIMEOUT
               value: "1800000"
-            - name: KERUTA_EXECUTOR_CODER_URL
+            - name: KERUTA_EXECUTOR_CODER_BASE_URL
               value: "http://coder.kigawa-coder.svc.cluster.local:3000"
+            - name: KERUTA_EXECUTOR_CODER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: session-token
+                  name: coder
+                  optional: false
             - name: CODER_URL
               value: "http://coder.kigawa-coder.svc.cluster.local:3000"
             - name: CODER_TOKEN

@@ -33,13 +33,14 @@ kubectl create secret generic keycloak \
   --namespace=kigawa-net-keruta
 ```
 
-#### Coder Secret (新規追加)
+#### Coder Secret
 ```bash
 kubectl create secret generic coder \
   --from-literal=session-token="your-coder-session-token" \
-  --from-literal=default-template-id="your-default-template-id" \
   --namespace=kigawa-net-keruta
 ```
+
+**注意**: Coderセッショントークンは keruta-executor サービスによって24時間ごとに自動更新されます。
 
 ### 2. アプリケーションのデプロイ
 
