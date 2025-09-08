@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keruta-executor-svc
+  namespace: kigawa-net-keruta-beta
+spec:
+  selector:
+    app: keruta-executor
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

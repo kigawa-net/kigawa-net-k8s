@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keruta
+  namespace: kigawa-net-keruta-dev
   labels:
     app: keruta
 spec:
@@ -77,7 +78,7 @@ spec:
                   key: admin-password
                   name: app-pass
             - name: SPRING_WEB_CORS_ALLOWED_ORIGINS
-              value: "http://localhost:3000,https://keruta.kigawa.net"
+              value: "http://localhost:3000,https://keruta-dev.kigawa.net"
             - name: SPRING_WEB_CORS_ALLOWED_METHODS
               value: "GET,POST,PUT,DELETE,PATCH,OPTIONS"
             - name: SPRING_WEB_CORS_ALLOWED_HEADERS
@@ -87,7 +88,7 @@ spec:
             - name: SPRING_WEB_CORS_MAX_AGE
               value: "3600"
             - name: SPRING_WEB_CORS_SPECIFIC_ORIGINS
-              value: "http://localhost:3000,http://localhost:3001,https://keruta.kigawa.net"
+              value: "http://localhost:3000,http://localhost:3001,https://keruta-dev.kigawa.net"
             # Coder Integration Configuration
             - name: CODER_BASE_URL
               value: "https://coder.kigawa.net"
@@ -112,7 +113,7 @@ spec:
               value: "30000"
             - name: CODER_ENABLE_SSL_VERIFICATION
               value: "true"
-            # Keruta Executor Configuration
-            - name: KERUTA_EXECUTOR_BASE_URL
+            # keruta Executor Configuration
+            - name: keruta_EXECUTOR_BASE_URL
               value: "http://keruta-executor-svc:8080"
       restartPolicy: Always

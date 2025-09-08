@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keruta-admin
+  namespace: kigawa-net-keruta-dev
   labels:
     app: keruta-admin
 spec:
@@ -38,5 +39,5 @@ spec:
             - name: API_URL
               value: http://keruta-svc:8080
             - name: PUBLIC_API_URL
-              value: https://keruta-api.kigawa.net
+              value: https://keruta-dev-api.kigawa.net
       restartPolicy: Always

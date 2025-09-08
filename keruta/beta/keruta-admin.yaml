@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keruta-admin
+  namespace: kigawa-net-keruta-beta
+  labels:
+    app: keruta-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keruta-admin
+  template:
+    metadata:
+      name: keruta-admin
+      labels:
+        app: keruta-admin
+    spec:
+      containers:
+        - name: keruta-admin
+          image: harbor.kigawa.net/library/keruta-admin:main-65d4c05ec9b30c70bc99248dd571fbec412466d6
+          imagePullPolicy: IfNotPresent
+          startupProbe:
+            httpGet:
+              port: 3000
+              path: /
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: KEYCLOAK_URL
+              value: https://user.kigawa.net
+            - name: KEYCLOAK_REALM
+              value: manage
+            - name: API_URL
+              value: http://keruta-svc:8080
+            - name: PUBLIC_API_URL
+              value: https://keruta-beta-api.kigawa.net
+      restartPolicy: Always
