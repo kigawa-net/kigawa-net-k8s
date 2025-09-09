@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keruta
+  name: keruta-dev
   namespace: kigawa-net-keruta-dev
   labels:
-    app: keruta
+    app: keruta-dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: keruta
+      app: keruta-dev
   template:
     metadata:
-      name: keruta
+      name: keruta-dev
       labels:
-        app: keruta
+        app: keruta-dev
     spec:
-      serviceAccountName: keruta-sa
+      serviceAccountName: keruta-dev-sa
       containers:
-        - name: keruta
+        - name: keruta-dev
           image: harbor.kigawa.net/library/keruta:main-e93f12247af02a41a262da17ccdbc5633d032f3c
           imagePullPolicy: IfNotPresent
           startupProbe:

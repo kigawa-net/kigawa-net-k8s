@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: keruta-executor-svc
+  name: keruta-dev-executor-svc
   namespace: kigawa-net-keruta-dev
 spec:
   selector:
-    app: keruta-executor
+    app: keruta-dev-executor
   ports:
     - port: 8080
       targetPort: 8080

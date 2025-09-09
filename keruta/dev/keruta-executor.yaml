@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keruta-executor
+  name: keruta-dev-executor
   namespace: kigawa-net-keruta-dev
   labels:
-    app: keruta-executor
+    app: keruta-dev-executor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: keruta-executor
+      app: keruta-dev-executor
   template:
     metadata:
-      name: keruta-executor
+      name: keruta-dev-executor
       labels:
-        app: keruta-executor
+        app: keruta-dev-executor
     spec:
-      serviceAccountName: keruta-sa
+      serviceAccountName: keruta-dev-sa
       containers:
-        - name: keruta-executor
+        - name: keruta-dev-executor
           image: harbor.kigawa.net/library/keruta-executor:main-5411030880b7998462ec1468c47e181c19d9f17e
           imagePullPolicy: IfNotPresent
           startupProbe:
@@ -50,7 +50,7 @@ spec:
                   key: pass
                   name: mongo
             - name: KERUTA_EXECUTOR_API_BASE_URL
-              value: "http://keruta-svc:8080"
+              value: "http://keruta-dev-svc:8080"
             - name: KERUTA_EXECUTOR_PROCESSING_DELAY
               value: "10000"
             - name: KERUTA_EXECUTOR_CODER_COMMAND

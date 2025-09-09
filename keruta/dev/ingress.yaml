@@ -3,7 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: keruta-ingress
+  name: keruta-dev-ingress
   namespace: kigawa-net-keruta-dev
 spec:
   ingressClassName: haproxy
@@ -15,7 +15,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: keruta-svc
+                name: keruta-dev-svc
                 port:
                   number: 8080
     - host: keruta-dev.kigawa.net
@@ -25,6 +25,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: keruta-admin-svc
+                name: keruta-dev-admin-svc
                 port:
                   number: 3000

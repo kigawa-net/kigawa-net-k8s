@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: keruta-admin-svc
+  name: keruta-dev-admin-svc
   namespace: kigawa-net-keruta-dev
 spec:
   selector:
-    app: keruta-admin
+    app: keruta-dev-admin
   ports:
     - port: 3000
       targetPort: 3000
