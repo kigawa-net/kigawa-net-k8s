@@ -88,16 +88,16 @@ spec:
                 secretKeyRef:
                   key: session-token
                   name: coder
-            - name: CODER_ORGANIZATION
-              value: "default"
-            - name: CODER_USER
-              value: "admin"
             - name: CODER_DEFAULT_TEMPLATE_ID
               valueFrom:
                 secretKeyRef:
                   key: default-template-id
                   name: coder
                   optional: true
+            - name: CODER_ORGANIZATION
+              value: "default"
+            - name: CODER_USER
+              value: "admin"
             - name: CODER_CONNECTION_TIMEOUT
               value: "10000"
             - name: CODER_READ_TIMEOUT
