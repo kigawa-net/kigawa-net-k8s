@@ -33,7 +33,7 @@ spec:
               protocol: TCP
           env:
             - name: CODER_TEMPLATE_ID
-              value: "keruta-dev
+              value: "keruta-dev"
             - name: KEYCLOAK_URL
               value: https://user.kigawa.net
             - name: KEYCLOAK_REALM
