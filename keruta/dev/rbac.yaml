@@ -33,7 +33,7 @@ metadata:
   namespace: kigawa-net-keruta-dev
 subjects:
 - kind: ServiceAccount
-  name: keruta-sa
+  name: keruta-dev-sa
   namespace: kigawa-net-keruta-dev
 roleRef:
   kind: Role

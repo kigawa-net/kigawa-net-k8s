@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keruta
+  name: keruta-beta
   namespace: kigawa-net-keruta-beta
   labels:
-    app: keruta
+    app: keruta-beta
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: keruta
+      app: keruta-beta
   template:
     metadata:
-      name: keruta
+      name: keruta-beta
       labels:
-        app: keruta
+        app: keruta-beta
     spec:
-      serviceAccountName: keruta-sa
+      serviceAccountName: keruta-beta-sa
       containers:
-        - name: keruta
+        - name: keruta-beta
           image: harbor.kigawa.net/library/keruta:main-52f9aef6392d69217f9ada4f739b20960a957fc1
           imagePullPolicy: IfNotPresent
           startupProbe:
@@ -106,5 +106,5 @@ spec:
               value: "true"
             # keruta Executor Configuration
             - name: keruta_EXECUTOR_BASE_URL
-              value: "http://keruta-executor-svc:8080"
+              value: "http://keruta-beta-executor-svc:8080"
       restartPolicy: Always
