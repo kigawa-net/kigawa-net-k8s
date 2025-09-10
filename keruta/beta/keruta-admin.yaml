@@ -32,6 +32,8 @@ spec:
             - containerPort: 3000
               protocol: TCP
           env:
+            - name: CODER_TEMPLATE_ID
+              value: "keruta-admin
             - name: KEYCLOAK_URL
               value: https://user.kigawa.net
             - name: KEYCLOAK_REALM
