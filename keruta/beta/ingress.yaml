@@ -15,7 +15,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: keruta-svc
+                name: keruta-beta-svc
                 port:
                   number: 8080
     - host: keruta-beta.kigawa.net
