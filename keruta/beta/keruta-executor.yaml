@@ -67,6 +67,8 @@ spec:
                   key: session-token
                   name: coder
                   optional: false
+            - name: KERUTA_EXECUTOR_CODER_ENABLE_CLI_FALLBACK
+              value: "true"
             - name: CODER_URL
               value: "http://coder.kigawa-coder.svc.cluster.local:3000"
             - name: CODER_TOKEN
