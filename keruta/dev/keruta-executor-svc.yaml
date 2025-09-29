@@ -8,6 +8,6 @@ spec:
     app: keruta-dev-executor
   ports:
     - port: 8080
-      targetPort: 8080
+      targetPort: 8081
       protocol: TCP
   type: ClusterIP

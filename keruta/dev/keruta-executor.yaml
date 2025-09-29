@@ -23,14 +23,14 @@ spec:
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
-              port: 8080
+              port: 8081
               path: /actuator/health
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8081
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
               protocol: TCP
           env:
             - name: SPRING_DATA_MONGODB_HOST
