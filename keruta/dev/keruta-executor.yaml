@@ -19,18 +19,18 @@ spec:
       serviceAccountName: keruta-dev-sa
       containers:
         - name: keruta-dev-executor
-          image: harbor.kigawa.net/library/keruta-executor:develop-0a96c02cc677dd87734799126c9e865fa45fef86
+          image: harbor.kigawa.net/library/keruta-executor:develop-0c931309250d3eb2f0ca84880e7c0f8ae3d40481
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
-              port: 8080
+              port: 8081
               path: /actuator/health
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: 8081
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
               protocol: TCP
           env:
             - name: SPRING_DATA_MONGODB_HOST
