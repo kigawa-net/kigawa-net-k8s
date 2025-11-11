@@ -7,7 +7,7 @@ metadata:
     "mc-router.itzg.me/externalServerName": "diver.kigawa.net"
 spec:
   selector:
-    app: kigawa-net-diver-mc-sts
+    app: kigawa-net-diver-mc-pod
   ports:
     - protocol: TCP
       port: 25565
