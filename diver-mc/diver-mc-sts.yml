@@ -24,6 +24,7 @@ spec:
             - -c
             - |
               mkdir /data/gc
+              chown 1000:1000 /data/gc
           volumeMounts:
             - name: kigawa-net-diver-mc-vl-data
               mountPath: /data
