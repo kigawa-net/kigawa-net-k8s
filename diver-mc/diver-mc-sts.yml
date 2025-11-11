@@ -9,7 +9,7 @@ spec:
   serviceName: kigawa-net-diver-mc-svc
   selector:
     matchLabels:
-      app: kigawa-net-diver-mc-sts
+      app: kigawa-net-diver-mc-pod
   template:
     metadata:
       deletionGracePeriodSeconds: 600
