@@ -17,7 +17,7 @@ spec:
       "clusterID": "rook-ceph"
       "fsName": "rook-cephfs"
       "staticVolume": "true"
-      "rootPath": /kigawa-net/diver-mc
+      "rootPath": /org/kigawa-net/diver-mc
     volumeHandle: kigawa-net-diver-mc-vh
   persistentVolumeReclaimPolicy: Retain
   volumeMode: Filesystem
