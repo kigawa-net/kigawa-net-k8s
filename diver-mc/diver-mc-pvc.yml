@@ -1,0 +1,16 @@
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kigawa-net-diver-mc-pvc
+spec:
+  volumeName: kigawa-net-diver-mc-pv
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---

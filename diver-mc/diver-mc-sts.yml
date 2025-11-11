@@ -1,0 +1,54 @@
+
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kigawa-net-diver-mc-sts
+spec:
+  replicas: 1
+  serviceName: kigawa-net-diver-mc-svc
+  selector:
+    matchLabels:
+      app: kigawa-net-diver-mc-sts
+  template:
+    metadata:
+      deletionGracePeriodSeconds: 600
+      labels:
+        app: kigawa-net-diver-mc-pod
+    spec:
+      containers:
+        - name: kigawa-net-diver-mc-con
+          resources:
+            limits:
+              memory: 1.5Gi
+          image: itzg/minecraft-server:java17
+          ports:
+            - containerPort: 25565
+          volumeMounts:
+            - name: kigawa-net-diver-mc-vl-data
+              mountPath: /data
+          env:
+            - name: SYNC_CHUNK_WRITES
+              value: "false"
+            - name: MOTD
+              value: "diver mc server"
+            - name: MEMORY
+              value: 1G
+            - name: TYPE
+              value: SPIGOT
+            - name: VERSION
+              value: "1.21.10"
+            - name: EULA
+              value: "true"
+            - name: ONLINE_MODE
+              value: "true"
+            - name: JVM_XX_OPTS
+              value: >
+                -XX:+UnlockExperimentalVMOptions -verbose:gc
+                -Xlog:gc:./gc/gc.log
+      volumes:
+        - name: kigawa-net-diver-mc-vl-data
+          persistentVolumeClaim:
+            claimName: kigawa-net-diver-mc-pvc
+
+---

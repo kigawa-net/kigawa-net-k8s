@@ -1,0 +1,23 @@
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kigawa-net-diver-mc-pv
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 64Gi
+  csi:
+    driver: rook-ceph.cephfs.csi.ceph.com
+    nodeStageSecretRef:
+      name: rook-csi-cephfs-node-user
+      namespace: rook-ceph
+    volumeAttributes:
+      "clusterID": "rook-ceph"
+      "fsName": "rook-cephfs"
+      "staticVolume": "true"
+      "rootPath": /kigawa-net/diver-mc
+    volumeHandle: kigawa-net-diver-mc-vh
+  persistentVolumeReclaimPolicy: Retain
+  volumeMode: Filesystem
