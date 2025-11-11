@@ -23,7 +23,10 @@ spec:
             - bash
             - -c
             - |
-              mkdir ./gc
+              mkdir /data/gc
+          volumeMounts:
+            - name: kigawa-net-diver-mc-vl-data
+              mountPath: /data
       containers:
         - name: kigawa-net-diver-mc-con
           resources:
