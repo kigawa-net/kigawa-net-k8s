@@ -16,6 +16,14 @@ spec:
       labels:
         app: kigawa-net-diver-mc-pod
     spec:
+      initContainers:
+        - name: mkdir gc
+          image: ubuntu
+          command:
+            - bash
+            - -c
+            - |
+              mkdir ./gc
       containers:
         - name: kigawa-net-diver-mc-con
           resources:
