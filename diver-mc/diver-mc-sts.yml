@@ -17,7 +17,7 @@ spec:
         app: kigawa-net-diver-mc-pod
     spec:
       initContainers:
-        - name: mkdir gc
+        - name: mkdir-gc
           image: ubuntu
           command:
             - bash
