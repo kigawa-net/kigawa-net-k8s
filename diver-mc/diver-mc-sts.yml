@@ -1,5 +1,3 @@
-
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -40,6 +38,12 @@ spec:
             - name: kigawa-net-diver-mc-vl-data
               mountPath: /data
           env:
+            - name: HARDCORE
+              value: "true"
+            - name: SPAWN_PROTECTION
+              value: "0"
+            - name: OPS
+              value: kigawa01
             - name: SYNC_CHUNK_WRITES
               value: "false"
             - name: MOTD
@@ -56,7 +60,7 @@ spec:
               value: "true"
             - name: JVM_XX_OPTS
               value: >
-                -XX:+UnlockExperimentalVMOptions -verbose:gc
+                -XX:+UnlockExperimentalVMOptions
                 -Xlog:gc:./gc/gc.log
       volumes:
         - name: kigawa-net-diver-mc-vl-data
