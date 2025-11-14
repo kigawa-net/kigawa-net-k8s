@@ -38,6 +38,12 @@ spec:
             - name: kigawa-net-diver-mc-vl-data
               mountPath: /data
           env:
+            - name: AUTO_SAVE
+              value: "false"
+            - name: SCHEDULE
+              value: "0 */5 * * * *"
+            - name: SCHEDULE_COMMAND
+              value: "save-all"
             - name: HARDCORE
               value: "true"
             - name: SPAWN_PROTECTION
