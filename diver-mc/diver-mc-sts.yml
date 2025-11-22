@@ -39,7 +39,7 @@ spec:
               mountPath: /data
           env:
             - name: AUTO_SAVE
-              value: "false"
+              value: "true"
             - name: SCHEDULE
               value: "0 */5 * * * *"
             - name: SCHEDULE_COMMAND
