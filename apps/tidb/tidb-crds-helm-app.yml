@@ -19,6 +19,8 @@ spec:
     namespace: tidb-system
 
   syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
     automated:
       prune: true
       selfHeal: true
