@@ -7,6 +7,9 @@ spec:
   project: default
 
   source:
+
+    directory:
+      recurse: true
     repoURL: https://github.com/pingcap/tidb-operator.git
     targetRevision: v1.6.4
     path: manifests/crd
