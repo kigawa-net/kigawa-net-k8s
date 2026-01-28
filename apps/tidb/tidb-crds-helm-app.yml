@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tidb-crds
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/pingcap/tidb-operator.git
+    targetRevision: v1.6.4
+    path: manifests/crd
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tidb-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
