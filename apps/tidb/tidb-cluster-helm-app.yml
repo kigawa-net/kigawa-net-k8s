@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://charts.pingcap.org/
     chart: tidb-cluster
-    # ❌ targetRevision は書かない
+    targetRevision: "v1.5.1"   # ← チャートのバージョン（必須）
     helm:
       releaseName: tidb-cluster
       valuesObject:
