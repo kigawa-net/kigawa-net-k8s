@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tidb-operator-helm
+  namespace: argocd
+spec:
+  project: default
+
+  # Sync Helm Chart for TiDB Operator
+  sources:
+    - repoURL: "https://charts.pingcap.org/"
+      chart: tidb-operator
+      targetRevision: "v1.6.4"                 # Chart version (例)
+      helm:
+        releaseName: tidb-operator
+        valueFiles:
+          - tidb/values-operator.yaml
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: tidb-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

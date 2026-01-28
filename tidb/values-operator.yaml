@@ -1,0 +1,11 @@
+cluster:
+  pd:
+    replicas: 1
+    storageClass: "standard"
+    storageSize: "10Gi"
+  tikv:
+    replicas: 1
+    storageClass: "standard"
+    storageSize: "20Gi"
+  tidb:
+    replicas: 1
