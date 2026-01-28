@@ -14,14 +14,14 @@ spec:
       helm:
         releaseName: tidb-operator
         valueFiles:
-          - tidb/values-operator.yaml
+          - ../tidb/values-operator.yaml
     - repoURL: "https://charts.pingcap.org/"
       chart: tidb-cluster
       targetRevision: "v1.6.4"                 # Chart version（Cluster）
       helm:
         releaseName: tidb-cluster
         valueFiles:
-          - tidb/values-operator.yaml
+          - ../tidb/values-operator.yaml
 
   destination:
     server: "https://kubernetes.default.svc"
