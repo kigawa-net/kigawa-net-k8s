@@ -27,3 +27,40 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kigawa-net
+  namespace: argocd
+spec:
+  description: Project for kigawa.net Kubernetes resources
+
+  # ----------------------------
+  # デプロイ先の制限
+  # ----------------------------
+  destinations:
+    - name: in-cluster
+      namespace: kigawa-net
+
+  # ----------------------------
+  # 許可する Git リポジトリ
+  # ----------------------------
+  sourceRepos:
+    - https://github.com/kigawa-net/*
+
+  # ----------------------------
+  # Namespace リソース許可
+  # ----------------------------
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # ----------------------------
+  # Cluster スコープ リソース許可
+  # （IngressClass, CRD, ClusterRole など）
+  # ----------------------------
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
