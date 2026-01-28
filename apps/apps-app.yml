@@ -4,7 +4,7 @@ metadata:
   name: kigawa-net-k8s
   namespace: argocd
 spec:
-  project: default
+  project: kigawa-net
 
   source:
     # GitHub リポジトリ URL
@@ -13,7 +13,7 @@ spec:
 
     # Kubernetes manifests のルートパス
     # 例: /deploy や /k8s などあればここを書き換える
-    path: applications
+    path: apps
 
   destination:
     server: https://kubernetes.default.svc
