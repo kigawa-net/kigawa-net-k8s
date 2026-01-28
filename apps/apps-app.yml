@@ -42,6 +42,7 @@ spec:
   # ----------------------------
   destinations:
     - name: in-cluster
+      server: https://kubernetes.default.svc
       namespace: kigawa-net
 
   # ----------------------------
