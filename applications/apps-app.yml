@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-k8s
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # GitHub リポジトリ URL
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: main
+
+    # Kubernetes manifests のルートパス
+    # 例: /deploy や /k8s などあればここを書き換える
+    path: applications
+
+  destination:
+    server: https://kubernetes.default.svc
+    # デプロイ先 namespace
+    namespace: kigawa-net
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
