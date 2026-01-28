@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tidb-cluster
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://charts.pingcap.org/
+    chart: tidb-cluster
+    targetRevision: v1.6.4
+    helm:
+      releaseName: tidb-cluster
+      valuesObject:
+        cluster:
+          pd:
+            replicas: 1
+            storageClass: standard
+            storageSize: 10Gi
+          tikv:
+            replicas: 1
+            storageClass: standard
+            storageSize: 20Gi
+          tidb:
+            replicas: 1
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tidb-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
