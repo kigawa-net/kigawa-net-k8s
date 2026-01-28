@@ -9,11 +9,12 @@ spec:
   source:
     repoURL: https://charts.pingcap.org/
     chart: tidb-cluster
-    targetRevision: v1.6.4
+    # ❌ targetRevision は書かない
     helm:
       releaseName: tidb-cluster
       valuesObject:
         cluster:
+          version: v8.5.0     # ← ここで TiDB のバージョンを指定
           pd:
             replicas: 1
             storageClass: standard
