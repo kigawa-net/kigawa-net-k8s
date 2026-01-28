@@ -11,6 +11,7 @@ spec:
     chart: tidb-operator
     targetRevision: v1.6.4
     helm:
+      skipCrds: false
       releaseName: tidb-operator
       valuesObject:
         clusterScoped: true
