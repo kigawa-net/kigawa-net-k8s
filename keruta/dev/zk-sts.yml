@@ -23,9 +23,9 @@ spec:
                   fieldPath: metadata.name
             - name: ZOO_SERVERS
               value: >
-                server.1=zk-0.zk-svc.default.svc.cluster.local:2888:3888;2181
-                server.2=zk-1.zk-svc.default.svc.cluster.local:2888:3888;2181
-                server.3=zk-2.zk-svc.default.svc.cluster.local:2888:3888;2181
+                server.1=zk-sts-0.zk-svc.default.svc.cluster.local:2888:3888;2181
+                server.2=zk-sts-1.zk-svc.default.svc.cluster.local:2888:3888;2181
+                server.3=zk-sts-2.zk-svc.default.svc.cluster.local:2888:3888;2181
           ports:
             - name: client
               containerPort: 2181
