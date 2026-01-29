@@ -13,18 +13,18 @@ spec:
     helm:
       releaseName: tidb-cluster
       valuesObject:
-        cluster:
-          version: v8.5.0     # ← ここで TiDB のバージョンを指定
-          pd:
-            replicas: 1
-            storageClass: rook-cephfs
-            storageSize: 10Gi
-          tikv:
-            replicas: 1
-            storageClass: rook-cephfs
-            storageSize: 20Gi
-          tidb:
-            replicas: 1
+        version: v8.5.0
+        pd:
+          replicas: 1
+          storageClassName: rook-cephfs
+          storageSize: 10Gi
+        tikv:
+          replicas: 1
+          storageClassName: rook-cephfs
+          storageSize: 20Gi
+        tidb:
+          replicas: 1
+
 
   destination:
     server: https://kubernetes.default.svc
