@@ -13,9 +13,9 @@ spec:
       labels:
         app: zk-pod
     spec:
-      initContainers:
-        - name: init-myid
-          image: busybox
+      containers:
+        - name: zk-con
+          image: zookeeper:3.9
           command:
             - sh
             - -c
@@ -23,13 +23,7 @@ spec:
               ORDINAL=${HOSTNAME##*-}
               export ZOO_MY_ID=$((ORDINAL + 1))
               exec /docker-entrypoint.sh zkServer.sh start-foreground
-          volumeMounts:
-            - name: datadir
-              mountPath: /var/lib/zookeeper/data
 
-      containers:
-        - name: zk-con
-          image: zookeeper:3.9
           env:
             - name: ZOO_SERVERS
               value: >
