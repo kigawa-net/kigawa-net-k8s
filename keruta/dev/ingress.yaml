@@ -1,5 +1,3 @@
-
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -8,14 +6,14 @@ metadata:
 spec:
   ingressClassName: haproxy
   rules:
-    - host: keruta-dev-api.kigawa.net
+    - host: ktse-dev.kigawa.net
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: keruta-dev-svc
+                name: ktse-dev-svc
                 port:
                   number: 8080
     - host: keruta-dev.kigawa.net
@@ -25,6 +23,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: keruta-dev-admin-svc
+                name: ktcl-front-dev-svc
                 port:
                   number: 3000

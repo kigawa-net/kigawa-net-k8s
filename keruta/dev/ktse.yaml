@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ktse-dev
+  namespace: kigawa-net-keruta-dev
+  labels:
+    app: ktse-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ktse-dev
+  template:
+    metadata:
+      name: ktse-dev
+      labels:
+        app: ktse-dev
+    spec:
+      serviceAccountName: keruta-dev-sa
+      containers:
+        - name: ktse-dev
+          image: harbor.kigawa.net/library/ktse:develop-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: DB_JDBC_URL
+              value: jdbc:mysql://tidb-cluster-tidb.tidb-system.svc.cluster.local:4000/keruta
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: tidb
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: tidb
+            - name: KTSE_ZK_HOST
+              value: zookeeper-svc:2181
+      restartPolicy: Always

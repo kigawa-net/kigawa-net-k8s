@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ktcl-front-dev
+  namespace: kigawa-net-keruta-dev
+  labels:
+    app: ktcl-front-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ktcl-front-dev
+  template:
+    metadata:
+      name: ktcl-front-dev
+      labels:
+        app: ktcl-front-dev
+    spec:
+      containers:
+        - name: ktcl-front-dev
+          image: harbor.kigawa.net/library/ktcl-front:develop-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: OWN_ISSUER
+              value: https://keruta-dev.kigawa.net
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: private-key
+                  name: ktcl-front
+            - name: KTSE_AUD
+              value: keruta
+            - name: USER_JWKS_URL
+              value: https://user.kigawa.net/realms/develop/protocol/openid-connect/certs
+            - name: USER_ISSUER
+              value: https://user.kigawa.net/realms/develop
+      restartPolicy: Always
