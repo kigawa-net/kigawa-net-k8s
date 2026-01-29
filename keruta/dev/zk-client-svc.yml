@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zk-client-svc
+  labels:
+    app: zk-pod
+spec:
+  selector:
+    app: zk-pod
+  ports:
+    - name: client
+      port: 2181

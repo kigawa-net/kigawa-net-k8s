@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zk-sts
+spec:
+  serviceName: zk-server-svc
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zk-sts
+  template:
+    metadata:
+      labels:
+        app: zk-pod
+    spec:
+      containers:
+        - name: zk-con
+          image: zookeeper:latest
+          env:
+            - name: ZOO_MY_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ZOO_SERVERS
+              value: >
+                server.1=zk-0.zk-svc.default.svc.cluster.local:2888:3888;2181
+                server.2=zk-1.zk-svc.default.svc.cluster.local:2888:3888;2181
+                server.3=zk-2.zk-svc.default.svc.cluster.local:2888:3888;2181
+          ports:
+            - name: client
+              containerPort: 2181
+            - name: server
+              containerPort: 2888
+            - name: leader-election
+              containerPort: 3888
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/zookeeper/data
+            - name: datalog
+              mountPath: /var/lib/zookeeper/log
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: datalog
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 5Gi
