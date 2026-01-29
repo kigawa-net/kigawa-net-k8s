@@ -13,6 +13,17 @@ spec:
       labels:
         app: zk-pod
     spec:
+      initContainers:
+        - name: init-myid
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "$((${HOSTNAME##*-} + 1))" > /var/lib/zookeeper/data/myid
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/zookeeper/data
       containers:
         - name: zk-con
           image: zookeeper:latest
