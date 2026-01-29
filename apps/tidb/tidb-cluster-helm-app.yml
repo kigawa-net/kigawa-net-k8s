@@ -17,11 +17,11 @@ spec:
           version: v8.5.0     # ← ここで TiDB のバージョンを指定
           pd:
             replicas: 1
-            storageClass: standard
+            storageClass: rook-cephfs
             storageSize: 10Gi
           tikv:
             replicas: 1
-            storageClass: standard
+            storageClass: rook-cephfs
             storageSize: 20Gi
           tidb:
             replicas: 1
