@@ -46,6 +46,9 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: kigawa-net
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: kigawa-net-*
 
   # ----------------------------
   # 許可する Git リポジトリ
