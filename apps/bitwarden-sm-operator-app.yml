@@ -15,8 +15,8 @@ spec:
       values: |
         # Sync 間隔（秒）最小値: 180
         settings:
-          bwSecretsManagerRefreshInterval: "300"
-          cloudRegion: "US"  # または "EU"
+          bwSecretsManagerRefreshInterval: 300
+          cloudRegion: US
           # セルフホストの場合は以下を設定
           # bwApiUrlOverride: "https://your-bitwarden.example.com/api"
           # bwIdentityUrlOverride: "https://your-bitwarden.example.com/identity"
