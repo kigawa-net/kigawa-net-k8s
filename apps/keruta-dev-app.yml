@@ -14,6 +14,9 @@ spec:
     # Kubernetes manifests のルートパス
     # 例: /deploy や /k8s などあればここを書き換える
     path: keruta/dev
+    directory:
+      recurse: true
+
 
   destination:
     server: https://kubernetes.default.svc
