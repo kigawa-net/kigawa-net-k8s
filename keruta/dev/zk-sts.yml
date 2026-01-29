@@ -20,7 +20,9 @@ spec:
             - sh
             - -c
             - |
-              echo "$((${HOSTNAME##*-} + 1))" > /var/lib/zookeeper/data/myid
+              ORDINAL=${HOSTNAME##*-}
+              export ZOO_MY_ID=$((ORDINAL + 1))
+              exec /docker-entrypoint.sh zkServer.sh start-foreground
           volumeMounts:
             - name: datadir
               mountPath: /var/lib/zookeeper/data
