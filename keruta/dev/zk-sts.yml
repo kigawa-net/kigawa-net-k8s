@@ -29,11 +29,12 @@ spec:
         - name: zk-con
           image: zookeeper:3.9
           env:
-            - name: ZOO_SERVERS
-              value: |
-                server.1=zk-sts-0.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
-                server.2=zk-sts-1.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
-                server.3=zk-sts-2.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
+        - name: ZOO_SERVERS
+          value: >
+            server.1=zk-sts-0.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+            server.2=zk-sts-1.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+            server.3=zk-sts-2.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+
           ports:
             - name: client
               containerPort: 2181
