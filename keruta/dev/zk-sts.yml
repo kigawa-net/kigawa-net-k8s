@@ -7,7 +7,7 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: zk-sts
+      app: zk-pod
   template:
     metadata:
       labels:
