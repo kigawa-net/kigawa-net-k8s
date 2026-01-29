@@ -42,7 +42,7 @@ spec:
     - metadata:
         name: datadir
       spec:
-        storageClassName: "rook-ceph"
+        storageClassName: "rook-ceph-rbd"
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
@@ -50,7 +50,7 @@ spec:
     - metadata:
         name: datalog
       spec:
-        storageClassName: "rook-ceph"
+        storageClassName: "rook-ceph-rbd"
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
