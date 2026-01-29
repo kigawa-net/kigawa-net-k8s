@@ -1,31 +1,29 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: external-secrets-operator
+  name: bitwarden-sm-operator
   namespace: argocd
 spec:
   project: default
 
   source:
-    repoURL: https://charts.external-secrets.io
-    chart: external-secrets
-    targetRevision: "0.9.11"
+    # Bitwarden Secrets Manager Operator
+    repoURL: https://charts.bitwarden.com
+    chart: sm-operator
+    targetRevision: "0.6.0"
     helm:
       values: |
-        installCRDs: true
-
-        # ------------------------
-        # Bitwarden SDK Server を有効化
-        bitwarden-sdk-server:
-          enabled: true
-
-        # Webhook サーバー
-        webhook:
-          port: 9443
+        # Sync 間隔（秒）最小値: 180
+        settings:
+          bwSecretsManagerRefreshInterval: 300
+          cloudRegion: "US"  # または "EU"
+          # セルフホストの場合は以下を設定
+          # bwApiUrlOverride: "https://your-bitwarden.example.com/api"
+          # bwIdentityUrlOverride: "https://your-bitwarden.example.com/identity"
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: external-secrets-system
+    namespace: sm-operator-system
 
   syncPolicy:
     automated:
@@ -33,12 +31,11 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: external-secrets-config
+  name: bitwarden-secrets-config
   namespace: argocd
 spec:
   project: default
@@ -46,13 +43,13 @@ spec:
   source:
     repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
     targetRevision: main
-    path: external-secrets
+    path: bitwarden-secrets
     directory:
       recurse: true
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: external-secrets-system
+    namespace: sm-operator-system
 
   syncPolicy:
     automated:
