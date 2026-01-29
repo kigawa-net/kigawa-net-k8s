@@ -42,6 +42,7 @@ spec:
     - metadata:
         name: datadir
       spec:
+        storageClassName: "rook-ceph"
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
@@ -49,6 +50,7 @@ spec:
     - metadata:
         name: datalog
       spec:
+        storageClassName: "rook-ceph"
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
