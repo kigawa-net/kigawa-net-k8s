@@ -13,6 +13,7 @@ spec:
     helm:
       releaseName: tidb-cluster
       valuesObject:
+        schedulerName: default-scheduler
         version: v8.5.0
         pd:
           affinity: { }
