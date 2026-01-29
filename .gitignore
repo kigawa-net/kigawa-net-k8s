@@ -1,1 +1,4 @@
-/**/*secret.yaml
+# Ignore actual Secret manifests (kind: Secret), but allow ExternalSecret manifests
+# Use naming convention: *-secret.yaml for Secrets, *-external-secret.yaml for ExternalSecrets
+/**/*-secret.yaml
+!/**/*-external-secret.yaml
