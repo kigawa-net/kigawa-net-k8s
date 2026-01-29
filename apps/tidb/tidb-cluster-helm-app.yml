@@ -15,14 +15,17 @@ spec:
       valuesObject:
         version: v8.5.0
         pd:
+          affinity: { }
           replicas: 1
           storageClassName: rook-cephfs
           storageSize: 10Gi
         tikv:
+          affinity: { }
           replicas: 1
           storageClassName: rook-cephfs
           storageSize: 20Gi
         tidb:
+          affinity: { }
           replicas: 1
 
 
