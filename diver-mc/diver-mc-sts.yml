@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: kigawa-net-diver-mc-sts
 spec:
-  replicas: 1
+  replicas: 0
   serviceName: kigawa-net-diver-mc-svc
   selector:
     matchLabels:
