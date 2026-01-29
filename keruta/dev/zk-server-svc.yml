@@ -2,10 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: zk-server-svc
-  labels:
-    app: zk-pod
 spec:
   clusterIP: None
+  publishNotReadyAddresses: true
   selector:
     app: zk-pod
   ports:
