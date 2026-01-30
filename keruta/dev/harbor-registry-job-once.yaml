@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sync-harbor-registry-secret-once
+  namespace: kigawa-net-keruta-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: keruta-dev-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: create-secret
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              # Read username and password from source secret
+              USERNAME=$(kubectl get secret harbor-registry-source -n kigawa-net-keruta-dev -o jsonpath='{.data.user}' | base64 -d)
+              PASSWORD=$(kubectl get secret harbor-registry-source -n kigawa-net-keruta-dev -o jsonpath='{.data.pass}' | base64 -d)
+
+              # Create or update the harbor-registry secret with correct type
+              kubectl create secret docker-registry harbor-registry \
+                --docker-server=harbor.kigawa.net \
+                --docker-username="$USERNAME" \
+                --docker-password="$PASSWORD" \
+                --namespace=kigawa-net-keruta-dev \
+                --dry-run=client -o yaml | kubectl apply -f -
+
+              echo "Secret harbor-registry synced successfully at $(date)"
