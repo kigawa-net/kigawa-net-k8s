@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: ktcl-front-dev
-          image: harbor.kigawa.net/library/ktcl-front:develop-a0a424329187872cd2fd4e19bd087b23f8964ba3
+          image: harbor.kigawa.net/library/ktcl-front:develop-d1881f35774cfd2a109422c53a9fc982ea581ef6
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
