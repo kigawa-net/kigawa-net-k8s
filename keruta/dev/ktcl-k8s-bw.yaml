@@ -1,0 +1,19 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: keruta-dev-ktcl-k8s-source
+  namespace: kigawa-net-keruta-dev
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktcl-k8s
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+    secretNamespace: sm-operator-system
+  map:
+    - bwSecretId: "REPLACE_WITH_USER_TOKEN_ID"
+      secretKeyName: user-token
+    - bwSecretId: "REPLACE_WITH_SERVER_TOKEN_ID"
+      secretKeyName: server-token
+    - bwSecretId: "REPLACE_WITH_QUEUE_ID"
+      secretKeyName: queue-id

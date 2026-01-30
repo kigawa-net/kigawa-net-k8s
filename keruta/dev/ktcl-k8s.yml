@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ktcl-k8s-dev
+  namespace: kigawa-net-keruta-dev
+  labels:
+    app: ktcl-k8s-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ktcl-k8s-dev
+  template:
+    metadata:
+      name: ktcl-k8s-dev
+      labels:
+        app: ktcl-k8s-dev
+    spec:
+      serviceAccountName: keruta-dev-sa
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: ktcl-k8s-dev
+          image: harbor.kigawa.net/private/ktcl-k8s:develop-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: ktse
+            - containerPort: 8081
+              protocol: TCP
+              name: web
+          env:
+            - name: KTSE_HOST
+              value: ktse-dev-svc
+            - name: KTSE_PORT
+              value: "8080"
+            - name: KTSE_USE_TLS
+              value: "false"
+            - name: K8S_NAMESPACE
+              value: kigawa-net-keruta-dev
+            - name: K8S_USE_IN_CLUSTER
+              value: "true"
+            - name: K8S_JOB_TIMEOUT
+              value: "600"
+            - name: KTCL_K8S_WEB_MODE
+              value: "false"
+            - name: KTCL_K8S_WEB_PORT
+              value: "8081"
+            - name: KERUTA_USER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ktcl-k8s
+                  key: user-token
+            - name: KERUTA_SERVER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ktcl-k8s
+                  key: server-token
+            - name: KERUTA_QUEUE_ID
+              valueFrom:
+                secretKeyRef:
+                  name: ktcl-k8s
+                  key: queue-id
+      restartPolicy: Always

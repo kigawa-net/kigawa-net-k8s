@@ -26,3 +26,13 @@ spec:
                 name: ktcl-front-dev-svc
                 port:
                   number: 3000
+    - host: ktcl-k8s-dev.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ktcl-k8s-dev-svc
+                port:
+                  number: 8081
