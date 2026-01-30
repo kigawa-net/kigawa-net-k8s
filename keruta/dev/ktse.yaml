@@ -38,7 +38,7 @@ spec:
             - name: IDP_0_ISSUER
               value: https://user.kigawa.net/realms/develop
             - name: DB_JDBC_URL
-              value: jdbc:mysql://tidb-cluster-tidb.tidb-system.svc.cluster.local:4000/keruta
+              value: jdbc:mysql://keruta-dev-tidb-tidb:4000/keruta
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:

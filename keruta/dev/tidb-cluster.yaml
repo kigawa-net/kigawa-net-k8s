@@ -1,0 +1,68 @@
+apiVersion: pingcap.com/v1alpha1
+kind: TidbCluster
+metadata:
+  name: keruta-dev-tidb
+  namespace: kigawa-net-keruta-dev
+spec:
+  version: v8.5.2
+  timezone: Asia/Tokyo
+  pvReclaimPolicy: Retain
+  enableDynamicConfiguration: true
+  configUpdateStrategy: RollingUpdate
+
+  pd:
+    baseImage: pingcap/pd
+    maxFailoverCount: 0
+    replicas: 1
+    requests:
+      storage: "10Gi"
+    config: |
+      [log]
+      level = "info"
+    storageClassName: rook-cephfs
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+  tikv:
+    baseImage: pingcap/tikv
+    maxFailoverCount: 0
+    replicas: 1
+    requests:
+      storage: "20Gi"
+    config: |
+      [log]
+      level = "info"
+    storageClassName: rook-cephfs
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+
+  tidb:
+    baseImage: pingcap/tidb
+    maxFailoverCount: 0
+    replicas: 1
+    service:
+      type: ClusterIP
+      annotations: {}
+    config: |
+      [log]
+      level = "info"
+      [performance]
+      max-procs = 0
+      tcp-keep-alive = true
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
