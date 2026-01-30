@@ -1,15 +1,17 @@
 apiVersion: k8s.bitwarden.com/v1
 kind: BitwardenSecret
 metadata:
-  name: keruta-dev-harbor-registry
+  name: keruta-dev-harbor-registry-source
   namespace: kigawa-net-keruta-dev
 spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
-  secretName: harbor-registry
+  secretName: harbor-registry-source
   authToken:
     secretName: bw-auth-token
     secretKey: token
     secretNamespace: sm-operator-system
   map:
-    - bwSecretId: "5fd632e0-d383-49e8-ab25-b3e200fc9c37"
-      secretKeyName: .dockerconfigjson
+    - bwSecretId: "13c66d3b-7eb6-4c37-b466-b3e2010057b1"
+      secretKeyName: pass
+    - bwSecretId: "929d361e-e599-4b58-b173-b3e201004d0a"
+      secretKeyName: user
