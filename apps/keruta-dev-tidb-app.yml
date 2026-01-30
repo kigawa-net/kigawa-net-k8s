@@ -5,6 +5,9 @@ metadata:
   namespace: argocd
 spec:
   project: default
+  # Prevent ArgoCD from adding its own instance label
+  # which conflicts with Helm's release-based labeling
+  trackingMethod: annotation
 
   source:
     repoURL: https://charts.pingcap.org/
