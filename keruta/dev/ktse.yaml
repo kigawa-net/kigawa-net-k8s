@@ -19,7 +19,7 @@ spec:
       serviceAccountName: keruta-dev-sa
       containers:
         - name: ktse-dev
-          image: harbor.kigawa.net/library/ktse:develop-29a3df349ac783691ddbfc3dc14412d16333812b
+          image: harbor.kigawa.net/library/ktse:develop-b5e30254a3db6d79f61bf9eaf00bd997e23d3a6b
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
