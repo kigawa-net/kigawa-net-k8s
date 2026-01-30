@@ -25,6 +25,16 @@ spec:
             - containerPort: 8080
               protocol: TCP
           env:
+            - name: PROVIDER_0_NAME
+              value: web
+            - name: PROVIDER_0_AUDIENCE
+              value: keruta
+            - name: PROVIDER_0_ISSUER
+              value: https://keruta-dev.kigawa.net/
+            - name: IDP_0_AUDIENCE
+              value: keruta
+            - name: IDP_0_ISSUER
+              value: https://user.kigawa.net/realms/develop
             - name: DB_JDBC_URL
               value: jdbc:mysql://tidb-cluster-tidb.tidb-system.svc.cluster.local:4000/keruta
             - name: DB_USERNAME
