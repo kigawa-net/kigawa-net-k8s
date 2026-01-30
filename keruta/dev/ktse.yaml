@@ -48,5 +48,5 @@ spec:
                   key: pass
                   name: tidb
             - name: ZK_HOST
-              value: zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2181
+              value: zk-sts-0.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2181
       restartPolicy: Always
