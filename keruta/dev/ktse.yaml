@@ -37,6 +37,6 @@ spec:
                 secretKeyRef:
                   key: pass
                   name: tidb
-            - name: KTSE_ZK_HOST
+            - name: ZK_HOST
               value: zk-client-svc:2181
       restartPolicy: Always
