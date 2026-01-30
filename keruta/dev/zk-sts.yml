@@ -27,9 +27,9 @@ spec:
           env:
             - name: ZOO_SERVERS
               value: >
-                server.1=zk-sts-0.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
-                server.2=zk-sts-1.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
-                server.3=zk-sts-2.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+                server.1=zk-sts-0.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
+                server.2=zk-sts-1.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
+                server.3=zk-sts-2.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888;2181
             - name: ZOO_CLIENT_PORT
               value: "2181"
             - name: ZOO_4LW_COMMANDS_WHITELIST
