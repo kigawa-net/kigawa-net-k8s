@@ -47,19 +47,19 @@ spec:
               value: "false"
             - name: KTCL_K8S_WEB_PORT
               value: "8081"
-            - name: KERUTA_USER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: ktcl-k8s
-                  key: user-token
-            - name: KERUTA_SERVER_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: ktcl-k8s
-                  key: server-token
-            - name: KERUTA_QUEUE_ID
-              valueFrom:
-                secretKeyRef:
-                  name: ktcl-k8s
-                  key: queue-id
+#            - name: KERUTA_USER_TOKEN
+#              valueFrom:
+#                secretKeyRef:
+#                  name: ktcl-k8s
+#                  key: user-token
+#            - name: KERUTA_SERVER_TOKEN
+#              valueFrom:
+#                secretKeyRef:
+#                  name: ktcl-k8s
+#                  key: server-token
+#            - name: KERUTA_QUEUE_ID
+#              valueFrom:
+#                secretKeyRef:
+#                  name: ktcl-k8s
+#                  key: queue-id
       restartPolicy: Always
