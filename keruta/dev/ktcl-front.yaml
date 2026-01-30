@@ -16,6 +16,8 @@ spec:
       labels:
         app: ktcl-front-dev
     spec:
+      imagePullSecrets:
+        - name: harbor-registry
       containers:
         - name: ktcl-front-dev
           image: harbor.kigawa.net/private/ktcl-front:develop-90a8e9ddb7f89e8599e70601d8cb24a16d02023e
