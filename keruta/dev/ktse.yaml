@@ -48,5 +48,5 @@ spec:
                   key: pass
                   name: tidb
             - name: ZK_HOST
-              value: zk-client-svc:2181
+              value: zk-svc:2181
       restartPolicy: Always

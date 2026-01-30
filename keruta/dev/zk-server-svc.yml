@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: zk-server-svc
+  name: zk-svc
 spec:
   clusterIP: None
   publishNotReadyAddresses: true
   selector:
     app: zk-pod
   ports:
+    - name: client
+      port: 2181
     - name: server
       port: 2888
     - name: leader-election

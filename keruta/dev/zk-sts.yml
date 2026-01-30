@@ -3,7 +3,7 @@ kind: StatefulSet
 metadata:
   name: zk-sts
 spec:
-  serviceName: zk-server-svc
+  serviceName: zk-svc
   replicas: 3
   selector:
     matchLabels:
@@ -27,9 +27,11 @@ spec:
           env:
             - name: ZOO_SERVERS
               value: >
-                server.1=zk-sts-0.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
-                server.2=zk-sts-1.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
-                server.3=zk-sts-2.zk-server-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+                server.1=zk-sts-0.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+                server.2=zk-sts-1.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+                server.3=zk-sts-2.zk-svc.kigawa-net-keruta-dev.svc.cluster.local:2888:3888
+            - name: ZOO_4LW_COMMANDS_WHITELIST
+              value: "*"
 
           ports:
             - name: client
