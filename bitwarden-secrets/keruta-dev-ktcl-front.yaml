@@ -1,0 +1,15 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: keruta-dev-ktcl-front
+  namespace: kigawa-net-keruta-dev
+spec:
+  organizationId: "<YOUR_ORGANIZATION_ID>"
+  secretName: ktcl-front
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+    secretNamespace: sm-operator-system
+  map:
+    - bwSecretId: "<KTCL_FRONT_PRIVATE_KEY_SECRET_UUID>"
+      secretKeyName: private-key
