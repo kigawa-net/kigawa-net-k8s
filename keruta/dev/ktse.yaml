@@ -32,7 +32,7 @@ spec:
             - name: PROVIDER_0_AUDIENCE
               value: keruta
             - name: PROVIDER_0_ISSUER
-              value: https://keruta-dev.kigawa.net/
+              value: https://keruta-dev.kigawa.net
             - name: IDP_0_AUDIENCE
               value: keruta
             - name: IDP_0_ISSUER
