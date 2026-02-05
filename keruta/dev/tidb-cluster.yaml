@@ -13,7 +13,7 @@ spec:
   pd:
     baseImage: pingcap/pd
     maxFailoverCount: 0
-    replicas: 1
+    replicas: 2
     requests:
       storage: "10Gi"
     config: |
@@ -26,7 +26,7 @@ spec:
         memory: 512Mi
       limits:
         cpu: 1000m
-        memory: 1Gi
+        memory: 0.5Gi
 
   tikv:
     baseImage: pingcap/tikv
