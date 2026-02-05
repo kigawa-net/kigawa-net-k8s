@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tidb-init-db
+  namespace: kigawa-net-keruta-dev
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: keruta-dev-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: init-db
+          image: mysql:8.0
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              echo "Starting TiDB database initialization..."
+
+              # Wait for TiDB to be ready
+              echo "Waiting for TiDB to be ready..."
+              until mysql -h keruta-dev-tidb-tidb -P 4000 -u root --connect-timeout=5 -e "SELECT 1" &> /dev/null; do
+                echo "TiDB is not ready yet, waiting..."
+                sleep 5
+              done
+
+              echo "TiDB is ready. Creating database and user..."
+
+              # Read application user credentials from secret
+              APP_USER="${DB_USERNAME}"
+              APP_PASS="${DB_PASSWORD}"
+
+              # Create database and user
+              mysql -h keruta-dev-tidb-tidb -P 4000 -u root << EOF
+              -- Create database if not exists
+              CREATE DATABASE IF NOT EXISTS keruta;
+
+              -- Create application user if not exists
+              CREATE USER IF NOT EXISTS '${APP_USER}'@'%' IDENTIFIED BY '${APP_PASS}';
+
+              -- Grant privileges on keruta database
+              GRANT ALL PRIVILEGES ON keruta.* TO '${APP_USER}'@'%';
+
+              -- Apply changes
+              FLUSH PRIVILEGES;
+
+              -- Show databases
+              SHOW DATABASES;
+              EOF
+
+              echo "Database and user initialization completed successfully at $(date)"
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: user
+                  name: tidb
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: tidb
