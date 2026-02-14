@@ -8,7 +8,7 @@ spec:
 
   source:
     # GitHub リポジトリ URL
-#    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
     targetRevision: main
 
     # Kubernetes manifests のルートパス
