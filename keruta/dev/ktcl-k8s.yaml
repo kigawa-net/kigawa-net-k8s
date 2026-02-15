@@ -21,7 +21,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktcl-k8s-dev
-          image: harbor.kigawa.net/library/ktcl-k8s:develop-b7ab99e31e1ad0d82c83cc3af010be774acba526
+          image: harbor.kigawa.net/library/ktcl-k8s:develop-deffc6439c187c4140ae9232f47f7e28f4ded728
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
