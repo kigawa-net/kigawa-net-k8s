@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: sync-harbor-registry-secret
+  name: bitwarden-sync-crn
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
   successfulJobsHistoryLimit: 1
