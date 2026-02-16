@@ -6,6 +6,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: sec-sync-sa
+    namespace: kigawa-net-secret-provider
 roleRef:
   kind: ClusterRole
   name: sec-sync-cro
