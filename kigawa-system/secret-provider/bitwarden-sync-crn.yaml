@@ -19,6 +19,7 @@ spec:
                 - name: TARGET_NAMESPACES
                   value: |
                     kigawa-net-keruta-dev
+                    develop
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
