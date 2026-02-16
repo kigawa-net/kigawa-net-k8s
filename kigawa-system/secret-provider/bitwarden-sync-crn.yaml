@@ -31,6 +31,7 @@ spec:
                   token=$(kubectl get secret bitwarden-sec -o jsonpath='{.data.token}' | base64 -d)
                   
                   echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                    if [[ -z "$namespace" ]]; then continue; fi
                     kubectl create secret generic bitwarden-sec \
                       --from-literal=token="$token" \
                       --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -

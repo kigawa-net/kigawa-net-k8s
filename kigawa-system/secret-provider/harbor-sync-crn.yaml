@@ -32,6 +32,7 @@ spec:
                   PASSWORD=$(kubectl get secret harbor-sec -o jsonpath='{.data.pass}' | base64 -d)
                   
                   echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                    if [[ -z "$namespace" ]]; then continue; fi
                     # Create or update the harbor-registry secret with correct type
                     kubectl create secret docker-registry harbor-registry \
                       --docker-server=harbor.kigawa.net \
