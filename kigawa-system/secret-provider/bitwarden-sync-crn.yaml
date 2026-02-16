@@ -11,7 +11,7 @@ spec:
       ttlSecondsAfterFinished: 300
       template:
         spec:
-          serviceAccountName: keruta-dev-sa
+          serviceAccountName: sec-sync-sa
           restartPolicy: OnFailure
           containers:
             - name: create-secret

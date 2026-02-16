@@ -1,0 +1,12 @@
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sec-sync-rob
+subjects:
+  - kind: ServiceAccount
+    name: sec-syncsa
+roleRef:
+  kind: Role
+  name: sec-sync-rol
+  apiGroup: rbac.authorization.k8s.io
