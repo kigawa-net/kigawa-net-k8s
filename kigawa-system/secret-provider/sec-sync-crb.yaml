@@ -1,0 +1,13 @@
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sec-sync-crb
+subjects:
+  - kind: ServiceAccount
+    name: sec-sync-sa
+    namespace: kigawa-net-secret-provider
+roleRef:
+  kind: ClusterRole
+  name: sec-sync-cro
+  apiGroup: rbac.authorization.k8s.io

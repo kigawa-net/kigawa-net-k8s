@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: sync-harbor-registry-secret
+  name: bitwarden-sync-crn
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
   successfulJobsHistoryLimit: 1
@@ -11,7 +11,7 @@ spec:
       ttlSecondsAfterFinished: 300
       template:
         spec:
-          serviceAccountName: keruta-dev-sa
+          serviceAccountName: sec-sync-sa
           restartPolicy: OnFailure
           containers:
             - name: create-secret
@@ -19,6 +19,7 @@ spec:
                 - name: TARGET_NAMESPACES
                   value: |
                     kigawa-net-keruta-dev
+                    develop
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
@@ -30,6 +31,7 @@ spec:
                   token=$(kubectl get secret bitwarden-sec -o jsonpath='{.data.token}' | base64 -d)
                   
                   echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                    if [[ -z "$namespace" ]]; then continue; fi
                     kubectl create secret generic bitwarden-sec \
                       --from-literal=token="$token" \
                       --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
