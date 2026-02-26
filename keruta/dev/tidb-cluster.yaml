@@ -27,29 +27,6 @@ spec:
       limits:
         cpu: 1000m
         memory: 0.5Gi
-    initContainers:
-    - name: pd-data-check
-      image: busybox:1.36
-      command:
-      - sh
-      - -c
-      - |
-        DB="/var/lib/pd/member/snap/db"
-        if [ ! -f "$DB" ]; then
-          echo "No database file, skipping check"
-          exit 0
-        fi
-        # bbolt マジックバイト確認 (0xED0CDAED little-endian = ED DA 0C ED)
-        MAGIC=$(od -A n -t x1 -N 4 "$DB" | tr -d ' \n')
-        if [ "$MAGIC" = "edda0ced" ]; then
-          echo "Database valid (magic=$MAGIC)"
-        else
-          echo "Corrupted database detected (magic=$MAGIC), removing member data for recovery"
-          rm -rf /var/lib/pd/member
-        fi
-      volumeMounts:
-      - name: pd
-        mountPath: /var/lib/pd
 
   tikv:
     baseImage: pingcap/tikv
