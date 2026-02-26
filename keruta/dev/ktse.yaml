@@ -26,6 +26,13 @@ spec:
           ports:
             - containerPort: 8080
               protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 64
           livenessProbe:
             tcpSocket:
               port: 8080
