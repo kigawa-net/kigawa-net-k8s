@@ -19,7 +19,7 @@ spec:
     config: |
       [log]
       level = "info"
-    storageClassName: rook-ceph-rdb
+    storageClassName: rook-ceph-rbd
     resources:
       requests:
         cpu: 250m
@@ -37,7 +37,7 @@ spec:
     config: |
       [log]
       level = "info"
-    storageClassName: rook-ceph-rdb
+    storageClassName: rook-ceph-rbd
     resources:
       requests:
         cpu: 500m
