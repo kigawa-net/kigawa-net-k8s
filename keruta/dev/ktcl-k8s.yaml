@@ -31,6 +31,8 @@ spec:
               protocol: TCP
               name: web
           env:
+            - name: IDP_AUDIENCE
+              value: "keruta-k8s"
             - name: KERUTA_K8S_OWN_ISSUER
               value: "https://ktcl-k8s-dev.kigawa.net/"
             - name: CORS_ALLOWED_ORIGINS
