@@ -51,8 +51,8 @@ spec:
             - name: KTSE_JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: ktse-sec
-                  name: key
+                  key: key
+                  name: ktse-sec
             - name: PROVIDER_0_NAME
               value: web
             - name: PROVIDER_0_AUDIENCE
