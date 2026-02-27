@@ -48,6 +48,11 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
           env:
+            - name: KTSE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: ktse-sec
+                  name: key
             - name: PROVIDER_0_NAME
               value: web
             - name: PROVIDER_0_AUDIENCE
