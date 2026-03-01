@@ -18,7 +18,7 @@ spec:
       storage: "10Gi"
     config: |
       [log]
-      level = "info"
+        level = "info"
     storageClassName: rook-ceph-rbd
 
 
@@ -30,7 +30,7 @@ spec:
       storage: "20Gi"
     config: |
       [log]
-      level = "info"
+        level = "info"
     storageClassName: rook-ceph-rbd
 
 
@@ -43,8 +43,8 @@ spec:
       annotations: {}
     config: |
       [log]
-      level = "info"
+        level = "info"
       [performance]
-      max-procs = 0
-      tcp-keep-alive = true
+        max-procs = 0
+        tcp-keep-alive = true
 

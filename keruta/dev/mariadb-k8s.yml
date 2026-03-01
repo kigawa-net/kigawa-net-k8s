@@ -22,9 +22,9 @@ kind: MariaDB
 metadata:
   name: mariadb-k8s
 spec:
-  rootPasswordSecretKeyRef:
-    name: mariadb-k8s
-    key: root-pass
+#  rootPasswordSecretKeyRef:
+#    name: mariadb-k8s
+#    key: root-pass
   image: mariadb:10.11
   port: 3306
   storage:
