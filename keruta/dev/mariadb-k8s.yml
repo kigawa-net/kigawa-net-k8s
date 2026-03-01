@@ -39,7 +39,7 @@ metadata:
   labels:
     app: mariadb-k8s
 spec:
-  serviceName: mariadb-k8s-svc
+  serviceName: mariadb-k8s
   replicas: 1
   selector:
     matchLabels:
