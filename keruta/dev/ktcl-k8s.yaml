@@ -31,6 +31,11 @@ spec:
               protocol: TCP
               name: web
           env:
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: private-key
+                  name: ktcl-k8s-sec
             - name: IDP_AUDIENCE
               value: "keruta-k8s"
             - name: KERUTA_K8S_OWN_ISSUER
