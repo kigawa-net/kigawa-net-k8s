@@ -37,10 +37,7 @@ spec:
                   name: mariadb-k8s
                   key: pass
             - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: mariadb-k8s
-                  key: user
+              value: ktcl-k8s
             - name: DB_JDBC_URL
               value: "jdbc:mariadb://mariadb-k8s:3306/ktcl_k8s"
             - name: PRIVATE_KEY

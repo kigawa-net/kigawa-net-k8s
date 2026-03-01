@@ -1,19 +1,4 @@
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: mariadb-k8s
-  labels:
-    app: mariadb-k8s
-    tier: database
-spec:
-  ports:
-  - port: 3306
-    targetPort: 3306
-  selector:
-    app: mariadb-k8s
-    tier: database
----
 apiVersion: k8s.bitwarden.com/v1
 kind: BitwardenSecret
 metadata:
@@ -32,88 +17,60 @@ spec:
     - bwSecretId: "54f8c7fc-eecf-492b-95a5-b40000ce6bb2"
       secretKeyName: pass
 ---
-apiVersion: apps/v1
-kind: StatefulSet
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
 metadata:
   name: mariadb-k8s
-  labels:
-    app: mariadb-k8s
 spec:
-  serviceName: mariadb-k8s
-  replicas: 1
-  selector:
-    matchLabels:
-      app: mariadb-k8s
-      tier: database
-  template:
-    metadata:
-      labels:
-        app: mariadb-k8s
-        tier: database
-    spec:
-      containers:
-      - name: mariadb-k8s
-        image: mariadb:10.11
-        ports:
-        - containerPort: 3306
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-k8s
-              key: root-pass
-        - name: MYSQL_DATABASE
-          value: ktcl_k8s
-        - name: MYSQL_USER
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-k8s
-              key: user
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mariadb-k8s
-              key: pass
-        volumeMounts:
-        - name: mariadb-k8s-data
-          mountPath: /var/lib/mysql
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          exec:
-            command:
-            - mysqladmin
-            - ping
-            - -h
-            - localhost
-            - -u
-            - root
-            - -p${MYSQL_ROOT_PASSWORD}
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          exec:
-            command:
-            - mysqladmin
-            - ping
-            - -h
-            - localhost
-            - -u
-            - root
-            - -p${MYSQL_ROOT_PASSWORD}
-          initialDelaySeconds: 5
-          periodSeconds: 2
-  volumeClaimTemplates:
-  - metadata:
-      name: mariadb-k8s-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 1Gi
-      storageClassName: rook-ceph-rbd
+  rootPasswordSecretKeyRef:
+    name: mariadb-k8s
+    key: root-pass
+  image: mariadb:10.11
+  port: 3306
+  storage:
+    size: 1Gi
+    storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  name: ktcl_k8s
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  passwordSecretKeyRef:
+    name: mariadb-k8s
+    key: pass
+  maxUserConnections: 20
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  privileges:
+    - "ALL PRIVILEGES"
+  database: ktcl_k8s
+  table: "*"
+  username: ktcl-k8s
+  grantOption: false
