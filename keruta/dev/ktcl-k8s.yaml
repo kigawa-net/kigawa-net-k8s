@@ -31,6 +31,8 @@ spec:
               protocol: TCP
               name: web
           env:
+            - name: DB_JDBC_URL
+              value: "jdbc:mysql://mariadb-k8s:3306/ktcl_k8s"
             - name: PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
