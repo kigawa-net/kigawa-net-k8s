@@ -27,6 +27,8 @@ spec:
 #    key: root-pass
   image: mariadb:10.11
   port: 3306
+  updateStrategy:
+    autoUpdateDataPlane: true
   storage:
     size: 1Gi
     storageClassName: rook-ceph-rbd
