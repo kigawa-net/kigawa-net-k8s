@@ -29,6 +29,10 @@ spec:
   port: 3306
   updateStrategy:
     autoUpdateDataPlane: true
+  startupProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 60
   storage:
     size: 1Gi
     storageClassName: rook-ceph-rbd
