@@ -65,7 +65,7 @@ spec:
   passwordSecretKeyRef:
     name: mariadb-k8s
     key: pass
-  maxUserConnections: 20
+  maxUserConnections: 50
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
