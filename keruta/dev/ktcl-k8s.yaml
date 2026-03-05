@@ -31,6 +31,8 @@ spec:
               protocol: TCP
               name: web
           env:
+            - name: KTSE_PROVIDER_AUDIENCE
+              value: "keruta-k8s"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
