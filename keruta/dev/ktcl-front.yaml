@@ -20,7 +20,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktcl-front-dev
-          image: harbor.kigawa.net/private/ktcl-front:develop-55ca844283c937babed18015cf61485c7eb67980
+          image: harbor.kigawa.net/private/ktcl-front:develop-5d7c222f679b02437aeb688439b8ab26d3bbe384
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
