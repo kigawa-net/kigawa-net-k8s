@@ -60,7 +60,7 @@ spec:
             - name: KTSE_USE_TLS
               value: "false"
             - name: K8S_NAMESPACE
-              value: kigawa-net-keruta-dev
+              value: kigawa-net-keruta-dev-sandbox
             - name: K8S_USE_IN_CLUSTER
               value: "true"
             - name: K8S_JOB_TIMEOUT
