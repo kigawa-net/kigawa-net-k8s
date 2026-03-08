@@ -21,7 +21,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktse-dev
-          image: harbor.kigawa.net/library/ktse:develop-f8022b2dac90b30437822d0877f4c1da0e4ac238
+          image: harbor.kigawa.net/library/ktse:develop-f070d7693ce8b080d703bebe7a36361df6f5350f
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
