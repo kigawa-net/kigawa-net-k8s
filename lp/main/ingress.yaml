@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lp
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lp
+                port:
+                  number: 3000

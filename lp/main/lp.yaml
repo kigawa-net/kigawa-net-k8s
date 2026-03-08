@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lp
+  labels:
+    app: lp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lp
+  template:
+    metadata:
+      name: lp
+      labels:
+        app: lp
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: lp
+          image: harbor.kigawa.net/private/ktcl-front:develop-f8022b2dac90b30437822d0877f4c1da0e4ac238
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env: [ ]
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lp
+spec:
+  selector:
+    app: lp
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP
