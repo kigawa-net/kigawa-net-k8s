@@ -1,0 +1,80 @@
+
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: mariadb-ktse
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: mariadb-ktse
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+  map:
+    - bwSecretId: "2f47a70a-5ad6-4ee0-92a6-b40800fa322a"
+      secretKeyName: root-pass
+    - bwSecretId: "31625825-ece1-40d0-b166-b40800f73a04"
+      secretKeyName: pass
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-ktse
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-ktse
+    key: root-pass
+  image: mariadb:10.11
+  port: 3306
+  updateStrategy:
+    autoUpdateDataPlane: true
+  startupProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 60
+  storage:
+    size: 1Gi
+    storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: ktse
+spec:
+  mariaDbRef:
+    name: mariadb-ktse
+  name: ktse
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: ktse
+spec:
+  mariaDbRef:
+    name: mariadb-ktse
+  passwordSecretKeyRef:
+    name: mariadb-ktse
+    key: pass
+  maxUserConnections: 50
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: ktse
+spec:
+  mariaDbRef:
+    name: mariadb-ktse
+  privileges:
+    - "ALL PRIVILEGES"
+  database: ktse
+  table: "*"
+  username: ktse
+  grantOption: false

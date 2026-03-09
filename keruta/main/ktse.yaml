@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ktse
+  labels:
+    app: ktse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ktse
+  template:
+    metadata:
+      name: ktse
+      labels:
+        app: ktse
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: ktse
+          image: harbor.kigawa.net/library/ktse:develop-3f7ad860f8d62fa298ba83c3a2a7b4db5674b325
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 64
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: KTSE_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: private-key
+                  name: ktse
+            - name: PROVIDER_0_NAME
+              value: web
+            - name: PROVIDER_0_AUDIENCE
+              value: keruta
+            - name: PROVIDER_0_ISSUER
+              value: https://keruta.kigawa.net
+            - name: IDP_0_AUDIENCE
+              value: keruta
+            - name: IDP_0_ISSUER
+              value: https://user.kigawa.net/realms/kigawa-net
+            - name: DB_JDBC_URL
+              value: jdbc:mysql://mariadb-ktse:4000/ktse
+            - name: DB_USERNAME
+              value: ktse
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: pass
+                  name: mariadb-ktse
+            - name: ZK_HOST
+              value: zookeeper-ktse:2181
+      restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: ktse
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktse
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+  map:
+    - bwSecretId: "45803aa3-a1d8-43e7-8812-b40800f6ad68"
+      secretKeyName: private-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ktse
+spec:
+  selector:
+    app: ktse
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

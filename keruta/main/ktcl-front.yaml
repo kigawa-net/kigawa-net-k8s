@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ktcl-front
+  namespace: kigawa-net-keruta-dev
+  labels:
+    app: ktcl-front
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ktcl-front
+  template:
+    metadata:
+      name: ktcl-front
+      labels:
+        app: ktcl-front
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: ktcl-front
+          image: harbor.kigawa.net/private/ktcl-front:develop-3f7ad860f8d62fa298ba83c3a2a7b4db5674b325
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: OWN_ISSUER
+              value: https://keruta.kigawa.net
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: private-key
+                  name: ktcl-front
+            - name: KTSE_AUD
+              value: keruta
+            - name: USER_ISSUER
+              value: https://user.kigawa.net/realms/kigawa-net
+      restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: ktcl-front
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktcl-front
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+  map:
+    - bwSecretId: "bfac4c69-fb8b-45b0-9667-b40800e7b348"
+      secretKeyName: private-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ktcl-front
+spec:
+  selector:
+    app: ktcl-front
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP

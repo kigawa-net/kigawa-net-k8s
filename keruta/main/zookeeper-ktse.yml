@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper-ktse
+spec:
+  serviceName: zookeeper-ktse
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zookeeper-ktse
+  template:
+    metadata:
+      labels:
+        app: zookeeper-ktse
+    spec:
+      containers:
+        - name: zookeeper-ktse
+          image: zookeeper:3.9
+          command:
+            - sh
+            - -c
+            - |
+              ORDINAL=${HOSTNAME##*-}
+              export ZOO_MY_ID=$((ORDINAL + 1))
+              exec /docker-entrypoint.sh zkServer.sh start-foreground
+
+          env:
+            - name: ZOO_SERVERS
+              value: >
+                server.1=zookeeper-ktse-0.zookeeper-ktse.kigawa-net-keruta-main.svc.cluster.local:2888:3888;2181
+                server.2=zookeeper-ktse-1.zookeeper-ktse.kigawa-net-keruta-main.svc.cluster.local:2888:3888;2181
+                server.3=zookeeper-ktse-2.zookeeper-ktse.kigawa-net-keruta-main.svc.cluster.local:2888:3888;2181
+            - name: ZOO_CLIENT_PORT
+              value: "2181"
+            - name: ZOO_4LW_COMMANDS_WHITELIST
+              value: "*"
+
+          ports:
+            - name: client
+              containerPort: 2181
+            - name: server
+              containerPort: 2888
+            - name: leader-election
+              containerPort: 3888
+          volumeMounts:
+            - name: datadir
+              mountPath: /var/lib/zookeeper/data
+            - name: datalog
+              mountPath: /var/lib/zookeeper/log
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+      spec:
+        storageClassName: "rook-ceph-rbd"
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+    - metadata:
+        name: datalog
+      spec:
+        storageClassName: "rook-ceph-rbd"
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: zookeeper-ktse
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: zookeeper-ktse
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-ktse
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: zookeeper-ktse
+  ports:
+    - name: client
+      port: 2181
+    - name: server
+      port: 2888
+    - name: leader-election
+      port: 3888
