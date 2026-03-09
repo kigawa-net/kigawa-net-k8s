@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ktcl-front
-  namespace: kigawa-net-keruta-dev
   labels:
     app: ktcl-front
 spec:
@@ -56,7 +55,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ktcl-front-svc
+  name: ktcl-front
 spec:
   selector:
     app: ktcl-front

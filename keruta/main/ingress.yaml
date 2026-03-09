@@ -22,7 +22,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ktcl-front-svc
+                name: ktcl-front
                 port:
                   number: 3000
     - host: ktcl-k8s.kigawa.net
