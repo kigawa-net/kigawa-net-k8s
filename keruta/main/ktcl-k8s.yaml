@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ktcl-k8s
-  namespace: kigawa-net-keruta-dev
   labels:
     app: ktcl-k8s
 spec:
