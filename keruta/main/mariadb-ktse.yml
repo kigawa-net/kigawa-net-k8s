@@ -7,7 +7,7 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: mariadb-ktse
   authToken:
-    secretName: bw-auth-token
+    secretName: bitwarden-sec-token
     secretKey: token
   map:
     - bwSecretId: "2f47a70a-5ad6-4ee0-92a6-b40800fa322a"

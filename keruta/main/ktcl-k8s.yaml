@@ -91,7 +91,7 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: ktcl-k8s
   authToken:
-    secretName: bw-auth-token
+    secretName: bitwarden-sec
     secretKey: token
   map:
     - bwSecretId: "53a8799d-cce9-4116-b3b7-b40800ef8e4a"
