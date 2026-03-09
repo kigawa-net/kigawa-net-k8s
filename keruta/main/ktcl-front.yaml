@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktcl-front
-          image: harbor.kigawa.net/private/ktcl-front:develop-3f7ad860f8d62fa298ba83c3a2a7b4db5674b325
+          image: harbor.kigawa.net/private/ktcl-front:main-d68faf1a9ded1a24fbbbea92a680e50155860a2e
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -51,6 +51,10 @@ spec:
   map:
     - bwSecretId: "bfac4c69-fb8b-45b0-9667-b40800e7b348"
       secretKeyName: private-key
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/private/ktcl-front:main-d68faf1a9ded1a24fbbbea92a680e50155860a2e
 ---
 apiVersion: v1
 kind: Service
@@ -64,3 +68,7 @@ spec:
       targetPort: 3000
       protocol: TCP
   type: ClusterIP
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/private/ktcl-front:main-d68faf1a9ded1a24fbbbea92a680e50155860a2e
