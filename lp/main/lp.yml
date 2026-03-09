@@ -19,12 +19,12 @@ spec:
         - name: harbor-registry
       containers:
         - name: lp
-          image: harbor.kigawa.net/private/ktcl-front:develop-f8022b2dac90b30437822d0877f4c1da0e4ac238
+          image: harbor.kigawa.net/private/portfolio:main-e7bab865b8401915e327246d4da4794d55800121
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
               protocol: TCP
-          env: [ ]
+          env: []
       restartPolicy: Always
 ---
 apiVersion: v1
@@ -39,3 +39,7 @@ spec:
       targetPort: 3000
       protocol: TCP
   type: ClusterIP
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/private/portfolio:main-e7bab865b8401915e327246d4da4794d55800121
