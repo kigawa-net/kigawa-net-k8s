@@ -20,7 +20,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktcl-k8s
-          image: harbor.kigawa.net/library/ktcl-k8s:develop-3f7ad860f8d62fa298ba83c3a2a7b4db5674b325
+          image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -95,6 +95,10 @@ spec:
   map:
     - bwSecretId: "53a8799d-cce9-4116-b3b7-b40800ef8e4a"
       secretKeyName: private-key
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
 apiVersion: v1
 kind: Service
@@ -109,11 +113,20 @@ spec:
       targetPort: 8081
       protocol: TCP
   type: ClusterIP
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ktcl-k8s
+spec:
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -135,6 +148,11 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch", "create", "update", "delete"]
+spec:
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -147,4 +165,14 @@ roleRef:
   kind: Role
   name: ktcl-k8s
   apiGroup: rbac.authorization.k8s.io
+spec:
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
+spec:
+  template:
+    spec:
+      containers:
+        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
