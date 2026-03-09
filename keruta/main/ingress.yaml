@@ -15,14 +15,14 @@ spec:
                 name: ktse
                 port:
                   number: 8080
-    - host: keruta-a.kigawa.net
+    - host: keruta.kigawa.net
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: ktcl-front
+                name: ktcl-front-svc
                 port:
                   number: 3000
     - host: ktcl-k8s.kigawa.net
