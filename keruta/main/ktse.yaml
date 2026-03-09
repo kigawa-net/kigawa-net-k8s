@@ -62,7 +62,7 @@ spec:
             - name: IDP_0_ISSUER
               value: https://user.kigawa.net/realms/kigawa-net
             - name: DB_JDBC_URL
-              value: jdbc:mysql://mariadb-ktse:4000/ktse
+              value: jdbc:mysql://mariadb-ktse:3306/ktse
             - name: DB_USERNAME
               value: ktse
             - name: DB_PASSWORD
