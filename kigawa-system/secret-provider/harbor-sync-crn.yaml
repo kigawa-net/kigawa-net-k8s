@@ -5,7 +5,7 @@ metadata:
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
   successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 300
