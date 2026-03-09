@@ -47,7 +47,7 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: ktcl-front
   authToken:
-    secretName: bitwarden-sec-token
+    secretName: bitwarden-sec
     secretKey: token
   map:
     - bwSecretId: "bfac4c69-fb8b-45b0-9667-b40800e7b348"

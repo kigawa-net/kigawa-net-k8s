@@ -82,7 +82,7 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: ktse
   authToken:
-    secretName: bitwarden-sec-token
+    secretName: bitwarden-sec
     secretKey: token
   map:
     - bwSecretId: "45803aa3-a1d8-43e7-8812-b40800f6ad68"
