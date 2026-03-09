@@ -68,7 +68,3 @@ spec:
       targetPort: 3000
       protocol: TCP
   type: ClusterIP
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/private/ktcl-front:main-deec5918bca105da112b89a2f22ca034ecb947c5

@@ -113,20 +113,12 @@ spec:
       targetPort: 8081
       protocol: TCP
   type: ClusterIP
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ktcl-k8s
-spec:
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -148,11 +140,7 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch", "create", "update", "delete"]
-spec:
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -165,14 +153,5 @@ roleRef:
   kind: Role
   name: ktcl-k8s
   apiGroup: rbac.authorization.k8s.io
-spec:
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
----
-spec:
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/library/ktcl-k8s:main-deec5918bca105da112b89a2f22ca034ecb947c5
+
+
