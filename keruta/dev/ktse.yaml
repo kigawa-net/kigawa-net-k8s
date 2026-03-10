@@ -66,10 +66,7 @@ spec:
             - name: DB_JDBC_URL
               value: jdbc:mysql://mariadb-k8s:3306/mariadb-ktse
             - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  key: user
-                  name: mariadb-ktse
+              value: mariadb-ktse
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
