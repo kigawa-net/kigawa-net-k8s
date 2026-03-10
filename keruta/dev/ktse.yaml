@@ -64,17 +64,17 @@ spec:
             - name: IDP_0_ISSUER
               value: https://user.kigawa.net/realms/develop
             - name: DB_JDBC_URL
-              value: jdbc:mysql://keruta-dev-tidb-tidb:4000/keruta
+              value: jdbc:mysql://mariadb-k8s:3306/mariadb-ktse
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   key: user
-                  name: tidb
+                  name: mariadb-ktse
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: pass
-                  name: tidb
+                  name: mariadb-ktse
             - name: ZK_HOST
               value: zk-svc:2181
       restartPolicy: Always

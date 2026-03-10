@@ -1,0 +1,52 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: mariadb-ktse
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: mariadb-ktse
+  authToken:
+    secretName: bw-auth-token
+    secretKey: token
+  map:
+    - bwSecretId: "29f7c712-30b5-477b-82d7-b3e2000fb915"
+      secretKeyName: user
+    - bwSecretId: "320e05ff-154e-4797-b4c3-b3e2000fdd1c"
+      secretKeyName: pass
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: mariadb-ktse
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  name: mariadb-ktse
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: mariadb-ktse
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  passwordSecretKeyRef:
+    name: mariadb-ktse
+    key: pass
+  maxUserConnections: 50
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: mariadb-ktse
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  privileges:
+    - "ALL PRIVILEGES"
+  database: mariadb-ktse
+  table: "*"
+  username: mariadb-ktse
+  grantOption: false
