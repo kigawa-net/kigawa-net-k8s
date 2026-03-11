@@ -73,12 +73,6 @@ spec:
             - name: ZK_HOST
               value: zookeeper-ktse:2181
       restartPolicy: Always
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktse:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: k8s.bitwarden.com/v1
 kind: BitwardenSecret
@@ -93,12 +87,6 @@ spec:
   map:
     - bwSecretId: "b05e1df6-f056-4193-9c5b-b3fe0113016e"
       secretKeyName: private-key
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktse:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: v1
 kind: Service
@@ -112,9 +100,3 @@ spec:
       targetPort: 8080
       protocol: TCP
   type: ClusterIP
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktse:develop-88be5ada2735833050979bb26275b9c9abf28d59
