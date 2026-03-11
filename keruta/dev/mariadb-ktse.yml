@@ -9,7 +9,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "29f7c712-30b5-477b-82d7-b3e2000fb915"
+    - bwSecretId: "c15a90e2-60d5-45e3-8e0b-b40a00ed5136"
       secretKeyName: root-pass
     - bwSecretId: "320e05ff-154e-4797-b4c3-b3e2000fdd1c"
       secretKeyName: pass
