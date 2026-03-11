@@ -37,6 +37,12 @@ spec:
             - name: USER_ISSUER
               value: https://user.kigawa.net/realms/develop
       restartPolicy: Always
+0:
+  spec:
+    template:
+      spec:
+        containers:
+          - image: harbor.kigawa.net/private/ktcl-front:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: k8s.bitwarden.com/v1
 kind: BitwardenSecret
@@ -51,6 +57,12 @@ spec:
   map:
     - bwSecretId: "105f5644-ddd4-42f3-971d-b3e2000f9285"
       secretKeyName: private-key
+0:
+  spec:
+    template:
+      spec:
+        containers:
+          - image: harbor.kigawa.net/private/ktcl-front:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: v1
 kind: Service
@@ -64,3 +76,9 @@ spec:
       targetPort: 3000
       protocol: TCP
   type: ClusterIP
+0:
+  spec:
+    template:
+      spec:
+        containers:
+          - image: harbor.kigawa.net/private/ktcl-front:develop-88be5ada2735833050979bb26275b9c9abf28d59
