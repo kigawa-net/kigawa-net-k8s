@@ -83,12 +83,6 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
       restartPolicy: Always
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: k8s.bitwarden.com/v1
 kind: BitwardenSecret
@@ -103,12 +97,6 @@ spec:
   map:
     - bwSecretId: "217aa846-8d1f-4f3c-8dbf-b4000066c764"
       secretKeyName: private-key
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: v1
 kind: Service
@@ -123,23 +111,11 @@ spec:
       targetPort: 8081
       protocol: TCP
   type: ClusterIP
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ktcl-k8s
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -161,12 +137,6 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list", "watch", "create", "update", "delete"]
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -179,9 +149,3 @@ roleRef:
   kind: Role
   name: ktcl-k8s
   apiGroup: rbac.authorization.k8s.io
-0:
-  spec:
-    template:
-      spec:
-        containers:
-          - image: harbor.kigawa.net/library/ktcl-k8s:develop-88be5ada2735833050979bb26275b9c9abf28d59
