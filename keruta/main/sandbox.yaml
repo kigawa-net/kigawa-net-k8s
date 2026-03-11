@@ -13,12 +13,19 @@ rules:
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["create", "get", "delete"]
+
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["list"]
+    verbs: ["get", "list"]
+
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["create", "get", "watch"]
+
   - apiGroups: ["batch"]
     resources: ["jobs/status"]
     verbs: ["get"]
