@@ -1,26 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ktse-dev
-  namespace: kigawa-net-keruta-dev
+  name: ktse
   labels:
-    app: ktse-dev
+    app: ktse
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ktse-dev
+      app: ktse
   template:
     metadata:
-      name: ktse-dev
+      name: ktse
       labels:
-        app: ktse-dev
+        app: ktse
     spec:
-      serviceAccountName: keruta-dev-sa
       imagePullSecrets:
         - name: harbor-registry
       containers:
-        - name: ktse-dev
+        - name: ktse
           image: harbor.kigawa.net/library/ktse:develop-174ca69f2b3077746076752566a1466fe841c48a
           imagePullPolicy: Always
           ports:
@@ -51,8 +49,8 @@ spec:
             - name: KTSE_JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: key
-                  name: ktse-sec
+                  key: private-key
+                  name: ktse
             - name: PROVIDER_0_NAME
               value: web
             - name: PROVIDER_0_AUDIENCE
@@ -64,7 +62,7 @@ spec:
             - name: IDP_0_ISSUER
               value: https://user.kigawa.net/realms/develop
             - name: DB_JDBC_URL
-              value: jdbc:mysql://mariadb-k8s:3306/mariadb-ktse
+              value: jdbc:mysql://mariadb-ktse:3306/mariadb-ktse
             - name: DB_USERNAME
               value: mariadb-ktse
             - name: DB_PASSWORD
@@ -73,5 +71,32 @@ spec:
                   key: pass
                   name: mariadb-ktse
             - name: ZK_HOST
-              value: zk-svc:2181
+              value: zookeeper-ktse:2181
       restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: ktse
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktse
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "b05e1df6-f056-4193-9c5b-b3fe0113016e"
+      secretKeyName: private-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ktse
+spec:
+  selector:
+    app: ktse
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP

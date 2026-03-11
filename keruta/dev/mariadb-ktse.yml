@@ -6,13 +6,40 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: mariadb-ktse
   authToken:
-    secretName: bw-auth-token
+    secretName: bitwarden-sec
     secretKey: token
   map:
     - bwSecretId: "29f7c712-30b5-477b-82d7-b3e2000fb915"
-      secretKeyName: user
+      secretKeyName: root-pass
     - bwSecretId: "320e05ff-154e-4797-b4c3-b3e2000fdd1c"
       secretKeyName: pass
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-ktse
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-ktse
+    key: root-pass
+  image: mariadb:10.11
+  port: 3306
+  updateStrategy:
+    autoUpdateDataPlane: true
+  startupProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 60
+  storage:
+    size: 1Gi
+    storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Database
@@ -20,7 +47,7 @@ metadata:
   name: mariadb-ktse
 spec:
   mariaDbRef:
-    name: mariadb-k8s
+    name: mariadb-ktse
   name: mariadb-ktse
   characterSet: utf8mb4
   collate: utf8mb4_unicode_ci
@@ -31,7 +58,7 @@ metadata:
   name: mariadb-ktse
 spec:
   mariaDbRef:
-    name: mariadb-k8s
+    name: mariadb-ktse
   passwordSecretKeyRef:
     name: mariadb-ktse
     key: pass
@@ -43,7 +70,7 @@ metadata:
   name: mariadb-ktse
 spec:
   mariaDbRef:
-    name: mariadb-k8s
+    name: mariadb-ktse
   privileges:
     - "ALL PRIVILEGES"
   database: mariadb-ktse

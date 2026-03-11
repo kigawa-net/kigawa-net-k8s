@@ -1,25 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ktcl-front-dev
-  namespace: kigawa-net-keruta-dev
+  name: ktcl-front
   labels:
-    app: ktcl-front-dev
+    app: ktcl-front
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ktcl-front-dev
+      app: ktcl-front
   template:
     metadata:
-      name: ktcl-front-dev
+      name: ktcl-front
       labels:
-        app: ktcl-front-dev
+        app: ktcl-front
     spec:
       imagePullSecrets:
         - name: harbor-registry
       containers:
-        - name: ktcl-front-dev
+        - name: ktcl-front
           image: harbor.kigawa.net/private/ktcl-front:develop-174ca69f2b3077746076752566a1466fe841c48a
           imagePullPolicy: Always
           ports:
@@ -35,8 +34,33 @@ spec:
                   name: ktcl-front
             - name: KTSE_AUD
               value: keruta
-            - name: USER_JWKS_URL
-              value: https://user.kigawa.net/realms/develop/protocol/openid-connect/certs
             - name: USER_ISSUER
               value: https://user.kigawa.net/realms/develop
       restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: ktcl-front
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktcl-front
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "105f5644-ddd4-42f3-971d-b3e2000f9285"
+      secretKeyName: private-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ktcl-front
+spec:
+  selector:
+    app: ktcl-front
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP

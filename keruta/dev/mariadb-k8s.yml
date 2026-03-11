@@ -7,13 +7,11 @@ spec:
   organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
   secretName: mariadb-k8s
   authToken:
-    secretName: bw-auth-token
+    secretName: bitwarden-sec
     secretKey: token
   map:
     - bwSecretId: "5860fe81-6d0e-487a-927c-b40000ce3056"
       secretKeyName: root-pass
-    - bwSecretId: "335a4ba7-58ee-4e31-bdb5-b40000ce5e15"
-      secretKeyName: user
     - bwSecretId: "54f8c7fc-eecf-492b-95a5-b40000ce6bb2"
       secretKeyName: pass
 ---
@@ -51,7 +49,7 @@ metadata:
 spec:
   mariaDbRef:
     name: mariadb-k8s
-  name: ktcl_k8s
+  name: ktcl-k8s
   characterSet: utf8mb4
   collate: utf8mb4_unicode_ci
 ---
@@ -76,7 +74,7 @@ spec:
     name: mariadb-k8s
   privileges:
     - "ALL PRIVILEGES"
-  database: ktcl_k8s
+  database: ktcl-k8s
   table: "*"
   username: ktcl-k8s
   grantOption: false

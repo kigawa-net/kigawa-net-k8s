@@ -1,26 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ktcl-k8s-dev
-  namespace: kigawa-net-keruta-dev
+  name: ktcl-k8s
   labels:
-    app: ktcl-k8s-dev
+    app: ktcl-k8s
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ktcl-k8s-dev
+      app: ktcl-k8s
   template:
     metadata:
-      name: ktcl-k8s-dev
+      name: ktcl-k8s
       labels:
-        app: ktcl-k8s-dev
+        app: ktcl-k8s
     spec:
-      serviceAccountName: keruta-dev-sa
+      serviceAccountName: ktcl-k8s
       imagePullSecrets:
         - name: harbor-registry
       containers:
-        - name: ktcl-k8s-dev
+        - name: ktcl-k8s
           image: harbor.kigawa.net/library/ktcl-k8s:develop-33ca40a47cbeeb45cff90fa0affb9fdea1515213
           imagePullPolicy: Always
           ports:
@@ -41,12 +40,12 @@ spec:
             - name: DB_USERNAME
               value: ktcl-k8s
             - name: DB_JDBC_URL
-              value: "jdbc:mariadb://mariadb-k8s:3306/ktcl_k8s"
+              value: "jdbc:mariadb://mariadb-k8s:3306/ktcl-k8s"
             - name: PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   key: private-key
-                  name: ktcl-k8s-sec
+                  name: ktcl-k8s
             - name: IDP_AUDIENCE
               value: "keruta-k8s"
             - name: KERUTA_K8S_OWN_ISSUER
@@ -54,7 +53,7 @@ spec:
             - name: CORS_ALLOWED_ORIGINS
               value: "https://keruta-dev.kigawa.net,http://localhost:5173"
             - name: KTSE_HOST
-              value: ktse-dev-svc
+              value: ktse
             - name: KTSE_PORT
               value: "8080"
             - name: KTSE_USE_TLS
@@ -84,3 +83,69 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
       restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: ktcl-k8s
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: ktcl-k8s
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "217aa846-8d1f-4f3c-8dbf-b4000066c764"
+      secretKeyName: private-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ktcl-k8s
+spec:
+  selector:
+    app: ktcl-k8s
+  ports:
+    - name: web
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ktcl-k8s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ktcl-k8s
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "watch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "list", "watch", "update", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ktcl-k8s
+subjects:
+  - kind: ServiceAccount
+    name: ktcl-k8s
+roleRef:
+  kind: Role
+  name: ktcl-k8s
+  apiGroup: rbac.authorization.k8s.io
