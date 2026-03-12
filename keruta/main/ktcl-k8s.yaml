@@ -51,7 +51,7 @@ spec:
             - name: KERUTA_K8S_OWN_ISSUER
               value: "https://ktcl-k8s.kigawa.net/"
             - name: KTSE_HOST
-              value: ktse-dev
+              value: ktse.kigawa-net-keruta-main.svc.cluster.local
             - name: KTSE_PORT
               value: "8080"
             - name: KTSE_USE_TLS
