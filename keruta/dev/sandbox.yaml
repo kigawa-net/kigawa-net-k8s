@@ -23,7 +23,7 @@ rules:
 
   - apiGroups: ["batch"]
     resources: ["jobs"]
-    verbs: ["create", "get", "watch"]
+    verbs: ["create", "get", "watch", "delete"]
 
   - apiGroups: ["batch"]
     resources: ["jobs/status"]
