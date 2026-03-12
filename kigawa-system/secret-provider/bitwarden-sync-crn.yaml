@@ -20,6 +20,7 @@ spec:
                   value: |
                     kigawa-net-keruta-dev
                     kigawa-net-keruta-main
+                    kigawa-net-lp-main
                     develop
               image: bitnami/kubectl:latest
               command:
