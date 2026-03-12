@@ -24,8 +24,37 @@ spec:
           ports:
             - containerPort: 3000
               protocol: TCP
-          env: []
+          env:
+            - name: KEYCLOAK_URL
+              value: https://user.kigawa.net
+            - name: KEYCLOAK_REALM
+              value: kigawa-net
+            - name: KEYCLOAK_CLIENT_ID
+              value: lp
+            #            - name: KEYCLOAK_CLIENT_SECRET
+            #              value:
+            - name: APP_URL
+              value: https://kigawa.net
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lp
+                  key: secret
       restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: lp
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: lp
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "804f048f-ddb0-479c-8cdc-b40b011c44c3"
+      secretKeyName: secret
 ---
 apiVersion: v1
 kind: Service
@@ -39,7 +68,3 @@ spec:
       targetPort: 3000
       protocol: TCP
   type: ClusterIP
-  template:
-    spec:
-      containers:
-        - image: harbor.kigawa.net/private/portfolio:main-9fd876fb87d3ccb6eb7933a4f80d89b856c0c170
