@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kicl-web
+  labels:
+    app: kicl-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kicl-web
+  template:
+    metadata:
+      name: kicl-web
+      labels:
+        app: kicl-web
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: kicl-web
+          image: harbor.kigawa.net/private/ktcl-front:develop-b5a966856c54e93df2491f33132b8e3257754b96
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: OWN_ISSUER
+              value: https://keruta-dev.kigawa.net
+            - name: PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: private-key
+                  name: kicl-web
+            - name: KTSE_AUD
+              value: keruta
+            - name: USER_ISSUER
+              value: https://user.kigawa.net/realms/develop
+      restartPolicy: Always
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: kicl-web
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: kicl-web
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kicl-web
+spec:
+  selector:
+    app: kicl-web
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  type: ClusterIP
