@@ -27,11 +27,11 @@ spec:
           env:
             - name: OWN_ISSUER
               value: https://keruta-dev.kigawa.net
-            - name: PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  key: private-key
-                  name: kicl-web
+#            - name: PRIVATE_KEY
+#              valueFrom:
+#                secretKeyRef:
+#                  key: private-key
+#                  name: kicl-web
             - name: KTSE_AUD
               value: keruta
             - name: USER_ISSUER
