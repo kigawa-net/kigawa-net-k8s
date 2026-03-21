@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: kicl-web
-          image: harbor.kigawa.net/private/kicl-web:develop-773a860130d1847a15055b5d7e17911e2ae81f37
+          image: harbor.kigawa.net/private/kicl-web:develop-0ef9cbce540b4110d31d1e1eda331b9ea022c9b7
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -27,11 +27,11 @@ spec:
           env:
             - name: OWN_ISSUER
               value: https://keruta-dev.kigawa.net
-#            - name: PRIVATE_KEY
-#              valueFrom:
-#                secretKeyRef:
-#                  key: private-key
-#                  name: kicl-web
+              #            - name: PRIVATE_KEY
+              #              valueFrom:
+              #                secretKeyRef:
+              #                  key: private-key
+              #                  name: kicl-web
             - name: KTSE_AUD
               value: keruta
             - name: USER_ISSUER
