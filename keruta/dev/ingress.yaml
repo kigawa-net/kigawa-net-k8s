@@ -35,3 +35,13 @@ spec:
                 name: ktcl-k8s
                 port:
                   number: 8081
+    - host: kicl-web-dev.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kicl-web
+                port:
+                  number: 3000
