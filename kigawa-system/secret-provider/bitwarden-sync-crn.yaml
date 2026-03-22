@@ -23,6 +23,7 @@ spec:
                     kigawa-net-lp-main
                     kigawa-net-nextcloud
                     develop
+                    kigawa-net-maas
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
