@@ -68,6 +68,13 @@ spec:
     server: https://kubernetes.default.svc
     namespace: kigawa-net-nextcloud
 
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      name: nextcloud-db
+      jsonPointers:
+        - /data
+
   syncPolicy:
     automated:
       prune: true
