@@ -1,0 +1,15 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: nextcloud-bws
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: nextcloud-sec
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "5553a0b9-a78d-4611-8edf-b4150086fd94"  # TODO: replace with actual Bitwarden secret ID for nextcloud admin username
+      secretKeyName: username
+    - bwSecretId: "357753bc-cc60-4a8e-b906-b415008727ed"  # TODO: replace with actual Bitwarden secret ID for nextcloud admin password
+      secretKeyName: password

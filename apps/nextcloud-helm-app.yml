@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-nextcloud-helm
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://nextcloud.github.io/helm/
+    chart: nextcloud
+    targetRevision: 9.0.3
+    helm:
+      releaseName: nextcloud
+      valuesObject:
+        nextcloud:
+          host: nextcloud.kigawa.net
+          existingSecret:
+            enabled: true
+            secretName: nextcloud-sec
+            usernameKey: username
+            passwordKey: password
+
+        ingress:
+          enabled: true
+          className: haproxy
+          hosts:
+            - host: nextcloud.kigawa.net
+              paths:
+                - path: /
+                  pathType: Prefix
+
+        persistence:
+          enabled: true
+          storageClass: rook-cephfs
+          size: 64Gi
+
+        mariadb:
+          enabled: true
+          auth:
+            database: nextcloud
+            username: nextcloud
+            existingSecret: nextcloud-mariadb-sec
+          primary:
+            persistence:
+              enabled: true
+              storageClass: rook-cephfs
+              size: 8Gi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-nextcloud
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

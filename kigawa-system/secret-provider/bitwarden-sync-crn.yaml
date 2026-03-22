@@ -21,6 +21,7 @@ spec:
                     kigawa-net-keruta-dev
                     kigawa-net-keruta-main
                     kigawa-net-lp-main
+                    kigawa-net-nextcloud
                     develop
               image: bitnami/kubectl:latest
               command:
