@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: maas-rack
+  namespace: kigawa-net-maas
+spec:
+  selector:
+    matchLabels:
+      app: maas-rack
+  template:
+    metadata:
+      labels:
+        app: maas-rack
+    spec:
+      # DHCP/TFTPサービスを物理ネットワークに直接提供するためhostNetworkが必須
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+
+      # MAASラックコントローラを実行するノードを指定
+      # ノードに kubectl label nodes <node-name> maas.kigawa.net/rack=true でラベル付けしてください
+      nodeSelector:
+        maas.kigawa.net/rack: "true"
+
+      containers:
+        - name: maas-rack
+          image: harbor.kigawa.net/library/maas-rack:3.5
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: MAAS_URL
+              value: "http://maas-region-svc.kigawa-net-maas.svc.cluster.local:5240/MAAS"
+            - name: MAAS_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: maas-secret
+                  key: secret
+          # DHCP, TFTP, HTTP ポートはhostNetwork経由でホストに公開される

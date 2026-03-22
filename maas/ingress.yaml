@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: maas-ingress
+  namespace: kigawa-net-maas
+spec:
+  rules:
+    - host: maas.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: maas-region-svc
+                port:
+                  number: 5240
