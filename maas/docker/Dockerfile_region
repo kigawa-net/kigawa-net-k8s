@@ -5,7 +5,9 @@ ARG MAAS_VERSION=3.5
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
         software-properties-common \
-        postgresql-client && \
+        postgresql-client \
+        sudo \
+        iproute2 && \
     add-apt-repository -y ppa:maas/${MAAS_VERSION} && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
