@@ -15,15 +15,13 @@ spec:
       # DHCP/TFTPサービスを物理ネットワークに直接提供するためhostNetworkが必須
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-
       # MAASラックコントローラを実行するノードを指定
       # ノードに kubectl label nodes <node-name> maas.kigawa.net/rack=true でラベル付けしてください
       nodeSelector:
         maas.kigawa.net/rack: "true"
-
       containers:
         - name: maas-rack
-          image: harbor.kigawa.net/library/maas-rack:main
+          image: harbor.kigawa.net/library/maas-rack:main-b0e04391fc114937239c0ffb972150de0d0cbb28
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -35,4 +33,4 @@ spec:
                 secretKeyRef:
                   name: maas-secret
                   key: secret
-          # DHCP, TFTP, HTTP ポートはhostNetwork経由でホストに公開される
+                  # DHCP, TFTP, HTTP ポートはhostNetwork経由でホストに公開される
