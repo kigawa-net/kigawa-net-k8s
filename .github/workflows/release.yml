@@ -1,0 +1,130 @@
+name: release.yml
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: 'docker image name'
+        required: true
+        type: string
+      harborProject:
+        required: true
+        type: string
+      manifestFile:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+      dockerFile:
+        required: false
+        default: "./Dockerfile"
+        type: string
+      buildArgs:
+        description: 'Docker build arguments (JSON format)'
+        required: false
+        type: string
+        default: '{}'
+      gradleTask:
+        description: 'Gradle task to run before Docker build (e.g. ":ktse:shadowJar -x test")'
+        required: false
+        type: string
+        default: ''
+      yamlPath:
+        required: false
+        type: string
+        default: '.spec.template.spec.containers[0].image'
+    secrets:
+      HARBOR_PASS:
+        required: true
+      GIT_TOKEN:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      harborUser: robot$kigawa-net
+      dir: "./"
+      dockerFile: ${{ inputs.dockerFile }}
+      name: ${{ inputs.name }}
+      dockerRepository: harbor.kigawa.net/${{ inputs.harborProject }}
+    steps:
+      # checkout
+      - uses: actions/checkout@v6
+
+      # gradle pre-build
+      - uses: actions/setup-java@v5
+        if: inputs.gradleTask != ''
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v5
+        if: inputs.gradleTask != ''
+      - name: Build with Gradle
+        if: inputs.gradleTask != ''
+        run: ./gradlew ${{ inputs.gradleTask }}
+
+      # docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: harbor.kigawa.net
+          username: ${{ env.harborUser }}
+          password: ${{ secrets.HARBOR_PASS }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ${{ env.dockerRepository }}/${{ env.name }}
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=raw,value=latest
+            type=ref,event=branch
+            type=raw,value=${{ github.ref_name }}-${{ github.sha }}
+
+      - name: Parse build args
+        id: build-args
+        run: |
+          echo "args<<EOF" >> $GITHUB_OUTPUT
+          echo '${{ inputs.buildArgs }}' | tr -d '\n' | jq -r 'to_entries | map("\(.key)=\(.value)") | join("\n")' \
+            | tee -a $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.dir }}
+          file: ${{ env.dockerFile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: ${{ steps.build-args.outputs.args }}
+
+      # argo
+      - name: checkout manifest repository
+        uses: actions/checkout@v6
+        if: inputs.manifestFile != ''
+        with:
+          repository: ${{ inputs.repository }}
+          ref: main
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Update YAML File
+        if: inputs.manifestFile != ''
+        run: |
+          yq -i '${{ inputs.yamlPath }} = "harbor.kigawa.net/${{ inputs.harborProject }}/${{ inputs.name }}:${{ github.ref_name }}-${{ github.sha }}"' \
+          ${{ inputs.manifestFile }}
+
+      - name: push
+        if: inputs.manifestFile != ''
+        run: |
+          git config user.name githubActions
+          git config user.email bot@kigawa.net
+          git add .
+          git commit --author=. -m "update by githubActions"
+          git push

@@ -1,0 +1,20 @@
+FROM ubuntu:22.04
+
+ARG MAAS_VERSION=3.5
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        software-properties-common \
+        postgresql-client && \
+    add-apt-repository -y ppa:maas/${MAAS_VERSION} && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        maas-region-api && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY entrypoint-region.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 5240
+
+ENTRYPOINT ["/entrypoint.sh"]
