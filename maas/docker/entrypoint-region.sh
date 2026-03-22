@@ -19,8 +19,27 @@ if [ -n "$MAAS_SECRET" ]; then
     chmod 640 /var/lib/maas/secret
 fi
 
-# Run database migrations (idempotent)
+# Create temporal directory required by temporal-server
+mkdir -p /var/lib/maas/temporal
+
+# Run Django database migrations
 maas-region dbupgrade
 
-# Start region daemon
-exec maas-regiond
+# Start Temporal server (background)
+/usr/sbin/temporal-server \
+    -e production \
+    -r "/var/lib/maas/temporal/" \
+    -c "" \
+    --allow-no-auth start &
+
+# Wait for Temporal to be ready
+sleep 5
+
+# Start MAAS API server (background)
+/usr/sbin/maas-apiserver &
+
+# Start Temporal worker (background)
+/usr/sbin/maas-temporal-worker &
+
+# Start region daemon (foreground)
+exec /usr/sbin/regiond
