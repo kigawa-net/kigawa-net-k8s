@@ -48,6 +48,9 @@ spec:
               enabled: true
               storageClass: rook-cephfs
               size: 8Gi
+        startupProbe:
+          failureThreshold: 60
+
 
   destination:
     server: https://kubernetes.default.svc
