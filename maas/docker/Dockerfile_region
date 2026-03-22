@@ -12,7 +12,7 @@ RUN apt-get update && \
         maas-region-api && \
     rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint-region.sh /entrypoint.sh
+COPY maas/docker/entrypoint-region.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 5240

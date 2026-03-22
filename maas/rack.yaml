@@ -23,7 +23,7 @@ spec:
 
       containers:
         - name: maas-rack
-          image: harbor.kigawa.net/library/maas-rack:3.5
+          image: harbor.kigawa.net/library/maas-rack:main
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true

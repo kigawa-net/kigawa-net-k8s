@@ -15,7 +15,7 @@ jobs:
       harborProject: library
       manifestFile: maas/region.yaml
       repository: kigawa-net/kigawa-net-k8s
-      dockerFile: maas/docker/Dockerfile.region
+      dockerFile: maas/docker/Dockerfile_region
       yamlPath: '.spec.template.spec.containers[0].image'
     secrets:
       HARBOR_PASS: ${{ secrets.HARBOR_PASS }}
@@ -28,7 +28,7 @@ jobs:
       harborProject: library
       manifestFile: maas/rack.yaml
       repository: kigawa-net/kigawa-net-k8s
-      dockerFile: maas/docker/Dockerfile.rack
+      dockerFile: maas/docker/Dockerfile_rack
       yamlPath: '.spec.template.spec.containers[0].image'
     secrets:
       HARBOR_PASS: ${{ secrets.HARBOR_PASS }}

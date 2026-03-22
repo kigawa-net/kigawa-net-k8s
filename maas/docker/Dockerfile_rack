@@ -11,7 +11,7 @@ RUN apt-get update && \
         maas-rack-controller && \
     rm -rf /var/lib/apt/lists/*
 
-COPY entrypoint-rack.sh /entrypoint.sh
+COPY maas/docker/entrypoint-rack.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
