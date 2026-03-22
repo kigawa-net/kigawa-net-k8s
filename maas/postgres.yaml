@@ -66,3 +66,19 @@ spec:
   ports:
     - port: 5432
       targetPort: 5432
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: maas-postgres
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: maas-postgres
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "e28802c4-9773-466e-b0d9-b41500c35113"  # TODO: replace with actual Bitwarden secret ID for mariadb root password
+      secretKeyName: pass
+    - bwSecretId: "376ad4b7-425e-40b1-85da-b41500c33f86"  # TODO: replace with actual Bitwarden secret ID for mariadb nextcloud user password
+      secretKeyName: user
