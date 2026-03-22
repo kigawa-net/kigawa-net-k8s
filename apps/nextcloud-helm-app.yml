@@ -58,18 +58,10 @@ spec:
               initialDelaySeconds: 300
               periodSeconds: 20
               failureThreshold: 10
-
+        internalDatabase:
+          enabled: false
         externalDatabase:
           enabled: false
-          type: mysql
-          host: nextcloud-mariadb
-          database: nextcloud
-          user: nextcloud
-          existingSecret:
-            enabled: true
-            secretName: nextcloud-mariadb-sec
-            usernameKey: ""
-            passwordKey: mariadb-password
 
 
   destination:
