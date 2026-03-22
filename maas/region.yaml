@@ -36,7 +36,7 @@ spec:
           # harbor.kigawa.net/library/maas-region:3.5 を使用する場合は変更してください
           # ビルド方法: https://github.com/canonical/maas を参照
           # または ghcr.io/canonical/maas などのコミュニティイメージを使用
-          image: harbor.kigawa.net/library/maas-region:main-b0e04391fc114937239c0ffb972150de0d0cbb28
+          image: harbor.kigawa.net/library/maas-region:main-a18cd3ef4fbe3e98faed81b6aee7e26a725e688b
           imagePullPolicy: IfNotPresent
           env:
             - name: MAAS_POSTGRES_USER
