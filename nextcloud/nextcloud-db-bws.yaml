@@ -1,0 +1,15 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: nextcloud-db-bws
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: nextcloud-db
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "873ed188-201f-49c0-9386-b415009a3196"
+      secretKeyName: db-username
+    - bwSecretId: "0ecbebba-c60a-4caf-aaf6-b415008779f7"  # same as mariadb-password
+      secretKeyName: db-password
