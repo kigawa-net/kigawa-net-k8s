@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: kigawa-net-nextcloud-helm
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
 
@@ -54,7 +56,7 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: true
+      selfHeal: false
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
