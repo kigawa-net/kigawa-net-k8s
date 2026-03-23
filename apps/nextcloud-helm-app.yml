@@ -22,19 +22,24 @@ spec:
             secretName: nextcloud-sec
             usernameKey: username
             passwordKey: password
-          livenessProbe:
-            initialDelaySeconds: 300
-            periodSeconds: 15
-            failureThreshold: 10
-          readinessProbe:
-            initialDelaySeconds: 300
-            periodSeconds: 15
-            failureThreshold: 10
-          startupProbe:
-            enabled: true
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            failureThreshold: 40
+
+        livenessProbe:
+          enabled: true
+          initialDelaySeconds: 300
+          periodSeconds: 15
+          failureThreshold: 10
+
+        readinessProbe:
+          enabled: true
+          initialDelaySeconds: 300
+          periodSeconds: 15
+          failureThreshold: 10
+
+        startupProbe:
+          enabled: true
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          failureThreshold: 40
 
         ingress:
           enabled: true
