@@ -22,6 +22,15 @@ spec:
             secretName: nextcloud-sec
             usernameKey: username
             passwordKey: password
+          configs:
+            trusted_domains.config.php: |-
+              <?php
+              $CONFIG = [
+                'trusted_domains' => [
+                  'localhost',
+                  'nextcloud.kigawa.net',
+                ],
+              ];
 
         livenessProbe:
           enabled: true
