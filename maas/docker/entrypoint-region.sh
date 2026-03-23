@@ -13,14 +13,16 @@ maas_url: ${MAAS_URL:-http://localhost:5240/MAAS}
 EOF
 
 # Write shared secret for rack controller authentication
+mkdir -p /var/lib/maas/temporal
 if [ -n "$MAAS_SECRET" ]; then
-    mkdir -p /var/lib/maas
     echo -n "$MAAS_SECRET" > /var/lib/maas/secret
     chmod 640 /var/lib/maas/secret
 fi
 
-# Create temporal directory required by temporal-server
-mkdir -p /var/lib/maas/temporal
+# maas ユーザーが書き込めるよう所有者を変更
+chown -R maas:maas /var/lib/maas
+chown root:maas /etc/maas/regiond.conf
+chmod 640 /etc/maas/regiond.conf
 
 # Run Django database migrations
 maas-region dbupgrade
