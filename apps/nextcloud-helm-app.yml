@@ -62,6 +62,7 @@ spec:
         persistence:
           enabled: true
           storageClass: rook-cephfs
+          accessMode: ReadWriteMany
           size: 64Gi
 
         mariadb:
