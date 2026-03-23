@@ -1,45 +1,43 @@
 apiVersion: batch/v1
-kind: CronJob
+kind: Job
 metadata:
   name: bitwarden-sync-crn
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
-  schedule: "*/5 * * * *"  # Run every 5 minutes
-  successfulJobsHistoryLimit: 1
-  failedJobsHistoryLimit: 2
-  jobTemplate:
+  ttlSecondsAfterFinished: 300
+  template:
     spec:
-      ttlSecondsAfterFinished: 300
-      template:
-        spec:
-          serviceAccountName: sec-sync-sa
-          restartPolicy: OnFailure
-          containers:
-            - name: create-secret
-              env:
-                - name: TARGET_NAMESPACES
-                  value: |
-                    kigawa-net-keruta-dev
-                    kigawa-net-keruta-main
-                    kigawa-net-lp-main
-                    kigawa-net-nextcloud
-                    develop
-                    kigawa-net-maas
-              image: bitnami/kubectl:latest
-              command:
-                - /bin/bash
-                - -c
-                - |
-                  set -e
-
-                  # Read username and password from source secret
-                  token=$(kubectl get secret bitwarden-sec -o jsonpath='{.data.token}' | base64 -d)
-                  
-                  echo "$TARGET_NAMESPACES" | while read -r namespace; do
-                    if [[ -z "$namespace" ]]; then continue; fi
-                    kubectl create secret generic bitwarden-sec \
-                      --from-literal=token="$token" \
-                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
-  
-                    echo "Secret bitwarden-sec synced successfully at $(date) to $namespace"
-                  done
+      serviceAccountName: sec-sync-sa
+      restartPolicy: OnFailure
+      containers:
+        - name: create-secret
+          env:
+            - name: TARGET_NAMESPACES
+              value: |
+                kigawa-net-keruta-dev
+                kigawa-net-keruta-main
+                kigawa-net-lp-main
+                kigawa-net-nextcloud
+                develop
+                kigawa-net-maas
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              
+              # Read username and password from source secret
+              token=$(kubectl get secret bitwarden-sec -o jsonpath='{.data.token}' | base64 -d)
+              
+              echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                if [[ -z "$namespace" ]]; then continue; fi
+                kubectl create secret generic bitwarden-sec \
+                  --from-literal=token="$token" \
+                  --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
+              
+                echo "Secret bitwarden-sec synced successfully at $(date) to $namespace"
+              done
   
