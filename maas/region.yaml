@@ -33,7 +33,7 @@ spec:
                   key: user
       containers:
         - name: maas-region
-          image: harbor.kigawa.net/library/maas-region:main-7dc803cf584e68905403c007c88e81a497033fa8
+          image: harbor.kigawa.net/library/maas-region:main-0d1ce1f1e1833769b2e9839959d3cb422a752d77
           imagePullPolicy: IfNotPresent
           # systemd実行に必要
           securityContext:
@@ -83,5 +83,3 @@ spec:
           hostPath:
             path: /sys/fs/cgroup
             type: Directory
-
-
