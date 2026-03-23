@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nextcloud-oidc-setup-sa
+  namespace: kigawa-net-nextcloud
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nextcloud-oidc-setup-role
+  namespace: kigawa-net-nextcloud
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nextcloud-oidc-setup-rb
+  namespace: kigawa-net-nextcloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: nextcloud-oidc-setup-role
+subjects:
+  - kind: ServiceAccount
+    name: nextcloud-oidc-setup-sa
+    namespace: kigawa-net-nextcloud
