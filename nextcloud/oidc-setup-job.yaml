@@ -47,9 +47,7 @@ spec:
                   --clientsecret="${OIDC_CLIENT_SECRET}" \
                   --discoveryuri=https://user.kigawa.net/realms/private/.well-known/openid-configuration \
                   --unique-uid=0 \
-                  --check-bearer=1 \
-                  --auto-provision=1 \
-                  --update-user-on-login=1
+                  --check-bearer=1
 
               # Keycloak only (disable local login)
               kubectl exec -n kigawa-net-nextcloud $POD \
