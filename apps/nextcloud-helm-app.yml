@@ -80,6 +80,11 @@ spec:
           enabled: false
         externalDatabase:
           enabled: false
+          existingSecret:
+            enabled: true
+            secretName: nextcloud-mariadb-sec
+            usernameKey: username
+            passwordKey: mariadb-password
 
 
   destination:
@@ -100,3 +105,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
