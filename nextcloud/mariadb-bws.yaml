@@ -9,7 +9,9 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "12c660be-da33-4b25-9d60-b41500878b14"  # TODO: replace with actual Bitwarden secret ID for mariadb root password
+    - bwSecretId: "12c660be-da33-4b25-9d60-b41500878b14"
       secretKeyName: mariadb-root-password
-    - bwSecretId: "0ecbebba-c60a-4caf-aaf6-b415008779f7"  # TODO: replace with actual Bitwarden secret ID for mariadb nextcloud user password
+    - bwSecretId: "0ecbebba-c60a-4caf-aaf6-b415008779f7"
       secretKeyName: mariadb-password
+    - bwSecretId: "873ed188-201f-49c0-9386-b415009a3196"
+      secretKeyName: username
