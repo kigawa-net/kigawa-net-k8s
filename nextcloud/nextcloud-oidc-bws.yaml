@@ -1,0 +1,13 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: nextcloud-oidc-bws
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: nextcloud-oidc-sec
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "16e3b63c-bc36-4310-b21d-b41600fbc922"  # TODO: replace with Bitwarden secret ID for Keycloak client secret
+      secretKeyName: client-secret

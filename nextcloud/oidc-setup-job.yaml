@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-oidc-setup
+  namespace: kigawa-net-nextcloud
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: 33
+        runAsGroup: 33
+        fsGroup: 33
+      restartPolicy: OnFailure
+      containers:
+        - name: oidc-setup
+          image: docker.io/library/nextcloud:33.0.0-apache
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              # Install and enable user_oidc app
+              php /var/www/html/occ app:install user_oidc --no-interaction 2>/dev/null || true
+              php /var/www/html/occ app:enable user_oidc
+
+              # Configure Keycloak OIDC provider (idempotent)
+              php /var/www/html/occ user_oidc:provider nextcloud \
+                --clientid=nextcloud \
+                --clientsecret="${OIDC_CLIENT_SECRET}" \
+                --discoveryuri=https://user.kigawa.net/realms/private/.well-known/openid-configuration \
+                --unique-uid=0 \
+                --check-bearer=1 \
+                --auto-provision=1 \
+                --update-user-on-login=1
+
+              # Disable local login (Keycloak only)
+              php /var/www/html/occ config:app:set user_oidc allow_multiple_user_backends --value=0
+
+              echo "OIDC setup complete"
+          env:
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-oidc-sec
+                  key: client-secret
+          volumeMounts:
+            - name: nextcloud-main
+              mountPath: /var/www/html
+              subPath: html
+            - name: nextcloud-main
+              mountPath: /var/www/html/config
+              subPath: config
+            - name: nextcloud-main
+              mountPath: /var/www/html/data
+              subPath: data
+            - name: nextcloud-main
+              mountPath: /var/www/html/custom_apps
+              subPath: custom_apps
+            - name: nextcloud-main
+              mountPath: /var/www/tmp
+              subPath: tmp
+      volumes:
+        - name: nextcloud-main
+          persistentVolumeClaim:
+            claimName: nextcloud-nextcloud
