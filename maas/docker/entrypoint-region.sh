@@ -25,21 +25,5 @@ mkdir -p /var/lib/maas/temporal
 # Run Django database migrations
 maas-region dbupgrade
 
-# Start Temporal server (background)
-/usr/sbin/temporal-server \
-    -e production \
-    -r "/var/lib/maas/temporal/" \
-    -c "" \
-    --allow-no-auth start &
-
-# Wait for Temporal to be ready
-sleep 5
-
-# Start MAAS API server (background)
-/usr/sbin/maas-apiserver &
-
-# Start Temporal worker (background)
-/usr/sbin/maas-temporal-worker &
-
-# Start region daemon (foreground)
-exec /usr/sbin/regiond
+# Hand off to systemd (manages all MAAS services)
+exec /sbin/init

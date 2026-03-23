@@ -33,11 +33,14 @@ spec:
                   key: user
       containers:
         - name: maas-region
-          # harbor.kigawa.net/library/maas-region:3.5 を使用する場合は変更してください
-          # ビルド方法: https://github.com/canonical/maas を参照
-          # または ghcr.io/canonical/maas などのコミュニティイメージを使用
           image: harbor.kigawa.net/library/maas-region:main-7dc803cf584e68905403c007c88e81a497033fa8
           imagePullPolicy: IfNotPresent
+          # systemd実行に必要
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: cgroup
+              mountPath: /sys/fs/cgroup
           env:
             - name: MAAS_POSTGRES_USER
               valueFrom:
@@ -75,5 +78,10 @@ spec:
               path: /MAAS/api/2.0/
               port: 5240
             periodSeconds: 30
+      volumes:
+        - name: cgroup
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
 
 
