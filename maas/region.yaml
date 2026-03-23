@@ -69,13 +69,13 @@ spec:
               name: api
           startupProbe:
             httpGet:
-              path: /MAAS/api/2.0/
+              path: /MAAS/
               port: 5240
             failureThreshold: 60
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /MAAS/api/2.0/
+              path: /MAAS/
               port: 5240
             periodSeconds: 30
       volumes:
