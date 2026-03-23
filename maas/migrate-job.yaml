@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: maas-db-migrate
+  namespace: kigawa-net-maas
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-postgres
+          image: postgres:14
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h maas-postgres-svc -U $POSTGRES_USER; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgres
+                  key: user
+      containers:
+        - name: migrate
+          image: harbor.kigawa.net/library/maas-region:main-0d1ce1f1e1833769b2e9839959d3cb422a752d77
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /etc/maas /var/lib/maas/temporal
+              cat > /etc/maas/regiond.conf <<EOF
+              database_host: ${MAAS_POSTGRES_HOST:-maas-postgres-svc}
+              database_port: 5432
+              database_name: ${MAAS_POSTGRES_DB:-maas}
+              database_user: ${MAAS_POSTGRES_USER}
+              database_pass: ${MAAS_POSTGRES_PASS}
+              maas_url: ${MAAS_URL:-http://maas-region-svc:5240/MAAS}
+              EOF
+              maas-region dbupgrade
+          env:
+            - name: MAAS_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgres
+                  key: user
+            - name: MAAS_POSTGRES_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: maas-postgres
+                  key: pass
+            - name: MAAS_POSTGRES_HOST
+              value: "maas-postgres-svc"
+            - name: MAAS_POSTGRES_DB
+              value: "maas"
+            - name: MAAS_URL
+              value: "http://maas-region-svc.kigawa-net-maas.svc.cluster.local:5240/MAAS"

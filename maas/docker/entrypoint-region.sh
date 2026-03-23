@@ -24,8 +24,6 @@ chown -R maas:maas /var/lib/maas
 chown root:maas /etc/maas/regiond.conf
 chmod 640 /etc/maas/regiond.conf
 
-# Run Django database migrations
-maas-region dbupgrade
-
 # Hand off to systemd (manages all MAAS services)
+# DB migration は ArgoCD PreSync Job (migrate-job.yaml) で実行済み
 exec /sbin/init
