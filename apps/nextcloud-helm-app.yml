@@ -40,9 +40,9 @@ spec:
 
         readinessProbe:
           enabled: true
-          initialDelaySeconds: 300
+          initialDelaySeconds: 30
           periodSeconds: 15
-          failureThreshold: 10
+          failureThreshold: 128
 
         startupProbe:
           enabled: true
