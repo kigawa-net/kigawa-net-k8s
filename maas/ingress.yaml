@@ -4,6 +4,7 @@ metadata:
   name: maas-ingress
   namespace: kigawa-net-maas
 spec:
+  ingressClassName: haproxy
   rules:
     - host: maas.kigawa.net
       http:
