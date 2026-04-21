@@ -14,6 +14,14 @@ spec:
       labels:
         app: kigawa-net-ftb-mc
     spec:
+      initContainers:
+        - name: rm-cache
+          image: ubuntu
+          command:
+            - bash
+            - -c
+            - |
+              rm -rf /data/libraries/
       containers:
         - name: kigawa-net-ftb-mc
           resources:
