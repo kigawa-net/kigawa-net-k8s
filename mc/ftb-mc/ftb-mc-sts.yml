@@ -1,0 +1,54 @@
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kigawa-net-ftb-mc
+spec:
+  replicas: 1
+  serviceName: kigawa-net-ftb-mc
+  selector:
+    matchLabels:
+      app: kigawa-net-ftb-mc
+  template:
+    metadata:
+      labels:
+        app: kigawa-net-ftb-mc
+    spec:
+      containers:
+        - name: kigawa-net-ftb-mc
+          resources:
+            limits:
+              memory: 8Gi
+          image: itzg/minecraft-server:java21
+          ports:
+            - containerPort: 25565
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          env:
+            - name: TYPE
+              value: NEOFORGE
+            - name: VERSION
+              value: "1.20.1"
+            - name: GENERIC_PACK
+              value: "https://public.kigawa.net/mc/modpack/ftb/ftb-stoneblock-3-1.11.5.zip"
+            - name: EULA
+              value: "true"
+            - name: ONLINE_MODE
+              value: "true"
+            - name: MEMORY
+              value: 6G
+            - name: OPS
+              value: kigawa01
+            - name: MOTD
+              value: "FTB StoneBlock 3"
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: rook-cephfs
+        resources:
+          requests:
+            storage: 100Gi

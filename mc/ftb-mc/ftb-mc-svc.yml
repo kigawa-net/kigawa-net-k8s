@@ -1,0 +1,16 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kigawa-net-ftb-mc
+  annotations:
+    "mc-router.itzg.me/externalServerName": "ftb.kigawa.net"
+spec:
+  selector:
+    app: kigawa-net-ftb-mc
+  ports:
+    - protocol: TCP
+      port: 25565
+      targetPort: 25565
+      name: mc
+  type: ClusterIP
