@@ -1,0 +1,80 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: mariadb-k8s
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: mariadb-k8s
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    # TODO: stg用のBitwarden SecretIDに差し替える
+    - bwSecretId: "5860fe81-6d0e-487a-927c-b40000ce3056"
+      secretKeyName: root-pass
+    - bwSecretId: "54f8c7fc-eecf-492b-95a5-b40000ce6bb2"
+      secretKeyName: pass
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb-k8s
+spec:
+  rootPasswordSecretKeyRef:
+    name: mariadb-k8s
+    key: root-pass
+  image: mariadb:10.11
+  port: 3306
+  updateStrategy:
+    autoUpdateDataPlane: true
+  startupProbe:
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 60
+  storage:
+    size: 1Gi
+    storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  name: ktcl-k8s
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  passwordSecretKeyRef:
+    name: mariadb-k8s
+    key: pass
+  maxUserConnections: 50
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: ktcl-k8s
+spec:
+  mariaDbRef:
+    name: mariadb-k8s
+  privileges:
+    - "ALL PRIVILEGES"
+  database: ktcl-k8s
+  table: "*"
+  username: ktcl-k8s
+  grantOption: false
