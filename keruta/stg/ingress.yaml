@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: ktse-stg.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ktse
+                port:
+                  number: 8080
+    - host: keruta-stg.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ktcl-front
+                port:
+                  number: 3000
+    - host: ktcl-k8s-stg.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ktcl-k8s
+                port:
+                  number: 8081
+    - host: kicl-web-stg.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kicl-web
+                port:
+                  number: 3000

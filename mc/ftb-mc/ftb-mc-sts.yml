@@ -37,7 +37,7 @@ spec:
             - name: TYPE
               value: FORGE
             - name: VERSION
-              value: "1.20.1"
+              value: "1.18.2"
             - name: GENERIC_PACK
               value: "https://public.kigawa.net/mc/modpack/ftb/ftb-stoneblock-3-1.11.5.zip"
             - name: EULA
