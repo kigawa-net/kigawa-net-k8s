@@ -14,14 +14,6 @@ spec:
       labels:
         app: kigawa-net-ftb-mc
     spec:
-      initContainers:
-        - name: rm-cache
-          image: ubuntu
-          command:
-            - bash
-            - -c
-            - |
-              rm -rf /data/libraries/
       containers:
         - name: kigawa-net-ftb-mc
           resources:
@@ -35,11 +27,14 @@ spec:
               mountPath: /data
           env:
             - name: TYPE
-              value: FORGE
-            - name: VERSION
-              value: "1.18.2"
-            - name: GENERIC_PACK
+              value: AUTO_CURSEFORGE
+            - name: CF_MODPACK_URL
               value: "https://public.kigawa.net/mc/modpack/ftb/ftb-stoneblock-3-1.11.5.zip"
+            - name: CF_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ftb-mc-secret
+                  key: cf-api-key
             - name: EULA
               value: "true"
             - name: ONLINE_MODE
