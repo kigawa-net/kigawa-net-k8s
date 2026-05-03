@@ -27,14 +27,11 @@ spec:
               mountPath: /data
           env:
             - name: TYPE
-              value: AUTO_CURSEFORGE
-            - name: CF_MODPACK_URL
-              value: "https://public.kigawa.net/mc/modpack/ftb/ftb-stoneblock-3-1.11.5.zip"
-            - name: CF_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: ftb-mc-secret
-                  key: cf-api-key
+              value: FTBA
+            - name: FTB_MODPACK_ID
+              value: "100"
+            - name: FTB_MODPACK_VERSION_ID
+              value: "12632"
             - name: EULA
               value: "true"
             - name: ONLINE_MODE
