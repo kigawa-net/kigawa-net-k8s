@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-keruta-stg-app
+  namespace: argocd
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: main
+
+    path: keruta/stg
+    directory:
+      recurse: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-keruta-stg
+
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

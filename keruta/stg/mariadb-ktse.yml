@@ -9,10 +9,9 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    # TODO: stg用のBitwarden SecretIDに差し替える
-    - bwSecretId: "c15a90e2-60d5-45e3-8e0b-b40a00ed5136"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: root-pass
-    - bwSecretId: "320e05ff-154e-4797-b4c3-b3e2000fdd1c"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: pass
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
@@ -45,18 +44,18 @@ spec:
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Database
 metadata:
-  name: mariadb-ktse
+  name: ktse
 spec:
   mariaDbRef:
     name: mariadb-ktse
-  name: mariadb-ktse
+  name: ktse
   characterSet: utf8mb4
   collate: utf8mb4_unicode_ci
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: User
 metadata:
-  name: mariadb-ktse
+  name: ktse
 spec:
   mariaDbRef:
     name: mariadb-ktse
@@ -68,13 +67,13 @@ spec:
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: Grant
 metadata:
-  name: mariadb-ktse
+  name: ktse
 spec:
   mariaDbRef:
     name: mariadb-ktse
   privileges:
     - "ALL PRIVILEGES"
-  database: mariadb-ktse
+  database: ktse
   table: "*"
-  username: mariadb-ktse
+  username: ktse
   grantOption: false

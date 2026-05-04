@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktse
-          image: harbor.kigawa.net/library/ktse:staging-0000000000000000000000000000000000000000
+          image: harbor.kigawa.net/library/ktse:stg-latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -60,11 +60,11 @@ spec:
             - name: IDP_0_AUDIENCE
               value: keruta
             - name: IDP_0_ISSUER
-              value: https://user.kigawa.net/realms/develop
+              value: https://user.kigawa.net/realms/stg
             - name: DB_JDBC_URL
-              value: jdbc:mysql://mariadb-ktse:3306/mariadb-ktse
+              value: jdbc:mysql://mariadb-ktse:3306/ktse
             - name: DB_USERNAME
-              value: mariadb-ktse
+              value: ktse
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -85,8 +85,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    # TODO: stg用のBitwarden SecretIDに差し替える
-    - bwSecretId: "b05e1df6-f056-4193-9c5b-b3fe0113016e"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: private-key
 ---
 apiVersion: v1

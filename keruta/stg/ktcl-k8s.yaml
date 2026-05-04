@@ -20,7 +20,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: ktcl-k8s
-          image: harbor.kigawa.net/library/ktcl-k8s:staging-0000000000000000000000000000000000000000
+          image: harbor.kigawa.net/library/ktcl-k8s:stg-latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -100,8 +100,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    # TODO: stg用のBitwarden SecretIDに差し替える
-    - bwSecretId: "217aa846-8d1f-4f3c-8dbf-b4000066c764"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: private-key
 ---
 apiVersion: v1

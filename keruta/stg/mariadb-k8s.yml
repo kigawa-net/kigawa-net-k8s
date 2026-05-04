@@ -9,10 +9,9 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    # TODO: stg用のBitwarden SecretIDに差し替える
-    - bwSecretId: "5860fe81-6d0e-487a-927c-b40000ce3056"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: root-pass
-    - bwSecretId: "54f8c7fc-eecf-492b-95a5-b40000ce6bb2"
+    - bwSecretId: "00000000-0000-0000-0000-000000000000"
       secretKeyName: pass
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
