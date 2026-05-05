@@ -19,7 +19,7 @@ spec:
           resources:
             limits:
               memory: 8Gi
-          image: itzg/minecraft-server:java21
+          image: itzg/minecraft-server:java17
           ports:
             - containerPort: 25565
           volumeMounts:
