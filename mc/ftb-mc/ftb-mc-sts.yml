@@ -42,6 +42,8 @@ spec:
               value: kigawa01
             - name: MOTD
               value: "FTB StoneBlock 3"
+            - name: MAX_TICK_TIME
+              value: "120000"
   volumeClaimTemplates:
     - metadata:
         name: data
