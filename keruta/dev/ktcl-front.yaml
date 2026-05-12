@@ -36,6 +36,8 @@ spec:
               value: keruta
             - name: USER_ISSUER
               value: https://user.kigawa.net/realms/develop
+            - name: VITE_KISE_URL
+              value: https://kise-dev.kigawa.net
       restartPolicy: Always
 ---
 apiVersion: k8s.bitwarden.com/v1
