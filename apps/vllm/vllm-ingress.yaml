@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vllm-ingress
+  namespace: kigawa-net-llm
+  annotations:
+    haproxy.org/backend-check-via: "health"
+    haproxy.org/health-check-uri: "/v1/health"
+    haproxy.org/health-check-interval: "10s"
+    haproxy.org/timeout-connect: "10s"
+    haproxy.org/timeout-server: "300s"
+    haproxy.org/timeout-tunnel: "300s"
+    haproxy.org/rate-limit: "100"
+    haproxy.org/rate-limit-period: "1s"
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: vllm-dev.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vllm-openai-service
+                port:
+                  number: 80

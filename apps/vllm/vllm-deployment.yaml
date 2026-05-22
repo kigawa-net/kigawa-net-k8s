@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-deployment
+  namespace: kigawa-net-llm
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.7.2
+          args:
+            - "--model"
+            - "meta-llama/Llama-3.1-70B-Instruct"
+            - "--served-model-name"
+            - "production-llm"
+            - "--tensor-parallel-size"
+            - "2"
+            - "--max-model-len"
+            - "4096"
+            - "--gpu-memory-utilization"
+            - "0.9"
+            - "--dtype"
+            - "auto"
+            - "--enable-chunked-prefill"
+            - "--max-num-batched-tokens"
+            - "8192"
+            - "--max-num-seqs"
+            - "256"
+            - "--max-logprobs"
+            - "100"
+            - "--disable-log-stats"
+            - "false"
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm
+                  key: api-key
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+          resources:
+            limits:
+              nvidia.com/gpu: 2
+            requests:
+              nvidia.com/gpu: 2
+              memory: "256Gi"
+              cpu: "32"
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            - mountPath: /tmp
+              name: tmp
+            - mountPath: /root/.cache/huggingface
+              name: hf-cache
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "8Gi"
+        - name: tmp
+          emptyDir: {}
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache-pvc
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: "Exists"
+          effect: "NoSchedule"

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hf-cache-pvc
+  namespace: kigawa-net-llm
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: rook-cephfs
+  resources:
+    requests:
+      storage: 128Gi

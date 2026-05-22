@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-vllm-dev-app
+  namespace: argocd
+spec:
+  project: kigawa-net
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: apps/vllm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-llm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

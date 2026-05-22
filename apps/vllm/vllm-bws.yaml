@@ -1,0 +1,14 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: vllm
+  namespace: kigawa-net-llm
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: vllm
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "PLACEHOLDER_VLLM_API_KEY_ID"
+      secretKeyName: api-key
