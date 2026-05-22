@@ -22,6 +22,14 @@ GitHub (main branch)
 
 ---
 
+## 関連リポジトリ
+
+| リポジトリ | 説明 |
+|-----------|------|
+| [kigawa-net/infra](https://github.com/kigawa-net/infra) | インフラ基盤の設定・プロビジョニング (物理・仮想マシン等) |
+
+---
+
 ## ディレクトリ構成
 
 ```
