@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
     targetRevision: HEAD
-    path: apps/vllm
+    path: vllm
   destination:
     server: https://kubernetes.default.svc
     namespace: kigawa-net-llm
