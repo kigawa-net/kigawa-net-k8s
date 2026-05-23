@@ -20,11 +20,11 @@ spec:
           image: vllm/vllm-openai:v0.7.2
           args:
             - "--model"
-            - "meta-llama/Llama-3.1-70B-Instruct"
+            - "Qwen/Qwen3.5-9B"
             - "--served-model-name"
             - "production-llm"
             - "--tensor-parallel-size"
-            - "2"
+            - "1"
             - "--max-model-len"
             - "4096"
             - "--gpu-memory-utilization"
@@ -55,11 +55,11 @@ spec:
               value: "compute,utility"
           resources:
             limits:
-              nvidia.com/gpu: 2
+              nvidia.com/gpu: 1
             requests:
-              nvidia.com/gpu: 2
-              memory: "256Gi"
-              cpu: "32"
+              nvidia.com/gpu: 1
+              memory: "32Gi"
+              cpu: "16"
           volumeMounts:
             - mountPath: /dev/shm
               name: dshm

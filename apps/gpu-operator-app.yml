@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-operator
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://helm.ngc.nvidia.com/nvidia
+    chart: gpu-operator
+    targetRevision: v24.9.2
+    helm:
+      releaseName: gpu-operator
+      valuesObject:
+        # ドライバーとToolkitはホスト側にインストール済み
+        driver:
+          enabled: false
+        toolkit:
+          enabled: false
+        # GTX 650 (Kepler, compute capability 3.0) は DCGM 非対応 (要 cc 3.5+)
+        dcgm:
+          enabled: false
+        dcgmExporter:
+          enabled: false
+        # validator は CUDA テストを実行するため Kepler では動作しない可能性がある
+        validator:
+          enabled: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gpu-operator
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
