@@ -49,12 +49,17 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: kigawa-net-*
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: gpu-operator
 
   # ----------------------------
   # 許可する Git リポジトリ
   # ----------------------------
   sourceRepos:
     - https://github.com/kigawa-net/*
+    - https://ray-project.github.io/kuberay-helm/
+    - https://helm.ngc.nvidia.com/nvidia
 
   # ----------------------------
   # Namespace リソース許可

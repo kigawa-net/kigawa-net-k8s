@@ -4,7 +4,7 @@ metadata:
   name: gpu-operator
   namespace: argocd
 spec:
-  project: default
+  project: kigawa-net
 
   source:
     repoURL: https://helm.ngc.nvidia.com/nvidia
