@@ -12,7 +12,7 @@ spec:
   map:
     - bwSecretId: "89a9f0ae-4c4a-487f-a7ce-b4560060e2e4"
       secretKeyName: secret-key
-    - bwSecretId: "PLACEHOLDER_LITELLM_MASTER_KEY_ID"
+    - bwSecretId: "5a07227a-88bd-455f-afb5-b4560065c5f9"
       secretKeyName: litellm-api-key
     - bwSecretId: "PLACEHOLDER_KEYCLOAK_CLIENT_SECRET_ID"
       secretKeyName: oauth-client-secret
