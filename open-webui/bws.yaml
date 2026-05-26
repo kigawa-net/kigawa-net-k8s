@@ -10,7 +10,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "PLACEHOLDER_OPENWEBUI_SECRET_KEY_ID"
+    - bwSecretId: "89a9f0ae-4c4a-487f-a7ce-b4560060e2e4"
       secretKeyName: secret-key
     - bwSecretId: "PLACEHOLDER_LITELLM_MASTER_KEY_ID"
       secretKeyName: litellm-api-key

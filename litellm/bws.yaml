@@ -12,9 +12,9 @@ spec:
   map:
     - bwSecretId: "PLACEHOLDER_LITELLM_MASTER_KEY_ID"
       secretKeyName: master-key
-    - bwSecretId: "PLACEHOLDER_VLLM_API_KEY_ID"
+    - bwSecretId: "f01005ec-bfaa-4999-999d-b45600557fbf"
       secretKeyName: vllm-api-key
-    - bwSecretId: "PLACEHOLDER_OPENAI_API_KEY_ID"
+    - bwSecretId: "9b442a6c-f288-4c32-bf79-b456005f71b8"
       secretKeyName: openai-api-key
-    - bwSecretId: "PLACEHOLDER_ANTHROPIC_API_KEY_ID"
+    - bwSecretId: "9f40ef16-2a0a-40f1-a1f3-b456006027fe"
       secretKeyName: anthropic-api-key
