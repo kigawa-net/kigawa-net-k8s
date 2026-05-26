@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: kigawa-net-llm-proxy
+data:
+  config.yaml: |
+    model_list:
+      - model_name: production-llm
+        litellm_params:
+          model: openai/production-llm
+          api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local
+          api_key: os.environ/VLLM_API_KEY
+      - model_name: gpt-4o
+        litellm_params:
+          model: gpt-4o
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: gpt-4o-mini
+        litellm_params:
+          model: gpt-4o-mini
+          api_key: os.environ/OPENAI_API_KEY
+      - model_name: claude-sonnet-4-6
+        litellm_params:
+          model: anthropic/claude-sonnet-4-6-20250220
+          api_key: os.environ/ANTHROPIC_API_KEY
+
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+
+    litellm_settings:
+      drop_params: true
+      request_timeout: 300

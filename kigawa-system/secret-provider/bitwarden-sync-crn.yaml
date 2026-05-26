@@ -23,6 +23,9 @@ spec:
                 develop
                 kigawa-net-maas
                 kigawa-net-mc-ftb-mc
+                kigawa-net-llm-proxy
+                kigawa-net-llm-ui
+                keycloak
           image: bitnami/kubectl:latest
           command:
             - /bin/bash

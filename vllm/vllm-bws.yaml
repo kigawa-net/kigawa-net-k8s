@@ -10,5 +10,5 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "PLACEHOLDER_VLLM_API_KEY_ID"
+    - bwSecretId: "f01005ec-bfaa-4999-999d-b45600557fbf"
       secretKeyName: api-key

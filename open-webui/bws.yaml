@@ -1,0 +1,18 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: open-webui
+  namespace: kigawa-net-llm-ui
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: open-webui
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "89a9f0ae-4c4a-487f-a7ce-b4560060e2e4"
+      secretKeyName: secret-key
+    - bwSecretId: "5a07227a-88bd-455f-afb5-b4560065c5f9"
+      secretKeyName: litellm-api-key
+    - bwSecretId: "200fa589-9f05-4fe4-94f2-b45600774d2c"
+      secretKeyName: oauth-client-secret
