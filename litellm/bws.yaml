@@ -1,0 +1,20 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: litellm
+  namespace: kigawa-net-llm-proxy
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: litellm
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "PLACEHOLDER_LITELLM_MASTER_KEY_ID"
+      secretKeyName: master-key
+    - bwSecretId: "PLACEHOLDER_VLLM_API_KEY_ID"
+      secretKeyName: vllm-api-key
+    - bwSecretId: "PLACEHOLDER_OPENAI_API_KEY_ID"
+      secretKeyName: openai-api-key
+    - bwSecretId: "PLACEHOLDER_ANTHROPIC_API_KEY_ID"
+      secretKeyName: anthropic-api-key

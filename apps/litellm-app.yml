@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-litellm-app
+  namespace: argocd
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: litellm
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-llm-proxy
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

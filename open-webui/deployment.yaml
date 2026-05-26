@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: kigawa-net-llm-ui
+  labels:
+    app: open-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      containers:
+        - name: open-webui
+          image: ghcr.io/open-webui/open-webui:main
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: WEBUI_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui
+                  key: secret-key
+            # LiteLLM Proxy をバックエンドとして使用
+            - name: OPENAI_API_BASE_URL
+              value: "http://litellm-service.kigawa-net-llm-proxy.svc.cluster.local/v1"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui
+                  key: litellm-api-key
+            # Keycloak SSO
+            - name: ENABLE_OAUTH_SIGNUP
+              value: "true"
+            - name: OAUTH_PROVIDER_NAME
+              value: "Keycloak"
+            - name: OAUTH_CLIENT_ID
+              value: "open-webui"
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui
+                  key: oauth-client-secret
+            - name: OPENID_PROVIDER_URL
+              value: "https://user.kigawa.net/realms/develop/.well-known/openid-configuration"
+            - name: OAUTH_SCOPES
+              value: "openid email profile"
+            # ローカル認証を無効化してSSO強制
+            - name: ENABLE_LOGIN_FORM
+              value: "false"
+          volumeMounts:
+            - name: data
+              mountPath: /app/backend/data
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: open-webui-pvc
