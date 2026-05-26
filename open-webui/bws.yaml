@@ -14,5 +14,5 @@ spec:
       secretKeyName: secret-key
     - bwSecretId: "5a07227a-88bd-455f-afb5-b4560065c5f9"
       secretKeyName: litellm-api-key
-    - bwSecretId: "PLACEHOLDER_KEYCLOAK_CLIENT_SECRET_ID"
+    - bwSecretId: "200fa589-9f05-4fe4-94f2-b45600774d2c"
       secretKeyName: oauth-client-secret
