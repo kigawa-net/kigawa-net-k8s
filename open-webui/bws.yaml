@@ -16,3 +16,5 @@ spec:
       secretKeyName: litellm-api-key
     - bwSecretId: "200fa589-9f05-4fe4-94f2-b45600774d2c"
       secretKeyName: oauth-client-secret
+    - bwSecretId: "8c4918d5-03b3-4d70-84ef-b45700480d69"
+      secretKeyName: hf-token
