@@ -54,6 +54,11 @@ spec:
             # ローカル認証を無効化してSSO強制
             - name: ENABLE_LOGIN_FORM
               value: "false"
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: open-webui
+                  key: hf-token
           volumeMounts:
             - name: data
               mountPath: /app/backend/data
