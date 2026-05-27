@@ -49,6 +49,13 @@ spec:
                 secretKeyRef:
                   name: litellm
                   key: anthropic-api-key
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: litellm
+                  key: db-password
+            - name: DATABASE_URL
+              value: "postgresql://litellm:$(DB_PASSWORD)@postgresql.kigawa-net-llm-proxy.svc.cluster.local:5432/litellm"
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml

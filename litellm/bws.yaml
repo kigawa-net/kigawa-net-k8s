@@ -18,3 +18,5 @@ spec:
       secretKeyName: openai-api-key
     - bwSecretId: "9f40ef16-2a0a-40f1-a1f3-b456006027fe"
       secretKeyName: anthropic-api-key
+    - bwSecretId: "PLACEHOLDER_LITELLM_DB_PASSWORD_ID"
+      secretKeyName: db-password
