@@ -18,13 +18,12 @@ spec:
       containers:
         - name: litellm
           image: ghcr.io/berriai/litellm:main-stable
+          command: ["/bin/sh", "-c"]
           args:
-            - "--config"
-            - "/app/config.yaml"
-            - "--port"
-            - "4000"
-            - "--num_workers"
-            - "4"
+            - |
+              export ENCODED_PASSWORD=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote(os.environ['DB_PASSWORD'],safe=''))")
+              export DATABASE_URL="postgresql://litellm:${ENCODED_PASSWORD}@postgresql.kigawa-net-llm-proxy.svc.cluster.local:5432/litellm"
+              exec litellm --config /app/config.yaml --port 4000 --num_workers 4
           ports:
             - containerPort: 4000
               name: http
@@ -54,8 +53,6 @@ spec:
                 secretKeyRef:
                   name: litellm
                   key: db-password
-            - name: DATABASE_URL
-              value: "postgresql://litellm:$(DB_PASSWORD)@postgresql.kigawa-net-llm-proxy.svc.cluster.local:5432/litellm"
           volumeMounts:
             - name: config
               mountPath: /app/config.yaml
