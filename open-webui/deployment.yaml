@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: open-webui
   namespace: kigawa-net-llm-ui
   labels:
     app: open-webui
 spec:
+  serviceName: open-webui-service
   replicas: 1
   selector:
     matchLabels:
@@ -27,7 +28,6 @@ spec:
                 secretKeyRef:
                   name: open-webui
                   key: secret-key
-            # LiteLLM Proxy をバックエンドとして使用
             - name: OPENAI_API_BASE_URL
               value: "http://litellm-service.kigawa-net-llm-proxy.svc.cluster.local/v1"
             - name: OPENAI_API_KEY
@@ -35,7 +35,6 @@ spec:
                 secretKeyRef:
                   name: open-webui
                   key: litellm-api-key
-            # Keycloak SSO
             - name: ENABLE_OAUTH_SIGNUP
               value: "true"
             - name: OAUTH_PROVIDER_NAME
@@ -51,7 +50,6 @@ spec:
               value: "https://user.kigawa.net/realms/develop/.well-known/openid-configuration"
             - name: OAUTH_SCOPES
               value: "openid email profile"
-            # ローカル認証を無効化してSSO強制
             - name: ENABLE_LOGIN_FORM
               value: "false"
             - name: HF_TOKEN
@@ -85,7 +83,13 @@ spec:
             limits:
               cpu: "1"
               memory: "1Gi"
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: open-webui-pvc
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: rook-cephfs
+        resources:
+          requests:
+            storage: 10Gi

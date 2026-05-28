@@ -59,7 +59,7 @@ spec:
             requests:
               nvidia.com/gpu: 1
               memory: "32Gi"
-              cpu: "16"
+              cpu: "8"
           volumeMounts:
             - mountPath: /dev/shm
               name: dshm
