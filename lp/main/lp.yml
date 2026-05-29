@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: lp
-          image: harbor.kigawa.net/private/portfolio:main-3e44456cf61f04975fb0060aaab88614ac1c19fd
+          image: harbor.kigawa.net/private/portfolio:main-91ae5801607637041ee6392553f8e28b012abc95
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
