@@ -32,6 +32,12 @@ spec:
                 ],
               ];
 
+        resources:
+          requests:
+            memory: 512Mi
+          limits:
+            memory: 1Gi
+
         livenessProbe:
           enabled: true
           initialDelaySeconds: 300
