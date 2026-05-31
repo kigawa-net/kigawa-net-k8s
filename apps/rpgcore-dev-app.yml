@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kigawa-net-mc-rpgcore-dev
+  name: onemc-rpgcore-dev
   namespace: argocd
 spec:
   project: one
