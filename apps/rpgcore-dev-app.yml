@@ -4,7 +4,7 @@ metadata:
   name: kigawa-net-mc-rpgcore-dev
   namespace: argocd
 spec:
-  project: kigawa-net
+  project: one
 
   source:
     repoURL: https://github.com/OneServerMC/RpgCore.git
