@@ -58,6 +58,7 @@ spec:
   # ----------------------------
   sourceRepos:
     - https://github.com/kigawa-net/*
+    - https://github.com/OneServerMC/*
     - https://ray-project.github.io/kuberay-helm/
     - https://helm.ngc.nvidia.com/nvidia
 
