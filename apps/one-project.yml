@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: one
+  namespace: argocd
+spec:
+  description: Project for OneServerMC resources
+
+  destinations:
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-*
+
+  sourceRepos:
+    - https://github.com/OneServerMC/*
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
