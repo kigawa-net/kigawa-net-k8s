@@ -18,28 +18,18 @@ spec:
       containers:
         - name: vllm
           image: vllm/vllm-openai:v0.7.2
+          command: ["/bin/sh", "-c"]
           args:
-            - "--model"
-            - "Qwen/Qwen3.5-9B"
-            - "--served-model-name"
-            - "production-llm"
-            - "--tensor-parallel-size"
-            - "1"
-            - "--max-model-len"
-            - "4096"
-            - "--gpu-memory-utilization"
-            - "0.9"
-            - "--dtype"
-            - "auto"
-            - "--enable-chunked-prefill"
-            - "--max-num-batched-tokens"
-            - "8192"
-            - "--max-num-seqs"
-            - "256"
-            - "--max-logprobs"
-            - "100"
-            - "--disable-log-stats"
-            - "false"
+            - |
+              exec python -m vllm.entrypoints.openai.api_server \
+                --model Qwen/Qwen2.5-14B-Instruct-AWQ \
+                --served-model-name production-llm \
+                --tensor-parallel-size 3 \
+                --max-model-len 8192 \
+                --gpu-memory-utilization 0.9 \
+                --dtype auto \
+                --port 8000 \
+                --host 0.0.0.0
           ports:
             - containerPort: 8000
               name: http
@@ -49,29 +39,30 @@ spec:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
+            - name: RAY_ADDRESS
+              value: "ray://vllm-cluster-head-svc:10001"
           resources:
-            limits:
-              nvidia.com/gpu: 1
             requests:
-              nvidia.com/gpu: 1
-              memory: "18Gi"
-              cpu: "6"
+              cpu: "2"
+              memory: "8Gi"
+            limits:
+              cpu: "4"
+              memory: "16Gi"
           volumeMounts:
-            - mountPath: /dev/shm
-              name: dshm
-            - mountPath: /tmp
-              name: tmp
             - mountPath: /root/.cache/huggingface
               name: hf-cache
+          startupProbe:
+            httpGet:
+              path: /v1/health
+              port: 8000
+            failureThreshold: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: /v1/health
               port: 8000
-            initialDelaySeconds: 120
+            initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
@@ -79,21 +70,11 @@ spec:
             httpGet:
               path: /v1/health
               port: 8000
-            initialDelaySeconds: 120
+            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
       volumes:
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: "8Gi"
-        - name: tmp
-          emptyDir: {}
         - name: hf-cache
           persistentVolumeClaim:
             claimName: hf-cache-pvc
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: "Exists"
-          effect: "NoSchedule"
