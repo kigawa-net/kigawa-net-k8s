@@ -52,6 +52,15 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: gpu-operator
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: sm-operator-system
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: tidb-system
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-rpgcore
 
   # ----------------------------
   # 許可する Git リポジトリ

@@ -25,6 +25,7 @@ spec:
                     develop
                     kigawa-net-maas
                     kigawa-net-mc-ftb-mc
+                    kigawa-net-llm
                     kigawa-net-llm-proxy
                     kigawa-net-llm-ui
                     keycloak
