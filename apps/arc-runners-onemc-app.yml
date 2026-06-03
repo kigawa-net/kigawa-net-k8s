@@ -19,15 +19,19 @@ spec:
           type: dind
         minRunners: 0
         maxRunners: 5
-        resources:
-          requests:
-            memory: "4Gi"
-            cpu: "2"
-            ephemeral-storage: "20Gi"
-          limits:
-            memory: "8Gi"
-            cpu: "4"
-            ephemeral-storage: "30Gi"
+        template:
+          spec:
+            containers:
+              - name: runner
+                resources:
+                  requests:
+                    memory: "4Gi"
+                    cpu: "2"
+                    ephemeral-storage: "20Gi"
+                  limits:
+                    memory: "8Gi"
+                    cpu: "4"
+                    ephemeral-storage: "30Gi"
 
   destination:
     server: https://kubernetes.default.svc
