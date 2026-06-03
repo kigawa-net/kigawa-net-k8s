@@ -29,6 +29,7 @@ spec:
                     kigawa-net-llm-proxy
                     kigawa-net-llm-ui
                     keycloak
+                    arc-runners
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash

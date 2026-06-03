@@ -61,6 +61,12 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: onemc-rpgcore
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: arc-systems
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: arc-runners
 
   # ----------------------------
   # 許可する Git リポジトリ
@@ -69,6 +75,7 @@ spec:
     - https://github.com/kigawa-net/*
     - https://ray-project.github.io/kuberay-helm/
     - https://helm.ngc.nvidia.com/nvidia
+    - oci://ghcr.io/actions/actions-runner-controller-charts
 
   # ----------------------------
   # Namespace リソース許可
