@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: arc-helm-oci-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  type: helm
+  name: arc-charts
+  url: oci://ghcr.io/actions/actions-runner-controller-charts
+  enableOCI: "true"
