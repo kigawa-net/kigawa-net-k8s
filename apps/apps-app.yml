@@ -75,7 +75,8 @@ spec:
     - https://github.com/kigawa-net/*
     - https://ray-project.github.io/kuberay-helm/
     - https://helm.ngc.nvidia.com/nvidia
-    - oci://ghcr.io/actions/actions-runner-controller-charts
+    - oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+    - oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
 
   # ----------------------------
   # Namespace リソース許可
