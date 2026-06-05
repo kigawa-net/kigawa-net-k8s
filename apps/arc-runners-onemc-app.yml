@@ -40,25 +40,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: arc-runners
 
-  ignoreDifferences:
-    - group: actions.github.com
-      kind: AutoscalingListener
-    - group: rbac.authorization.k8s.io
-      kind: Role
-      labelMatchExpressions:
-        - key: app.kubernetes.io/component
-          operator: In
-          values: [runner-scale-set-listener]
-    - group: rbac.authorization.k8s.io
-      kind: RoleBinding
-      labelMatchExpressions:
-        - key: app.kubernetes.io/component
-          operator: In
-          values: [runner-scale-set-listener]
-
   syncPolicy:
     automated:
-      prune: true
+      prune: false
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
