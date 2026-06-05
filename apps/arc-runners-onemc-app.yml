@@ -15,6 +15,9 @@ spec:
       valuesObject:
         githubConfigUrl: "https://github.com/OneServerMC"
         githubConfigSecret: arc-github-secret
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-gha-rs-controller
         containerMode:
           type: dind
         minRunners: 0
