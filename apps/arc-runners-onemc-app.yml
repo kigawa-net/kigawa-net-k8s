@@ -24,8 +24,12 @@ spec:
         maxRunners: 5
         template:
           spec:
+            initContainers:
+              - name: init-dind-externals
+                image: ghcr.io/actions/actions-runner:2.321.0
             containers:
               - name: runner
+                image: ghcr.io/actions/actions-runner:2.321.0
                 resources:
                   requests:
                     memory: "4Gi"
@@ -35,6 +39,8 @@ spec:
                     memory: "8Gi"
                     cpu: "4"
                     ephemeral-storage: "30Gi"
+              - name: dind
+                image: docker:dind
 
   destination:
     server: https://kubernetes.default.svc
