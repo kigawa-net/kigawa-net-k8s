@@ -29,13 +29,13 @@ spec:
                 image: ghcr.io/actions/actions-runner:2.321.0
                 resources:
                   requests:
+                    memory: "1Gi"
+                    cpu: "500m"
+                    ephemeral-storage: "10Gi"
+                  limits:
                     memory: "4Gi"
                     cpu: "2"
                     ephemeral-storage: "20Gi"
-                  limits:
-                    memory: "8Gi"
-                    cpu: "4"
-                    ephemeral-storage: "30Gi"
 
   destination:
     server: https://kubernetes.default.svc
