@@ -27,8 +27,6 @@ spec:
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:2.333.1
-                command: ["/bin/sh", "-c"]
-                args: ["set -x; /home/runner/run.sh 2>&1; echo EXIT:$?"]
                 resources:
                   requests:
                     memory: "1Gi"
