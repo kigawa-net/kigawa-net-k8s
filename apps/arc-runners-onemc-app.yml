@@ -24,11 +24,9 @@ spec:
         maxRunners: 5
         template:
           spec:
-            nodeSelector:
-              kubernetes.io/hostname: k8s-worker5
             containers:
               - name: runner
-                image: ghcr.io/actions/actions-runner:2.334.0
+                image: ghcr.io/actions/actions-runner:2.333.1
                 resources:
                   requests:
                     memory: "1Gi"
