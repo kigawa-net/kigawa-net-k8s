@@ -7,6 +7,30 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
+  name: sentry-setup-exec-role
+  namespace: kigawa-net-sentry
+rules:
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods"]
+    verbs: ["get", "create", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentry-setup-exec-rolebinding
+  namespace: kigawa-net-sentry
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentry-setup-exec-role
+subjects:
+  - kind: ServiceAccount
+    name: sentry-setup-sa
+    namespace: kigawa-net-sentry
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
   name: sentry-setup-role
   namespace: kigawa-net-nextcloud
 rules:
