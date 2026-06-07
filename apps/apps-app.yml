@@ -76,6 +76,7 @@ spec:
     - https://ray-project.github.io/kuberay-helm/
     - https://helm.ngc.nvidia.com/nvidia
     - ghcr.io/actions/actions-runner-controller-charts
+    - https://sentry-kubernetes.github.io/charts
 
   # ----------------------------
   # Namespace リソース許可
