@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-sentry
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: https://sentry-kubernetes.github.io/charts
+    chart: sentry
+    targetRevision: 32.0.0
+    helm:
+      releaseName: sentry
+      valuesObject:
+        user:
+          create: true
+          email: account@kigawa.net
+          existingSecret: sentry-sec
+          existingSecretKey: admin-password
+
+        system:
+          url: https://sentry.kigawa.net
+          adminEmail: account@kigawa.net
+
+        sentry:
+          existingSecret: sentry-sec
+          existingSecretKey: system-secret-key
+
+        filestore:
+          backend: filesystem
+          filesystem:
+            path: /var/lib/sentry/files
+            persistence:
+              enabled: true
+              storageClass: rook-cephfs
+              accessMode: ReadWriteMany
+              size: 20Gi
+
+        ingress:
+          enabled: true
+          ingressClassName: haproxy
+          regexPathStyle: nginx
+          hostname: sentry.kigawa.net
+          annotations:
+            nginx.ingress.kubernetes.io/use-regex: "true"
+            nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+            nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+            nginx.ingress.kubernetes.io/proxy-busy-buffers-size: "256k"
+
+        postgresql:
+          primary:
+            persistence:
+              enabled: true
+              storageClass: rook-ceph-rbd
+              size: 20Gi
+
+        redis:
+          replica:
+            replicaCount: 0
+          master:
+            persistence:
+              enabled: true
+              storageClass: rook-ceph-rbd
+              size: 5Gi
+
+        kafka:
+          controller:
+            replicaCount: 1
+            persistence:
+              enabled: true
+              storageClass: rook-ceph-rbd
+              size: 10Gi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-sentry
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
