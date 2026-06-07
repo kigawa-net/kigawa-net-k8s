@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: snuba-migration-reset
   namespace: kigawa-net-sentry
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 spec:
   ttlSecondsAfterFinished: 86400
   template:
