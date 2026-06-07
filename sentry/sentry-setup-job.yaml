@@ -41,7 +41,7 @@ spec:
               if not key:
                   key = ProjectKey.objects.create(project=project)
               print(key.get_dsn())
-              " 2>/dev/null > /shared/dsn
+              " 2>/dev/null | grep "^https://" > /shared/dsn
               echo "DSN written: $(cat /shared/dsn)"
       containers:
         - name: create-secret
