@@ -9,18 +9,17 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: sentry-setup-sa
+      volumes:
+        - name: shared
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: sentry-sentry
+        - name: sentry-data
+          persistentVolumeClaim:
+            claimName: sentry-data
       initContainers:
-        - name: wait-for-web
-          image: busybox:1.38.0
-          command:
-            - sh
-            - -c
-            - |
-              until wget -qO- http://sentry-web:9000/_health/ 2>/dev/null | grep -q ok; do
-                echo "waiting for sentry-web..."; sleep 5
-              done
-      containers:
-        - name: setup
+        - name: get-dsn
           image: ghcr.io/getsentry/sentry:26.5.0
           env:
             - name: SENTRY_SECRET_KEY
@@ -46,6 +45,8 @@ spec:
             - name: VROOM
               value: http://sentry-vroom:8085
           volumeMounts:
+            - name: shared
+              mountPath: /shared
             - name: config
               mountPath: /etc/sentry
             - name: sentry-data
@@ -56,7 +57,7 @@ spec:
             - pipefail
             - -c
             - |
-              DSN=$(sentry django shell -c "
+              sentry django shell -c "
               from sentry.models.organization import Organization
               from sentry.models.team import Team
               from sentry.models.project import Project
@@ -79,21 +80,25 @@ spec:
               if not key:
                   key = ProjectKey.objects.create(project=project)
               print(key.get_dsn())
-              " 2>/dev/null)
-
-              echo "DSN: $DSN"
-
+              " 2>/dev/null > /shared/dsn
+              echo "DSN written: $(cat /shared/dsn)"
+      containers:
+        - name: create-secret
+          image: bitnami/kubectl:latest
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              DSN=$(cat /shared/dsn)
+              echo "Creating secret with DSN: $DSN"
               kubectl create secret generic nextcloud-sentry-sec \
                 --from-literal=dsn="$DSN" \
                 --dry-run=client -o yaml \
                 -n kigawa-net-nextcloud \
                 | kubectl apply -n kigawa-net-nextcloud -f -
-
-              echo "Secret nextcloud-sentry-sec created/updated in kigawa-net-nextcloud"
-      volumes:
-        - name: config
-          configMap:
-            name: sentry-sentry
-        - name: sentry-data
-          persistentVolumeClaim:
-            claimName: sentry-data
+              echo "Secret nextcloud-sentry-sec created/updated"
