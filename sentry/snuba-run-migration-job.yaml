@@ -8,7 +8,7 @@ spec:
   backoffLimit: 0
   template:
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
         - name: migrate
           image: ghcr.io/getsentry/snuba:26.5.0
