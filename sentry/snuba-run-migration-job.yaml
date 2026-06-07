@@ -15,7 +15,6 @@ spec:
             - snuba
             - migrations
             - migrate
-            - --force
           env:
             - name: SNUBA_SETTINGS
               value: /etc/snuba/settings.py
