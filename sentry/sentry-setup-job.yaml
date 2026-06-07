@@ -12,75 +12,36 @@ spec:
       volumes:
         - name: shared
           emptyDir: {}
-        - name: config
-          configMap:
-            name: sentry-sentry
-        - name: sentry-data
-          persistentVolumeClaim:
-            claimName: sentry-data
       initContainers:
         - name: get-dsn
-          image: ghcr.io/getsentry/sentry:26.5.0
-          env:
-            - name: SENTRY_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: sentry-sec
-                  key: system-secret-key
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: sentry-sentry-postgresql
-                  key: postgres-password
-            - name: POSTGRES_USER
-              value: postgres
-            - name: POSTGRES_NAME
-              value: sentry
-            - name: POSTGRES_HOST
-              value: sentry-sentry-postgresql
-            - name: POSTGRES_PORT
-              value: "5432"
-            - name: SNUBA
-              value: http://sentry-snuba:1218
-            - name: VROOM
-              value: http://sentry-vroom:8085
+          image: bitnami/kubectl:latest
           volumeMounts:
             - name: shared
               mountPath: /shared
-            - name: config
-              mountPath: /etc/sentry
-            - name: sentry-data
-              mountPath: /data
           command:
             - bash
             - -euo
             - pipefail
             - -c
             - |
-              sentry django shell -c "
+              POD=$(kubectl get pod -n kigawa-net-sentry -l app.kubernetes.io/name=sentry,app.kubernetes.io/component=web -o jsonpath='{.items[0].metadata.name}')
+              echo "Using sentry-web pod: $POD"
+              kubectl exec -n kigawa-net-sentry "$POD" -- sentry django shell -c "
               from sentry.models.organization import Organization
               from sentry.models.team import Team
               from sentry.models.project import Project
               from sentry.models.projectkey import ProjectKey
 
               org = Organization.objects.get()
-              team, _ = Team.objects.get_or_create(
-                  organization=org,
-                  slug='kigawa-net',
-                  defaults={'name': 'kigawa-net'}
-              )
-              project, created = Project.objects.get_or_create(
-                  organization=org,
-                  slug='nextcloud',
-                  defaults={'name': 'Nextcloud', 'platform': 'php-other'}
-              )
+              team, _ = Team.objects.get_or_create(organization=org, slug='kigawa-net', defaults={'name': 'kigawa-net'})
+              project, created = Project.objects.get_or_create(organization=org, slug='nextcloud', defaults={'name': 'Nextcloud', 'platform': 'php-other'})
               if created:
                   project.add_team(team)
               key = ProjectKey.objects.filter(project=project).first()
               if not key:
                   key = ProjectKey.objects.create(project=project)
               print(key.get_dsn())
-              " > /shared/dsn
+              " 2>/dev/null > /shared/dsn
               echo "DSN written: $(cat /shared/dsn)"
       containers:
         - name: create-secret
