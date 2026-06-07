@@ -5,6 +5,7 @@ metadata:
   namespace: kigawa-net-sentry
 spec:
   ttlSecondsAfterFinished: 86400
+  backoffLimit: 0
   template:
     spec:
       restartPolicy: OnFailure
