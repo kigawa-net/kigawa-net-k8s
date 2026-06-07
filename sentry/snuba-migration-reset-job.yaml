@@ -20,16 +20,8 @@ spec:
             - -c
             - |
               clickhouse-client --host clickhouse --query "
-                INSERT INTO migrations_local
-                  (group, migration_id, status, host_name, port, datetime, duration_ms)
-                SELECT
-                  group,
-                  migration_id,
-                  'not_started' AS status,
-                  host_name,
-                  port,
-                  now() AS datetime,
-                  0 AS duration_ms
+                INSERT INTO migrations_local (group, migration_id, timestamp, status)
+                SELECT group, migration_id, now(), 'not_started'
                 FROM migrations_local FINAL
                 WHERE status = 'in_progress'
               "
