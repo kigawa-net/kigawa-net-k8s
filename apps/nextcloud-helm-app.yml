@@ -34,7 +34,8 @@ spec:
             sentry.config.php: |-
               <?php
               $CONFIG = [
-                'log_sentry_dsn' => getenv('SENTRY_DSN'),
+                'sentry.dsn' => getenv('SENTRY_DSN'),
+                'sentry.minimum.log.level' => 2,
               ];
 
           extraEnv:
