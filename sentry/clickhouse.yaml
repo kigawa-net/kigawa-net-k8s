@@ -4,11 +4,12 @@ metadata:
   name: clickhouse-config
   namespace: kigawa-net-sentry
 data:
-  max_parser_backtracks.xml: |
+  settings.xml: |
     <clickhouse>
       <profiles>
         <default>
           <max_parser_backtracks>100000</max_parser_backtracks>
+          <allow_experimental_json_type>1</allow_experimental_json_type>
         </default>
       </profiles>
     </clickhouse>
