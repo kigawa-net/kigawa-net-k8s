@@ -1,0 +1,16 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: sentry-bws
+  namespace: kigawa-net-sentry
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: sentry-sec
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "dfacd19d-e41a-4383-8b4d-b462008b11e6"
+      secretKeyName: admin-password
+    - bwSecretId: "d2bc266d-c320-4ee9-b21a-b462008a8c8c"
+      secretKeyName: system-secret-key

@@ -30,6 +30,7 @@ spec:
                     kigawa-net-llm-ui
                     keycloak
                     arc-runners
+                    kigawa-net-sentry
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
