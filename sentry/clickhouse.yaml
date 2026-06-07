@@ -59,7 +59,8 @@ spec:
             - name: data
               mountPath: /var/lib/clickhouse
             - name: config
-              mountPath: /etc/clickhouse-server/users.d
+              mountPath: /etc/clickhouse-server/users.d/settings.xml
+              subPath: settings.xml
           readinessProbe:
             httpGet:
               path: /ping
