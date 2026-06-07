@@ -13,6 +13,18 @@ data:
         </default>
       </profiles>
     </clickhouse>
+  default-user.xml: |
+    <clickhouse>
+      <users>
+        <default>
+          <password></password>
+          <networks>
+            <ip>::/0</ip>
+          </networks>
+          <access_management>1</access_management>
+        </default>
+      </users>
+    </clickhouse>
 ---
 apiVersion: v1
 kind: Service
@@ -61,6 +73,9 @@ spec:
             - name: config
               mountPath: /etc/clickhouse-server/users.d/settings.xml
               subPath: settings.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/users.d/default-user.xml
+              subPath: default-user.xml
           readinessProbe:
             httpGet:
               path: /ping
