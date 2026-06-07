@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sentry-setup-sa
+  namespace: kigawa-net-sentry
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sentry-setup-role
+  namespace: kigawa-net-nextcloud
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sentry-setup-rolebinding
+  namespace: kigawa-net-nextcloud
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sentry-setup-role
+subjects:
+  - kind: ServiceAccount
+    name: sentry-setup-sa
+    namespace: kigawa-net-sentry
