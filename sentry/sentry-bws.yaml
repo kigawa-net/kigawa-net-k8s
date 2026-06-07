@@ -10,7 +10,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "TODO: replace with Bitwarden secret ID for sentry admin-password"
+    - bwSecretId: "dfacd19d-e41a-4383-8b4d-b462008b11e6"
       secretKeyName: admin-password
-    - bwSecretId: "TODO: replace with Bitwarden secret ID for sentry system-secret-key"
+    - bwSecretId: "d2bc266d-c320-4ee9-b21a-b462008a8c8c"
       secretKeyName: system-secret-key
