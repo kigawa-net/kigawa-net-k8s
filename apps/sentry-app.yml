@@ -67,6 +67,8 @@ spec:
               size: 5Gi
 
         kafka:
+          provisioning:
+            replicationFactor: 1
           controller:
             replicaCount: 1
             persistence:
