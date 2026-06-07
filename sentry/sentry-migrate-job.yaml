@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sentry-migrate
+  namespace: kigawa-net-sentry
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: ghcr.io/getsentry/sentry:26.5.0
+          command: ["sentry", "upgrade", "--noinput"]
+          env:
+            - name: SENTRY_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sentry-sec
+                  key: system-secret-key
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sentry-sentry-postgresql
+                  key: postgres-password
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_NAME
+              value: sentry
+            - name: POSTGRES_HOST
+              value: sentry-sentry-postgresql
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: SNUBA
+              value: http://sentry-snuba:1218
+            - name: VROOM
+              value: http://sentry-vroom:8085
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sentry
+            - name: sentry-data
+              mountPath: /data
+      volumes:
+        - name: config
+          configMap:
+            name: sentry-sentry
+        - name: sentry-data
+          persistentVolumeClaim:
+            claimName: sentry-data
