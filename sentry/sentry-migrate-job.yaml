@@ -3,8 +3,6 @@ kind: Job
 metadata:
   name: sentry-migrate
   namespace: kigawa-net-sentry
-  annotations:
-    argocd.argoproj.io/sync-options: Replace=true
 spec:
   ttlSecondsAfterFinished: 86400
   template:
