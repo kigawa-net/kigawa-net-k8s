@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: snuba-migration-reset
+  namespace: kigawa-net-sentry
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: reset
+          image: clickhouse/clickhouse-server:24
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              clickhouse-client --host clickhouse --query "
+                INSERT INTO migrations_local
+                  (group, migration_id, status, host_name, port, datetime, duration_ms)
+                SELECT
+                  group,
+                  migration_id,
+                  'not_started' AS status,
+                  host_name,
+                  port,
+                  now() AS datetime,
+                  0 AS duration_ms
+                FROM migrations_local FINAL
+                WHERE status = 'in_progress'
+              "
+              echo "Reset complete. Current in_progress migrations:"
+              clickhouse-client --host clickhouse --query "
+                SELECT group, migration_id, status
+                FROM migrations_local FINAL
+                WHERE status = 'in_progress'
+              "
