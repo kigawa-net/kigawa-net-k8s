@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-app-setup
+  namespace: kigawa-net-nextcloud
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: nextcloud-app-setup-sa
+      containers:
+        - name: setup
+          image: bitnami/kubectl:latest
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              POD=$(kubectl get pods -n kigawa-net-nextcloud \
+                -l app.kubernetes.io/name=nextcloud \
+                --field-selector=status.phase=Running \
+                -o jsonpath='{.items[0].metadata.name}')
+
+              echo "Target pod: $POD"
+
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                php occ app:list --shipped=false | grep -q "sentry" \
+                && echo "sentry app already installed" \
+                || kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                    php occ app:install sentry
+
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                php occ app:enable sentry
+
+              echo "Sentry app enabled"

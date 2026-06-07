@@ -31,6 +31,19 @@ spec:
                   'nextcloud.kigawa.net',
                 ],
               ];
+            sentry.config.php: |-
+              <?php
+              $CONFIG = [
+                'sentry.dsn' => getenv('SENTRY_DSN'),
+                'sentry.minimum.log.level' => 2,
+              ];
+
+          extraEnv:
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: nextcloud-sentry-sec
+                  key: dsn
 
         resources:
           requests:
