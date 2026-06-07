@@ -4,17 +4,13 @@ metadata:
   name: clickhouse-config
   namespace: kigawa-net-sentry
 data:
-  users_max_parser_backtracks.xml: |
+  max_parser_backtracks.xml: |
     <clickhouse>
       <profiles>
         <default>
           <max_parser_backtracks>100000</max_parser_backtracks>
         </default>
       </profiles>
-    </clickhouse>
-  server_max_parser_backtracks.xml: |
-    <clickhouse>
-      <max_parser_backtracks>100000</max_parser_backtracks>
     </clickhouse>
 ---
 apiVersion: v1
@@ -61,10 +57,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/clickhouse
-            - name: config-users
+            - name: config
               mountPath: /etc/clickhouse-server/users.d
-            - name: config-server
-              mountPath: /etc/clickhouse-server/config.d
           readinessProbe:
             httpGet:
               path: /ping
@@ -78,18 +72,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:
-        - name: config-users
+        - name: config
           configMap:
             name: clickhouse-config
-            items:
-              - key: users_max_parser_backtracks.xml
-                path: max_parser_backtracks.xml
-        - name: config-server
-          configMap:
-            name: clickhouse-config
-            items:
-              - key: server_max_parser_backtracks.xml
-                path: max_parser_backtracks.xml
   volumeClaimTemplates:
     - metadata:
         name: data
