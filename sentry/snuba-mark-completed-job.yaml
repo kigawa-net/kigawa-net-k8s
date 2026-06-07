@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: snuba-mark-completed
+  namespace: kigawa-net-sentry
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mark
+          image: clickhouse/clickhouse-server:24
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              # 0026 migration: ALTER TABLE columns already applied, mark as completed
+              clickhouse-client --host clickhouse --query "
+                INSERT INTO migrations_local (group, migration_id, timestamp, status, version)
+                SELECT group, migration_id, now(), 'completed', version + 1
+                FROM migrations_local FINAL
+                WHERE group = 'events_analytics_platform'
+                  AND migration_id = '0026_items_add_attributes_hash_map'
+                  AND status = 'in_progress'
+              "
+              echo "Mark complete. Current status:"
+              clickhouse-client --host clickhouse --query "
+                SELECT group, migration_id, status, version
+                FROM migrations_local FINAL
+                WHERE group = 'events_analytics_platform'
+                  AND migration_id = '0026_items_add_attributes_hash_map'
+              "
