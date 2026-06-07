@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: snuba-mark-0041-completed
+  namespace: kigawa-net-sentry
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mark
+          image: clickhouse/clickhouse-server:24
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              echo "Current state of 0041:"
+              clickhouse-client --host clickhouse --query "
+                SELECT group, migration_id, status, version
+                FROM migrations_local FINAL
+                WHERE group = 'events_analytics_platform' AND migration_id = '0041_hashed_attributes_index'
+              "
+              # Mark 0041 as completed (version+1 to win ReplacingMergeTree dedup)
+              # The ALTER TABLE SQL in this migration exceeds ClickHouse 24.x parser backtrack limit
+              # (applyMetadataChangesToCreateQuery uses global context with default limit=1000)
+              # Fresh install has no EAP data so missing hashed_keys column is safe to skip
+              clickhouse-client --host clickhouse --query "
+                INSERT INTO migrations_local (group, migration_id, timestamp, status, version)
+                SELECT group, migration_id, now(), 'completed', version + 1
+                FROM migrations_local FINAL
+                WHERE group = 'events_analytics_platform' AND migration_id = '0041_hashed_attributes_index'
+              "
+              echo "Done. Verify:"
+              clickhouse-client --host clickhouse --query "
+                SELECT group, migration_id, status, version
+                FROM migrations_local FINAL
+                WHERE group = 'events_analytics_platform' AND migration_id = '0041_hashed_attributes_index'
+              "
