@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sentry-saml2-setup
+  namespace: kigawa-net-sentry
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: sentry-setup-sa
+      containers:
+        - name: setup-saml2
+          image: bitnami/kubectl:latest
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              POD=$(kubectl get pod -n kigawa-net-sentry \
+                -l app.kubernetes.io/name=sentry,app.kubernetes.io/component=web \
+                -o jsonpath='{.items[0].metadata.name}')
+              echo "Using pod: $POD"
+              kubectl exec -n kigawa-net-sentry "$POD" -- sentry django shell -c "
+              import urllib.request, ssl, re
+              from sentry.models.organization import Organization
+              from sentry.models.authprovider import AuthProvider
+
+              IDP_META_URL = 'https://user.kigawa.net/realms/manage/protocol/saml/descriptor'
+              ctx = ssl.create_default_context()
+              with urllib.request.urlopen(IDP_META_URL, context=ctx) as f:
+                  xml = f.read().decode()
+
+              cert_m = re.search(r'X509Certificate>(.*?)</.*?X509Certificate', xml, re.DOTALL)
+              cert = cert_m.group(1).strip().replace('\\\n', '').replace(' ', '') if cert_m else ''
+              print('cert length:', len(cert))
+
+              org = Organization.objects.get(slug='sentry')
+              config = {
+                  'idp': {
+                      'entity_id': 'https://user.kigawa.net/realms/manage',
+                      'x509cert': cert,
+                      'sso_url': 'https://user.kigawa.net/realms/manage/protocol/saml',
+                      'slo_url': 'https://user.kigawa.net/realms/manage/protocol/saml',
+                  },
+                  'attribute_mapping': {
+                      'identifier': 'email',
+                      'user_email': 'email',
+                      'first_name': '',
+                      'last_name': '',
+                  }
+              }
+              provider, created = AuthProvider.objects.get_or_create(
+                  organization_id=org.id,
+                  defaults={'provider': 'saml2', 'config': config}
+              )
+              if not created:
+                  provider.config = config
+                  provider.save()
+                  print('Updated AuthProvider')
+              else:
+                  print('Created AuthProvider')
+              print('Done: provider=' + provider.provider + ' org=' + org.slug)
+              " 2>&1 | grep -v 'objects imported'
