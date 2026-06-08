@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-cli-upgrade
+  namespace: kigawa-net-nextcloud
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: nextcloud-app-setup-sa
+      containers:
+        - name: upgrade
+          image: bitnami/kubectl:latest
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              POD=$(kubectl get pods -n kigawa-net-nextcloud \
+                -l app.kubernetes.io/name=nextcloud \
+                --field-selector=status.phase=Running \
+                -o jsonpath='{.items[0].metadata.name}')
+
+              if [ -z "$POD" ]; then
+                echo "No running Nextcloud pod found" >&2
+                exit 1
+              fi
+
+              echo "Target pod: $POD"
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- php occ status
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- php occ upgrade
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- php occ status
