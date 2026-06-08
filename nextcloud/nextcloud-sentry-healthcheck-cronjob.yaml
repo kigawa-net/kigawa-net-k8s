@@ -1,0 +1,214 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-sentry-healthcheck
+  namespace: kigawa-net-nextcloud
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          containers:
+            - name: healthcheck
+              image: python:3.13-alpine
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: NEXTCLOUD_HEALTH_URL
+                  value: https://nextcloud.kigawa.net/status.php
+                - name: REQUEST_TIMEOUT_SECONDS
+                  value: "15"
+                - name: SENTRY_DSN
+                  valueFrom:
+                    secretKeyRef:
+                      name: nextcloud-sentry-sec
+                      key: dsn
+              command:
+                - python
+                - -c
+                - |
+                  import json
+                  import os
+                  import socket
+                  import sys
+                  import time
+                  import uuid
+                  from datetime import datetime, timezone
+                  from urllib import request
+                  from urllib.error import HTTPError, URLError
+                  from urllib.parse import urlparse
+
+
+                  HEALTH_URL = os.environ["NEXTCLOUD_HEALTH_URL"]
+                  TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT_SECONDS", "15"))
+                  SENTRY_DSN = os.environ["SENTRY_DSN"]
+
+
+                  def utc_now():
+                      return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+                  def check_nextcloud():
+                      started = time.monotonic()
+                      req = request.Request(
+                          HEALTH_URL,
+                          headers={"User-Agent": "nextcloud-sentry-healthcheck/1.0"},
+                      )
+                      try:
+                          with request.urlopen(req, timeout=TIMEOUT) as response:
+                              status_code = response.status
+                              raw_body = response.read(4096)
+                      except HTTPError as exc:
+                          status_code = exc.code
+                          raw_body = exc.read(4096)
+                          elapsed = time.monotonic() - started
+                          return False, {
+                              "status_code": status_code,
+                              "elapsed_seconds": round(elapsed, 3),
+                              "error": f"HTTP {status_code}",
+                              "response_body": raw_body.decode("utf-8", "replace"),
+                          }
+                      except (TimeoutError, socket.timeout, URLError) as exc:
+                          elapsed = time.monotonic() - started
+                          return False, {
+                              "elapsed_seconds": round(elapsed, 3),
+                              "error": str(exc),
+                          }
+
+                      elapsed = time.monotonic() - started
+                      body = raw_body.decode("utf-8", "replace")
+                      details = {
+                          "status_code": status_code,
+                          "elapsed_seconds": round(elapsed, 3),
+                          "response_body": body,
+                      }
+
+                      if status_code != 200:
+                          details["error"] = f"HTTP {status_code}"
+                          return False, details
+
+                      try:
+                          payload = json.loads(body)
+                      except json.JSONDecodeError as exc:
+                          details["error"] = f"Invalid JSON: {exc}"
+                          return False, details
+
+                      details["nextcloud_status"] = payload
+                      checks = {
+                          "installed": payload.get("installed") is True,
+                          "maintenance": payload.get("maintenance") is False,
+                          "needsDbUpgrade": payload.get("needsDbUpgrade") is False,
+                      }
+                      details["checks"] = checks
+                      if not all(checks.values()):
+                          details["error"] = "Nextcloud status.php returned an unhealthy state"
+                          return False, details
+
+                      return True, details
+
+
+                  def sentry_store_url(parsed_dsn):
+                      path_parts = [part for part in parsed_dsn.path.split("/") if part]
+                      if not path_parts:
+                          raise ValueError("Sentry DSN does not include project id")
+                      project_id = path_parts[-1]
+                      base_path = "/" + "/".join(path_parts[:-1]) if len(path_parts) > 1 else ""
+                      netloc = parsed_dsn.hostname
+                      if parsed_dsn.port:
+                          netloc = f"{netloc}:{parsed_dsn.port}"
+                      return f"{parsed_dsn.scheme}://{netloc}{base_path}/api/{project_id}/store/"
+
+
+                  def send_sentry_event(details):
+                      parsed = urlparse(SENTRY_DSN)
+                      public_key = parsed.username
+                      secret_key = parsed.password
+                      if not public_key:
+                          raise ValueError("Sentry DSN does not include public key")
+
+                      event = {
+                          "event_id": uuid.uuid4().hex,
+                          "timestamp": utc_now(),
+                          "level": "error",
+                          "platform": "python",
+                          "logger": "nextcloud.healthcheck",
+                          "message": "Nextcloud health check failed",
+                          "fingerprint": [
+                              "nextcloud-healthcheck",
+                              urlparse(HEALTH_URL).netloc,
+                          ],
+                          "tags": {
+                              "service": "nextcloud",
+                              "check": "status.php",
+                              "health_url_host": urlparse(HEALTH_URL).netloc,
+                          },
+                          "extra": {
+                              "health_url": HEALTH_URL,
+                              **details,
+                          },
+                      }
+                      auth = [
+                          "Sentry sentry_version=7",
+                          "sentry_client=nextcloud-healthcheck/1.0",
+                          f"sentry_key={public_key}",
+                      ]
+                      if secret_key:
+                          auth.append(f"sentry_secret={secret_key}")
+
+                      req = request.Request(
+                          sentry_store_url(parsed),
+                          data=json.dumps(event).encode("utf-8"),
+                          headers={
+                              "Content-Type": "application/json",
+                              "X-Sentry-Auth": ", ".join(auth),
+                          },
+                          method="POST",
+                      )
+                      with request.urlopen(req, timeout=TIMEOUT) as response:
+                          return response.status
+
+
+                  ok, details = check_nextcloud()
+                  if ok:
+                      print(
+                          "Nextcloud health check OK",
+                          json.dumps(details, ensure_ascii=False, sort_keys=True),
+                      )
+                      sys.exit(0)
+
+                  try:
+                      sentry_status = send_sentry_event(details)
+                      details["sentry_status_code"] = sentry_status
+                  except Exception as exc:
+                      details["sentry_error"] = str(exc)
+
+                  print(
+                      "Nextcloud health check failed",
+                      json.dumps(details, ensure_ascii=False, sort_keys=True),
+                      file=sys.stderr,
+                  )
+                  sys.exit(1)
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65534
+                seccompProfile:
+                  type: RuntimeDefault
