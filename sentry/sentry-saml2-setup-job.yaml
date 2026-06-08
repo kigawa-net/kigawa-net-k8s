@@ -27,8 +27,10 @@ spec:
               from sentry.models.organization import Organization
               from sentry.models.authprovider import AuthProvider
 
-              IDP_META_URL = 'https://user.kigawa.net/realms/manage/protocol/saml/descriptor'
+              IDP_META_URL = 'https://keycloak-service.keycloak.svc.cluster.local:8443/realms/manage/protocol/saml/descriptor'
               ctx = ssl.create_default_context()
+              ctx.check_hostname = False
+              ctx.verify_mode = ssl.CERT_NONE
               with urllib.request.urlopen(IDP_META_URL, context=ctx) as f:
                   xml = f.read().decode()
 
