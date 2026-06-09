@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-mamoru-central-server-app
+  namespace: argocd
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: mamoru-central-server
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-mamoru-main
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true

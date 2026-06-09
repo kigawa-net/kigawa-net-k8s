@@ -23,6 +23,7 @@ spec:
                     kigawa-net-lp-main
                     develop
                     prometheus
+                    kigawa-net-mamoru-main
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
