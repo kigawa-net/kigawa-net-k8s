@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mamoru-central-server
+  namespace: kigawa-net-mamoru-main
+  labels:
+    app: mamoru-central-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mamoru-central-server
+  template:
+    metadata:
+      labels:
+        app: mamoru-central-server
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: mamoru-central-server
+          image: harbor.kigawa.net/mamoru/mamoru-central-server:main-placeholder
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1536Mi"
