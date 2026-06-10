@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: haproxy
   rules:
-    - host: central.mamoru.kigawa.net
+    - host: mamoru-central.kigawa.net
       http:
         paths:
           - path: /
