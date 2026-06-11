@@ -24,23 +24,13 @@ spec:
         maxRunners: 5
         template:
           spec:
-            affinity:
-              nodeAffinity:
-                requiredDuringSchedulingIgnoredDuringExecution:
-                  nodeSelectorTerms:
-                    - matchExpressions:
-                        - key: kubernetes.io/hostname
-                          operator: NotIn
-                          values:
-                            - k8s-worker5
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:2.334.0
                 resources:
                   requests:
-                    memory: "2Gi"
-                    cpu: "1"
-                    ephemeral-storage: "20Gi"
+                    memory: "512Mi"
+                    cpu: "500m"
                   limits:
                     memory: "8Gi"
                     cpu: "4"
@@ -52,8 +42,8 @@ spec:
                   - --iptables=false
                 resources:
                   requests:
-                    memory: "1Gi"
-                    cpu: "500m"
+                    memory: "256Mi"
+                    cpu: "250m"
                   limits:
                     memory: "6Gi"
                     cpu: "2"
