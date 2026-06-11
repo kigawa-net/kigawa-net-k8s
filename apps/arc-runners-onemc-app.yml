@@ -35,18 +35,6 @@ spec:
                     memory: "8Gi"
                     cpu: "4"
                     ephemeral-storage: "40Gi"
-              - name: dind
-                args:
-                  - dockerd
-                  - --host=unix:///var/run/docker.sock
-                  - --iptables=false
-                resources:
-                  requests:
-                    memory: "256Mi"
-                    cpu: "250m"
-                  limits:
-                    memory: "6Gi"
-                    cpu: "2"
 
   destination:
     server: https://kubernetes.default.svc
