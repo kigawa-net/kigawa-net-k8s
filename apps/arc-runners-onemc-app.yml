@@ -24,6 +24,15 @@ spec:
         maxRunners: 5
         template:
           spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: NotIn
+                          values:
+                            - k8s-worker3
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:2.334.0
