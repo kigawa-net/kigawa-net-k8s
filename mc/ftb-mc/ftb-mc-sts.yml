@@ -4,7 +4,7 @@ kind: StatefulSet
 metadata:
   name: kigawa-net-ftb-mc
 spec:
-  replicas: 1
+  replicas: 0
   serviceName: kigawa-net-ftb-mc
   selector:
     matchLabels:
