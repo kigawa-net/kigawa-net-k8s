@@ -48,12 +48,15 @@ spec:
             - name: DB_NAME
               value: mamoru
             - name: DB_USER
-              value: mamoru
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
-                  key: MYSQL_PASSWORD
+                  key: pass
           resources:
             requests:
               cpu: "250m"

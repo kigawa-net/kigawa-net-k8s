@@ -23,16 +23,19 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
-                  key: MYSQL_ROOT_PASSWORD
+                  key: pass
             - name: MYSQL_DATABASE
               value: mamoru
             - name: MYSQL_USER
-              value: mamoru
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
-                  key: MYSQL_PASSWORD
+                  key: pass
           ports:
             - containerPort: 3306
           volumeMounts:
