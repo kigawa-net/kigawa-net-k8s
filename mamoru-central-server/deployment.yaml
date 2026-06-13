@@ -40,6 +40,23 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          env:
+            - name: DB_HOST
+              value: mamoru-mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: mamoru
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
           resources:
             requests:
               cpu: "250m"
