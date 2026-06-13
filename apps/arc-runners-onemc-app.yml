@@ -44,7 +44,6 @@ spec:
                   limits:
                     memory: "8Gi"
                     cpu: "4"
-                    ephemeral-storage: "40Gi"
 
   destination:
     server: https://kubernetes.default.svc
