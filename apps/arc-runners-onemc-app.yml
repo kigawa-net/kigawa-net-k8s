@@ -24,30 +24,26 @@ spec:
         maxRunners: 5
         template:
           spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: NotIn
+                          values:
+                            - k8s-worker3
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:2.334.0
+                command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    memory: "2Gi"
-                    cpu: "1"
-                    ephemeral-storage: "20Gi"
+                    memory: "512Mi"
+                    cpu: "500m"
                   limits:
                     memory: "8Gi"
                     cpu: "4"
-                    ephemeral-storage: "40Gi"
-              - name: dind
-                args:
-                  - dockerd
-                  - --host=unix:///var/run/docker.sock
-                  - --iptables=false
-                resources:
-                  requests:
-                    memory: "1Gi"
-                    cpu: "500m"
-                  limits:
-                    memory: "6Gi"
-                    cpu: "2"
 
   destination:
     server: https://kubernetes.default.svc

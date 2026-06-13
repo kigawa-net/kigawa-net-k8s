@@ -24,6 +24,7 @@ spec:
                     develop
                     prometheus
                     kigawa-net-mamoru-main
+                    onemc-rpgcore
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
