@@ -21,7 +21,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              exec python -m vllm.entrypoints.openai.api_server \
+              exec python3 -m vllm.entrypoints.openai.api_server \
                 --model Qwen/Qwen2.5-14B-Instruct-AWQ \
                 --served-model-name production-llm \
                 --tensor-parallel-size 3 \

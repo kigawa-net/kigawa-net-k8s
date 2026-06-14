@@ -14,8 +14,8 @@ spec:
       releaseName: kuberay-operator
       valuesObject:
         image:
-          repository: rancher/kuberay-operator
-          tag: "1.2.1"
+          repository: kuberay/operator
+          tag: "v1.2.1"
         rbac:
           create: true
         clusterScope: false
