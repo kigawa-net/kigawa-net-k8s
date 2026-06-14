@@ -32,6 +32,8 @@ spec:
                     arc-runners
                     kigawa-net-sentry
                     kigawa-net-mamoru-main
+                    mcp-discord
+                    mcp-growi
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
