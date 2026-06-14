@@ -65,7 +65,7 @@ spec:
           ports:
             - containerPort: 3306
           volumeMounts:
-            - name: mysql-data
+            - name: mysql-storage
               mountPath: /var/lib/mysql
           livenessProbe:
             exec:
@@ -98,7 +98,7 @@ spec:
               memory: "1Gi"
   volumeClaimTemplates:
     - metadata:
-        name: mysql-data
+        name: mysql-storage
       spec:
         accessModes:
           - ReadWriteOnce
