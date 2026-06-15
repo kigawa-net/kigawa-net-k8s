@@ -41,6 +41,21 @@ spec:
       labels:
         app: mamoru-mysql
     spec:
+      initContainers:
+        - name: cleanup
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              if [ -n "$(ls -A /var/lib/mysql)" ] && [ ! -d "/var/lib/mysql/mysql" ]; then
+                echo "Cleaning up partial/lost+found files..."
+                rm -rf /var/lib/mysql/*
+                rm -rf /var/lib/mysql/.??*
+              fi
+          volumeMounts:
+            - name: mysql-vol
+              mountPath: /var/lib/mysql
       containers:
         - name: mysql
           image: mysql:8.4
