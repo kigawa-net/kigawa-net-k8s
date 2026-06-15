@@ -65,8 +65,19 @@ spec:
           ports:
             - containerPort: 3306
           volumeMounts:
-            - name: mysql-storage
+            - name: mysql-vol
               mountPath: /var/lib/mysql
+          startupProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             exec:
               command:
@@ -74,7 +85,6 @@ spec:
                 - ping
                 - -h
                 - localhost
-            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
@@ -85,7 +95,6 @@ spec:
                 - ping
                 - -h
                 - localhost
-            initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
@@ -98,7 +107,7 @@ spec:
               memory: "1Gi"
   volumeClaimTemplates:
     - metadata:
-        name: mysql-storage
+        name: mysql-vol
       spec:
         accessModes:
           - ReadWriteOnce
