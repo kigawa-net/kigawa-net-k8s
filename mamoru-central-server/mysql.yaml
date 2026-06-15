@@ -48,10 +48,15 @@ spec:
             - sh
             - -c
             - |
-              if [ -n "$(ls -A /var/lib/mysql)" ] && [ ! -d "/var/lib/mysql/mysql" ]; then
-                echo "Cleaning up partial/lost+found files..."
-                rm -rf /var/lib/mysql/*
-                rm -rf /var/lib/mysql/.??*
+              DATA_DIR=/var/lib/mysql
+              if [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
+                echo "Data directory is empty, no cleanup needed."
+              elif [ -d "$DATA_DIR/mysql" ] && [ -f "$DATA_DIR/ibdata1" ] && [ -f "$DATA_DIR/undo_001" ] && [ -d "$DATA_DIR/sys" ]; then
+                echo "MySQL data directory appears healthy, skipping cleanup."
+              else
+                echo "Incomplete or corrupt MySQL data directory detected. Cleaning up..."
+                rm -rf "$DATA_DIR"/* "$DATA_DIR"/.??* 2>/dev/null || true
+                echo "Cleanup complete."
               fi
           volumeMounts:
             - name: mysql-vol
@@ -92,7 +97,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 60
+            failureThreshold: 180
           livenessProbe:
             exec:
               command:
