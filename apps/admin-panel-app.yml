@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-admin-panel
+  namespace: argocd
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: https://github.com/kigawa-net/admin-panel.git
+    targetRevision: main
+    path: k8s/overlays/production
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-admin-panel
+
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
