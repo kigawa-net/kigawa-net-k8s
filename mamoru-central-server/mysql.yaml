@@ -42,22 +42,74 @@ spec:
         app: mamoru-mysql
     spec:
       initContainers:
-        - name: cleanup
-          image: busybox
+        - name: mysql-init
+          image: mysql:8.4
           command:
-            - sh
+            - bash
             - -c
             - |
+              set -e
               DATA_DIR=/var/lib/mysql
-              if [ -z "$(ls -A "$DATA_DIR" 2>/dev/null)" ]; then
-                echo "Data directory is empty, no cleanup needed."
-              elif [ -d "$DATA_DIR/mysql" ] && [ -f "$DATA_DIR/ibdata1" ] && [ -f "$DATA_DIR/undo_001" ] && [ -d "$DATA_DIR/sys" ]; then
-                echo "MySQL data directory appears healthy, skipping cleanup."
-              else
-                echo "Incomplete or corrupt MySQL data directory detected. Cleaning up..."
-                rm -rf "$DATA_DIR"/* "$DATA_DIR"/.??* 2>/dev/null || true
-                echo "Cleanup complete."
+              MARKER="$DATA_DIR/.mamoru-init-complete"
+              SOCK=/tmp/mysql-init.sock
+
+              if [ -f "$MARKER" ]; then
+                echo "Init marker present. MySQL already initialized."
+                exit 0
               fi
+
+              echo "Wiping data directory for fresh initialization..."
+              rm -rf "$DATA_DIR"/* "$DATA_DIR"/.??* 2>/dev/null || true
+
+              echo "Running mysqld --initialize-insecure..."
+              mysqld --initialize-insecure --user=mysql --datadir="$DATA_DIR"
+              echo "--initialize-insecure complete."
+
+              echo "Starting temporary MySQL (--skip-networking)..."
+              mysqld --skip-networking --socket="$SOCK" --user=mysql --datadir="$DATA_DIR" &
+              MYSQLD_PID=$!
+
+              echo "Waiting for temporary MySQL to be ready..."
+              for i in $(seq 1 240); do
+                if mysqladmin ping -u root -S "$SOCK" --connect-timeout=5 2>/dev/null; then
+                  echo "Temporary MySQL is ready (attempt $i)."
+                  break
+                fi
+                sleep 5
+              done
+
+              echo "Configuring root password, user, and database..."
+              mysql -u root -S "$SOCK" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
+              mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -S "$SOCK" -e "
+                CREATE DATABASE IF NOT EXISTS \`mamoru\`;
+                CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
+                GRANT ALL ON \`mamoru\`.* TO '${MYSQL_USER}'@'%';
+                FLUSH PRIVILEGES;
+              "
+
+              echo "Shutting down temporary MySQL..."
+              mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" -S "$SOCK" shutdown
+              wait "$MYSQLD_PID"
+              echo "Temporary MySQL stopped."
+
+              touch "$MARKER"
+              echo "MySQL initialization complete. Marker written."
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
           volumeMounts:
             - name: mysql-vol
               mountPath: /var/lib/mysql
@@ -97,7 +149,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 180
+            failureThreshold: 60
           livenessProbe:
             exec:
               command:
