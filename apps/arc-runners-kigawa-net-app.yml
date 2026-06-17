@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-runner
+  namespace: argocd
+spec:
+  project: kigawa-net
+
+  source:
+    repoURL: ghcr.io/actions/actions-runner-controller-charts
+    chart: gha-runner-scale-set
+    targetRevision: 0.14.2
+    helm:
+      releaseName: kigawa-net-runner
+      valuesObject:
+        githubConfigUrl: "https://github.com/kigawa-net"
+        githubConfigSecret: arc-github-secret-kigawa-net
+        controllerServiceAccount:
+          namespace: arc-systems
+          name: arc-gha-rs-controller
+        containerMode:
+          type: dind
+        minRunners: 0
+        maxRunners: 5
+        template:
+          spec:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: NotIn
+                          values:
+                            - k8s-worker3
+            containers:
+              - name: runner
+                image: ghcr.io/actions/actions-runner:2.334.0
+                command: ["/home/runner/run.sh"]
+                resources:
+                  requests:
+                    memory: "512Mi"
+                    cpu: "500m"
+                  limits:
+                    memory: "8Gi"
+                    cpu: "4"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arc-runners
+
+  syncPolicy:
+    automated:
+      prune: false
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
