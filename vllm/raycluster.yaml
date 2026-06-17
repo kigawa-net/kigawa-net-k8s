@@ -65,12 +65,12 @@ spec:
               resources:
                 requests:
                   nvidia.com/gpu: "1"
-                  cpu: "4"
-                  memory: "16Gi"
+                  cpu: "1"
+                  memory: "4Gi"
                 limits:
                   nvidia.com/gpu: "1"
-                  cpu: "8"
-                  memory: "32Gi"
+                  cpu: "4"
+                  memory: "16Gi"
               env:
                 - name: NCCL_IB_DISABLE
                   value: "1"
