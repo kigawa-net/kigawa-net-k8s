@@ -54,6 +54,19 @@ spec:
             - name: cephfs-root
               mountPath: /mnt/cephfs
 
+          extraInitContainers:
+            - name: fix-config-permissions
+              image: busybox
+              command:
+                - sh
+                - -c
+                - chown www-data:www-data /var/www/html/config
+              securityContext:
+                runAsUser: 0
+              volumeMounts:
+                - name: nextcloud-main
+                  mountPath: /var/www/html
+
         resources:
           requests:
             memory: 512Mi
@@ -62,9 +75,9 @@ spec:
 
         livenessProbe:
           enabled: true
-          initialDelaySeconds: 300
+          initialDelaySeconds: 60
           periodSeconds: 15
-          failureThreshold: 10
+          failureThreshold: 40
 
         readinessProbe:
           enabled: true
@@ -76,7 +89,7 @@ spec:
           enabled: true
           initialDelaySeconds: 30
           periodSeconds: 10
-          failureThreshold: 128
+          failureThreshold: 600
 
         ingress:
           enabled: true
