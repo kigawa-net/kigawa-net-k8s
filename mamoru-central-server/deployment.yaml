@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: mamoru-central-server
-          image: harbor.kigawa.net/private/mamoru-central-server:main-a7241bcd4e001e29d3a79d61dd28eaae5d634c0f
+          image: harbor.kigawa.net/private/mamoru-central-server:main-0ce710c8e88c39585405a84a5a40cb05a79ca010
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
