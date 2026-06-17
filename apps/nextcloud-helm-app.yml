@@ -45,6 +45,15 @@ spec:
                   name: nextcloud-sentry-sec
                   key: dsn
 
+          extraVolumes:
+            - name: cephfs-root
+              persistentVolumeClaim:
+                claimName: rook-cephfs-root
+
+          extraVolumeMounts:
+            - name: cephfs-root
+              mountPath: /mnt/cephfs
+
         resources:
           requests:
             memory: 512Mi
