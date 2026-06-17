@@ -13,7 +13,7 @@ spec:
     helm:
       releaseName: arc-runner-set-kigawa01
       valuesObject:
-        githubConfigUrl: "https://github.com/kigawa01"
+        githubConfigUrl: "https://github.com/kigawa01/bosai-mamoru"
         githubConfigSecret: arc-github-secret-kigawa01
         controllerServiceAccount:
           namespace: arc-systems
