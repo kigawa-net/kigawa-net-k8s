@@ -36,6 +36,7 @@ spec:
             containers:
               - name: runner
                 image: ghcr.io/actions/actions-runner:2.334.0
+                imagePullPolicy: IfNotPresent
                 command: ["/home/runner/run.sh"]
                 resources:
                   requests:
