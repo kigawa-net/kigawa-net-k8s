@@ -10,7 +10,7 @@ spec:
   csi:
     driver: kigawa-system-rook-ceph.cephfs.csi.ceph.com
     nodeStageSecretRef:
-      name: rook-csi-cephfs-node
+      name: rook-csi-cephfs-node-user
       namespace: kigawa-system-rook-ceph
     volumeAttributes:
       clusterID: kigawa-system-rook-ceph
