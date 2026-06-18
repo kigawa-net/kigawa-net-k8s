@@ -61,7 +61,7 @@ spec:
                         values: ["k8s-worker3"]
           containers:
             - name: ray-worker
-              image: vllm/vllm-openai:v0.7.2
+              image: vllm/vllm-openai:v0.23.0
               resources:
                 requests:
                   nvidia.com/gpu: "1"
