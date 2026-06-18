@@ -13,11 +13,12 @@ spec:
     helm:
       releaseName: gpu-operator
       valuesObject:
-        # ドライバーとToolkitはホスト側にインストール済み
+        # ドライバーはホスト側にインストール済み
         driver:
           enabled: false
+        # toolkit を有効化して CDI スペックを /etc/cdi/ に自動生成させる
         toolkit:
-          enabled: false
+          enabled: true
         # GTX 650 (Kepler, compute capability 3.0) は DCGM 非対応 (要 cc 3.5+)
         dcgm:
           enabled: false
