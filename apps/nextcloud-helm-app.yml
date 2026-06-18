@@ -67,8 +67,9 @@ spec:
                 - name: nextcloud-main
                   mountPath: /var/www/html
 
-        podSecurityContext:
-          fsGroupChangePolicy: "OnRootMismatch"
+          podSecurityContext:
+            fsGroup: 33
+            fsGroupChangePolicy: "OnRootMismatch"
 
         resources:
           requests:
