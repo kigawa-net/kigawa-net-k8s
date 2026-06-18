@@ -22,8 +22,9 @@ spec:
           args:
             - |
               exec python3 -m vllm.entrypoints.openai.api_server \
-                --model Qwen/Qwen3.5-4B \
+                --model Qwen/Qwen3-4B-AWQ \
                 --served-model-name production-llm \
+                --quantization awq \
                 --tensor-parallel-size 1 \
                 --max-model-len 8192 \
                 --gpu-memory-utilization 0.9 \
