@@ -67,6 +67,9 @@ spec:
                 - name: nextcloud-main
                   mountPath: /var/www/html
 
+        podSecurityContext:
+          fsGroupChangePolicy: "OnRootMismatch"
+
         resources:
           requests:
             memory: 512Mi
