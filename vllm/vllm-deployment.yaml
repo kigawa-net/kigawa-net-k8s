@@ -29,6 +29,7 @@ spec:
                 --max-model-len 8192 \
                 --gpu-memory-utilization 0.9 \
                 --dtype auto \
+                --trust-remote-code \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
