@@ -141,6 +141,18 @@ spec:
             usernameKey: username
             passwordKey: mariadb-password
 
+        cronjob:
+          enabled: true
+          type: cronjob
+          cronjob:
+            schedule: "*/5 * * * *"
+            successfulJobsHistoryLimit: 3
+            failedJobsHistoryLimit: 3
+            backoffLimit: 1
+            securityContext:
+              runAsUser: 33
+              runAsGroup: 33
+
 
   destination:
     server: https://kubernetes.default.svc
