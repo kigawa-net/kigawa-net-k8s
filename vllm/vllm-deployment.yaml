@@ -28,10 +28,11 @@ spec:
                 --served-model-name production-llm \
                 --quantization awq_marlin \
                 --tensor-parallel-size 1 \
-                --max-model-len 8192 \
-                --gpu-memory-utilization 0.9 \
+                --max-model-len 4096 \
+                --gpu-memory-utilization 0.85 \
                 --dtype auto \
                 --trust-remote-code \
+                --enforce-eager \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
