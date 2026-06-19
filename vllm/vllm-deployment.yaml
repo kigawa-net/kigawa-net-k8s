@@ -33,6 +33,7 @@ spec:
                 --dtype float16 \
                 --trust-remote-code \
                 --enforce-eager \
+                --max-num-seqs 32 \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
