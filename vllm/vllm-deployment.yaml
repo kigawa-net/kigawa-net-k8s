@@ -33,7 +33,6 @@ spec:
                 --dtype float16 \
                 --trust-remote-code \
                 --enforce-eager \
-                --disable-prefix-caching \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
