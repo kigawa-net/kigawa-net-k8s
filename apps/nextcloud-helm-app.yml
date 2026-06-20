@@ -71,6 +71,12 @@ spec:
             fsGroup: 33
             fsGroupChangePolicy: "OnRootMismatch"
 
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 0
+
         resources:
           requests:
             memory: 512Mi
