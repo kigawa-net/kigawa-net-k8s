@@ -47,6 +47,8 @@ spec:
                   key: api-key
             - name: TMPDIR
               value: /vllm-tmp
+            - name: VLLM_ATTENTION_BACKEND
+              value: TRITON_ATTN
           resources:
             requests:
               nvidia.com/gpu: "1"
