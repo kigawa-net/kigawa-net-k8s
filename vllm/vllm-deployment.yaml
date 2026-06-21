@@ -65,14 +65,14 @@ spec:
               name: vllm-tmp
           startupProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             failureThreshold: 60
             periodSeconds: 30
             timeoutSeconds: 10
           livenessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
@@ -80,7 +80,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
