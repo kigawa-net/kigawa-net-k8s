@@ -23,11 +23,13 @@ spec:
           env:
             - name: ARGOCD_SERVER
               value: argocd-server.argocd.svc.cluster.local
-            - name: ARGOCD_TOKEN
+            - name: ARGOCD_USERNAME
+              value: admin
+            - name: ARGOCD_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mcp-for-argocd-secret
-                  key: token
+                  name: argocd-initial-admin-secret
+                  key: password
             - name: ARGOCD_INSECURE
               value: "true"
           resources:
