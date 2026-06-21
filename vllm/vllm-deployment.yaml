@@ -29,7 +29,7 @@ spec:
                 --quantization awq_marlin \
                 --tensor-parallel-size 1 \
                 --max-model-len 1024 \
-                --gpu-memory-utilization 0.95 \
+                --gpu-memory-utilization 0.85 \
                 --dtype float16 \
                 --trust-remote-code \
                 --enforce-eager \
@@ -47,8 +47,6 @@ spec:
                   key: api-key
             - name: TMPDIR
               value: /vllm-tmp
-            - name: VLLM_ATTENTION_BACKEND
-              value: TRITON_ATTN
           resources:
             requests:
               nvidia.com/gpu: "1"
