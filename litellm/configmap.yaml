@@ -9,7 +9,7 @@ data:
       - model_name: production-llm
         litellm_params:
           model: openai/production-llm
-          api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local
+          api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local/v1
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
