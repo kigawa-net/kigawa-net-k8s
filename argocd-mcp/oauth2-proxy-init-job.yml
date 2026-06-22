@@ -28,6 +28,31 @@ subjects:
     name: oauth2-proxy-init
     namespace: argocd
 ---
+# keycloak namespace の管理者 Secret 読み取り権限
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: oauth2-proxy-init-keycloak-reader
+  namespace: keycloak
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: oauth2-proxy-init-keycloak-reader
+  namespace: keycloak
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: oauth2-proxy-init-keycloak-reader
+subjects:
+  - kind: ServiceAccount
+    name: oauth2-proxy-init
+    namespace: argocd
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -50,16 +75,65 @@ spec:
             - -c
             - |
               set -e
+
               if kubectl get secret oauth2-proxy-secret -n argocd > /dev/null 2>&1; then
                 echo "Secret already exists, skipping"
                 exit 0
               fi
-              client_id=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-id}')
-              client_secret=$(openssl rand -base64 32 | tr -d '\n=')
-              cookie_secret=$(openssl rand -base64 32 | tr -d '\n=')
+
+              apt-get update -qq && apt-get install -y -qq curl jq
+
+              # ConfigMap から設定を読み込み
+              CLIENT_ID=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-id}')
+              KC_URL=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-url}')
+              KC_REALM=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-realm}')
+              KC_ADMIN_NS=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-secret-namespace}')
+              KC_ADMIN_SECRET=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-secret-name}')
+              KC_USER_KEY=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-username-key}')
+              KC_PASS_KEY=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-password-key}')
+
+              # Keycloak 管理者認証情報を取得
+              KC_ADMIN=$(kubectl get secret "$KC_ADMIN_SECRET" -n "$KC_ADMIN_NS" -o jsonpath="{.data.$KC_USER_KEY}" | base64 -d)
+              KC_ADMIN_PASSWORD=$(kubectl get secret "$KC_ADMIN_SECRET" -n "$KC_ADMIN_NS" -o jsonpath="{.data.$KC_PASS_KEY}" | base64 -d)
+
+              # Keycloak Admin API トークン取得
+              TOKEN=$(curl -sf -X POST "$KC_URL/realms/master/protocol/openid-connect/token" \
+                -d "client_id=admin-cli" \
+                -d "username=$KC_ADMIN" \
+                -d "password=$KC_ADMIN_PASSWORD" \
+                -d "grant_type=password" | jq -r '.access_token')
+
+              # クライアントが存在するか確認
+              CLIENT_INTERNAL_ID=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients?clientId=$CLIENT_ID" \
+                -H "Authorization: Bearer $TOKEN" | jq -r '.[0].id // empty')
+
+              if [ -z "$CLIENT_INTERNAL_ID" ]; then
+                echo "Creating Keycloak client: $CLIENT_ID"
+                curl -sf -X POST "$KC_URL/admin/realms/$KC_REALM/clients" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"clientId\": \"$CLIENT_ID\",
+                    \"enabled\": true,
+                    \"publicClient\": false,
+                    \"redirectUris\": [\"https://mcp-argocd.kigawa.net/oauth2/callback\"],
+                    \"protocol\": \"openid-connect\"
+                  }"
+
+                CLIENT_INTERNAL_ID=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients?clientId=$CLIENT_ID" \
+                  -H "Authorization: Bearer $TOKEN" | jq -r '.[0].id')
+              fi
+
+              # client-secret を取得
+              CLIENT_SECRET=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients/$CLIENT_INTERNAL_ID/client-secret" \
+                -H "Authorization: Bearer $TOKEN" | jq -r '.value')
+
+              COOKIE_SECRET=$(openssl rand -base64 32 | tr -d '\n=')
+
               kubectl create secret generic oauth2-proxy-secret \
-                --from-literal=client-id="$client_id" \
-                --from-literal=client-secret="$client_secret" \
-                --from-literal=cookie-secret="$cookie_secret" \
+                --from-literal=client-id="$CLIENT_ID" \
+                --from-literal=client-secret="$CLIENT_SECRET" \
+                --from-literal=cookie-secret="$COOKIE_SECRET" \
                 -n argocd
+
               echo "Secret created successfully"

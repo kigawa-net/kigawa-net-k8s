@@ -5,3 +5,10 @@ metadata:
   namespace: argocd
 data:
   client-id: mcp-argocd
+  keycloak-url: https://user.kigawa.net
+  keycloak-realm: kigawa-net
+  # Keycloak 管理者認証情報が格納された Secret の namespace と name
+  keycloak-admin-secret-namespace: keycloak
+  keycloak-admin-secret-name: keycloak-admin
+  keycloak-admin-username-key: username
+  keycloak-admin-password-key: password
