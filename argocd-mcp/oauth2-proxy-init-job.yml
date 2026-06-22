@@ -55,7 +55,7 @@ spec:
                 exit 0
               fi
               client_id=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-id}')
-              client_secret=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-secret}')
+              client_secret=$(openssl rand -base64 32 | tr -d '\n=')
               cookie_secret=$(openssl rand -base64 32 | tr -d '\n=')
               kubectl create secret generic oauth2-proxy-secret \
                 --from-literal=client-id="$client_id" \

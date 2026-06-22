@@ -26,6 +26,7 @@ spec:
             - --skip-provider-button=true
             - --pass-authorization-header=true
             - --pass-access-token=true
+            - --code-challenge-method=S256
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:

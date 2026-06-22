@@ -5,5 +5,3 @@ metadata:
   namespace: argocd
 data:
   client-id: mcp-argocd
-  # Keycloak クライアント作成時にこの値をクライアントシークレットとして設定する
-  client-secret: changeme-replace-with-actual-secret
