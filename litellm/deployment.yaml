@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: litellm
+      annotations:
+        config-version: "2"
     spec:
       containers:
         - name: litellm
