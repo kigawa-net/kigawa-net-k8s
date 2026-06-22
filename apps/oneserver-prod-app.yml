@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oneserver-prod
+  namespace: argocd
+spec:
+  project: one
+
+  source:
+    repoURL: https://github.com/OneServerMC/RpgCore.git
+    targetRevision: develop
+    path: k8s/one/overlays/prod
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: onemc-rpgcore
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
