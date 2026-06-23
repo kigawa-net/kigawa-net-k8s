@@ -70,13 +70,16 @@ spec:
               MYSQLD_PID=$!
 
               echo "Waiting for temporary MySQL to be ready..."
+              READY=0
               for i in $(seq 1 240); do
                 if mysqladmin ping -u root -S "$SOCK" --connect-timeout=5 2>/dev/null; then
                   echo "Temporary MySQL is ready (attempt $i)."
+                  READY=1
                   break
                 fi
                 sleep 5
               done
+              [ "$READY" -eq 1 ] || { echo "ERROR: MySQL did not start within timeout."; kill "$MYSQLD_PID" 2>/dev/null || true; exit 1; }
 
               echo "Configuring root password, user, and database..."
               mysql -u root -S "$SOCK" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
