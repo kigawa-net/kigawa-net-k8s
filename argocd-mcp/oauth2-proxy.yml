@@ -70,7 +70,8 @@ spec:
               CLIENT_SECRET=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients/$CLIENT_INTERNAL_ID/client-secret" \
                 -H "Authorization: Bearer $TOKEN" | jq -r '.value')
 
-              COOKIE_SECRET=$(openssl rand -base64 32 | tr -d '\n=')
+              # 32 bytes (hex) = oauth2-proxy が要求する有効なサイズ
+              COOKIE_SECRET=$(openssl rand -hex 16)
 
               kubectl create secret generic oauth2-proxy-secret \
                 --from-literal=client-id="$CLIENT_ID" \
