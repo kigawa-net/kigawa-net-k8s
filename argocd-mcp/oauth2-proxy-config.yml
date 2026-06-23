@@ -6,7 +6,7 @@ metadata:
 data:
   client-id: mcp-argocd
   keycloak-url: https://user.kigawa.net
-  keycloak-realm: kigawa-net
+  keycloak-realm: manage
   keycloak-admin-secret-namespace: keycloak
   keycloak-admin-secret-name: keycloak-initial-admin
   keycloak-admin-username-key: username
