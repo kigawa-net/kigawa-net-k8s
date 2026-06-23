@@ -37,6 +37,36 @@ spec:
                 'sentry.dsn' => getenv('SENTRY_DSN'),
                 'sentry.minimum.log.level' => 2,
               ];
+            performance.config.php: |-
+              <?php
+              $CONFIG = [
+                'memcache.local' => '\OC\Memcache\APCu',
+                'memcache.distributed' => '\OC\Memcache\Redis',
+                'memcache.locking' => '\OC\Memcache\Redis',
+                'redis' => [
+                  'host' => 'nextcloud-redis-master',
+                  'port' => 6379,
+                  'timeout' => 1.5,
+                  'read_timeout' => 1.5,
+                  'dbindex' => 0,
+                ],
+                'default_phone_region' => 'JP',
+                'maintenance_window_start' => 1,
+                'enable_previews' => true,
+                'enabledPreviewProviders' => [
+                  'OC\Preview\Movie',
+                  'OC\Preview\PNG',
+                  'OC\Preview\JPEG',
+                  'OC\Preview\GIF',
+                  'OC\Preview\BMP',
+                  'OC\Preview\XBitmap',
+                  'OC\Preview\MP3',
+                  'OC\Preview\MP4',
+                  'OC\Preview\TXT',
+                  'OC\Preview\MarkDown',
+                  'OC\Preview\PDF',
+                ],
+              ];
 
           extraEnv:
             - name: SENTRY_DSN
@@ -80,8 +110,10 @@ spec:
         resources:
           requests:
             memory: 512Mi
+            cpu: 250m
           limits:
-            memory: 1Gi
+            memory: 2Gi
+            cpu: 2000m
 
         livenessProbe:
           enabled: true
@@ -127,6 +159,22 @@ spec:
               enabled: true
               storageClass: rook-cephfs
               size: 8Gi
+            extraFlags: >-
+              --innodb-buffer-pool-size=512M
+              --innodb-log-file-size=128M
+              --innodb-flush-log-at-trx-commit=2
+              --max-connections=150
+              --tmp-table-size=64M
+              --max-heap-table-size=64M
+              --join-buffer-size=4M
+              --sort-buffer-size=4M
+            resources:
+              requests:
+                memory: 512Mi
+                cpu: 250m
+              limits:
+                memory: 1Gi
+                cpu: 1000m
             startupProbe:
               enabled: true
               initialDelaySeconds: 120
@@ -146,6 +194,21 @@ spec:
             secretName: nextcloud-mariadb-sec
             usernameKey: username
             passwordKey: mariadb-password
+
+        redis:
+          enabled: true
+          auth:
+            enabled: false
+          master:
+            persistence:
+              enabled: false
+            resources:
+              requests:
+                memory: 64Mi
+                cpu: 50m
+              limits:
+                memory: 256Mi
+                cpu: 500m
 
         cronjob:
           enabled: true
