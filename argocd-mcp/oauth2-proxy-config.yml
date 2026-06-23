@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oauth2-proxy-config
+  namespace: argocd
+data:
+  client-id: mcp-argocd
+  keycloak-url: https://user.kigawa.net
+  keycloak-realm: kigawa-net
+  keycloak-admin-secret-namespace: keycloak
+  keycloak-admin-secret-name: keycloak-initial-admin
+  keycloak-admin-username-key: username
+  keycloak-admin-password-key: password
