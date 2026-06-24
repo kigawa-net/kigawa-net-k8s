@@ -48,14 +48,20 @@ spec:
             - sh
             - -c
             - |
-              # rook-ceph thin provisioning may return blocks from previous volumes.
-              # If ibdata1 exists but has zero bytes, the data dir is corrupt → wipe it.
-              if [ -f /var/lib/mysql/ibdata1 ] && [ ! -s /var/lib/mysql/ibdata1 ]; then
-                echo "Detected zero-byte ibdata1 (dirty block device). Wiping data directory..."
-                find /var/lib/mysql -mindepth 1 -delete
-                echo "Wipe complete."
+              # rook-ceph thin provisioning may return sparse blocks from previous volumes.
+              # ibdata1 can appear non-empty (fallocate) but read as all-zeros (unwritten blocks).
+              # [ -s file ] only checks logical size > 0, so use content-based check instead.
+              if [ -f /var/lib/mysql/ibdata1 ]; then
+                HEX=$(od -An -N 4 -t x1 /var/lib/mysql/ibdata1 2>/dev/null | tr -d ' \n')
+                if [ -z "$HEX" ] || [ "$HEX" = "00000000" ]; then
+                  echo "ibdata1 header is zero (sparse/dirty block). Wiping data directory..."
+                  find /var/lib/mysql -mindepth 1 -delete
+                  echo "Wipe complete."
+                else
+                  echo "ibdata1 header OK (${HEX}). Keeping existing data."
+                fi
               else
-                echo "Data directory OK (ibdata1 absent or valid)."
+                echo "No ibdata1 found. Fresh data directory."
               fi
           volumeMounts:
             - name: mysql-vol
