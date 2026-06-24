@@ -41,6 +41,25 @@ spec:
       labels:
         app: mamoru-mysql
     spec:
+      initContainers:
+        - name: wipe-dirty-datadir
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              # rook-ceph thin provisioning may return blocks from previous volumes.
+              # If ibdata1 exists but has zero bytes, the data dir is corrupt → wipe it.
+              if [ -f /var/lib/mysql/ibdata1 ] && [ ! -s /var/lib/mysql/ibdata1 ]; then
+                echo "Detected zero-byte ibdata1 (dirty block device). Wiping data directory..."
+                find /var/lib/mysql -mindepth 1 -delete
+                echo "Wipe complete."
+              else
+                echo "Data directory OK (ibdata1 absent or valid)."
+              fi
+          volumeMounts:
+            - name: mysql-vol
+              mountPath: /var/lib/mysql
       containers:
         - name: mysql
           image: mariadb:11.4
