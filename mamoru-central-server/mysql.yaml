@@ -96,7 +96,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 60
+            failureThreshold: 180
           livenessProbe:
             exec:
               command:
