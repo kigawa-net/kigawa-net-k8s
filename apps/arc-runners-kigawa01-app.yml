@@ -21,7 +21,7 @@ spec:
         containerMode:
           type: dind
         minRunners: 0
-        maxRunners: 5
+        maxRunners: 32
         template:
           spec:
             affinity:
