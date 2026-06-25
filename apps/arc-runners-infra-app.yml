@@ -14,7 +14,7 @@ spec:
       releaseName: arc-runner-set-infra
       valuesObject:
         githubConfigUrl: "https://github.com/kigawa-net/infra"
-        githubConfigSecret: arc-github-secret
+        githubConfigSecret: arc-github-secret-kigawa-net
         controllerServiceAccount:
           namespace: arc-systems
           name: arc-gha-rs-controller
