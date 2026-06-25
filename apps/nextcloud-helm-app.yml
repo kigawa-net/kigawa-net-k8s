@@ -101,6 +101,12 @@ spec:
             fsGroup: 33
             fsGroupChangePolicy: "OnRootMismatch"
 
+        replicaCount: 2
+
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+
         strategy:
           type: RollingUpdate
           rollingUpdate:
@@ -197,6 +203,7 @@ spec:
 
         redis:
           enabled: true
+          architecture: standalone
           auth:
             enabled: false
           master:
