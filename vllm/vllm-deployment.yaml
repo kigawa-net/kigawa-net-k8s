@@ -47,6 +47,10 @@ spec:
                   key: api-key
             - name: TMPDIR
               value: /vllm-tmp
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: expandable_segments:True
+            - name: VLLM_ATTENTION_BACKEND
+              value: TRITON_ATTN
           resources:
             requests:
               nvidia.com/gpu: "1"
