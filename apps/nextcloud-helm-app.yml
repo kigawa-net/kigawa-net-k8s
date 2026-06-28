@@ -126,12 +126,14 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 15
           failureThreshold: 40
+          timeoutSeconds: 10
 
         readinessProbe:
           enabled: true
           initialDelaySeconds: 30
           periodSeconds: 15
           failureThreshold: 128
+          timeoutSeconds: 10
 
         startupProbe:
           enabled: true
