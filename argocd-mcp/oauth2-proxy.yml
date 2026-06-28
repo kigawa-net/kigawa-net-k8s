@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      serviceAccountName: oauth2-proxy
+      initContainers:
+        - name: init-secret
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              if kubectl get secret oauth2-proxy-secret -n argocd > /dev/null 2>&1; then
+                echo "Secret already exists, skipping"
+                exit 0
+              fi
+
+              apt-get update -qq && apt-get install -y -qq curl jq
+
+              CLIENT_ID=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-id}')
+              KC_URL=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-url}')
+              KC_REALM=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-realm}')
+              KC_ADMIN_NS=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-secret-namespace}')
+              KC_ADMIN_SECRET=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-secret-name}')
+              KC_USER_KEY=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-username-key}')
+              KC_PASS_KEY=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.keycloak-admin-password-key}')
+
+              KC_ADMIN=$(kubectl get secret "$KC_ADMIN_SECRET" -n "$KC_ADMIN_NS" -o jsonpath="{.data.$KC_USER_KEY}" | base64 -d)
+              KC_ADMIN_PASSWORD=$(kubectl get secret "$KC_ADMIN_SECRET" -n "$KC_ADMIN_NS" -o jsonpath="{.data.$KC_PASS_KEY}" | base64 -d)
+
+              TOKEN=$(curl -sf -X POST "$KC_URL/realms/master/protocol/openid-connect/token" \
+                -d "client_id=admin-cli" \
+                -d "username=$KC_ADMIN" \
+                -d "password=$KC_ADMIN_PASSWORD" \
+                -d "grant_type=password" | jq -r '.access_token')
+
+              CLIENT_INTERNAL_ID=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients?clientId=$CLIENT_ID" \
+                -H "Authorization: Bearer $TOKEN" | jq -r '.[0].id // empty')
+
+              if [ -z "$CLIENT_INTERNAL_ID" ]; then
+                echo "Creating Keycloak client: $CLIENT_ID"
+                curl -sf -X POST "$KC_URL/admin/realms/$KC_REALM/clients" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"clientId\": \"$CLIENT_ID\",
+                    \"enabled\": true,
+                    \"publicClient\": false,
+                    \"redirectUris\": [\"https://mcp-argocd.kigawa.net/oauth2/callback\"],
+                    \"protocol\": \"openid-connect\"
+                  }"
+
+                CLIENT_INTERNAL_ID=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients?clientId=$CLIENT_ID" \
+                  -H "Authorization: Bearer $TOKEN" | jq -r '.[0].id')
+              fi
+
+              CLIENT_SECRET=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients/$CLIENT_INTERNAL_ID/client-secret" \
+                -H "Authorization: Bearer $TOKEN" | jq -r '.value')
+
+              COOKIE_SECRET=$(openssl rand -hex 16)
+
+              kubectl create secret generic oauth2-proxy-secret \
+                --from-literal=client-id="$CLIENT_ID" \
+                --from-literal=client-secret="$CLIENT_SECRET" \
+                --from-literal=cookie-secret="$COOKIE_SECRET" \
+                -n argocd
+
+              echo "Secret created successfully"
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:latest
+          args:
+            - --provider=oidc
+            - --oidc-issuer-url=https://user.kigawa.net/realms/manage
+            - --upstream=http://mcp-for-argocd:8080
+            - --http-address=0.0.0.0:4180
+            - --redirect-url=https://mcp-argocd.kigawa.net/oauth2/callback
+            - --email-domain=*
+            - --skip-provider-button=true
+            - --pass-authorization-header=true
+            - --pass-access-token=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: client-id
+                  optional: true
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: client-secret
+                  optional: true
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy-secret
+                  key: cookie-secret
+                  optional: true
+          ports:
+            - containerPort: 4180
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+spec:
+  selector:
+    app: oauth2-proxy
+  ports:
+    - name: http
+      port: 4180
+      targetPort: 4180

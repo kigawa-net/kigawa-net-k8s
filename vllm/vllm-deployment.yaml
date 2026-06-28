@@ -10,6 +10,8 @@ spec:
   selector:
     matchLabels:
       app: vllm
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -17,17 +19,21 @@ spec:
     spec:
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.7.2
+          image: vllm/vllm-openai:v0.23.0
           command: ["/bin/sh", "-c"]
           args:
             - |
               exec python3 -m vllm.entrypoints.openai.api_server \
-                --model Qwen/Qwen2.5-14B-Instruct-AWQ \
+                --model Qwen/Qwen3-4B-AWQ \
                 --served-model-name production-llm \
-                --tensor-parallel-size 3 \
-                --max-model-len 8192 \
-                --gpu-memory-utilization 0.9 \
-                --dtype auto \
+                --quantization awq_marlin \
+                --tensor-parallel-size 1 \
+                --max-model-len 1024 \
+                --gpu-memory-utilization 0.85 \
+                --dtype float16 \
+                --trust-remote-code \
+                --enforce-eager \
+                --max-num-seqs 32 \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
@@ -39,28 +45,38 @@ spec:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: RAY_ADDRESS
-              value: "ray://vllm-cluster-head-svc:10001"
+            - name: TMPDIR
+              value: /vllm-tmp
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: expandable_segments:True
+            - name: VLLM_ATTENTION_BACKEND
+              value: TRITON_ATTN
           resources:
             requests:
-              cpu: "2"
-              memory: "8Gi"
+              nvidia.com/gpu: "1"
+              cpu: "1"
+              memory: "4Gi"
+              ephemeral-storage: "1Gi"
             limits:
+              nvidia.com/gpu: "1"
               cpu: "4"
               memory: "16Gi"
+              ephemeral-storage: "10Gi"
           volumeMounts:
             - mountPath: /root/.cache/huggingface
               name: hf-cache
+            - mountPath: /vllm-tmp
+              name: vllm-tmp
           startupProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             failureThreshold: 60
             periodSeconds: 30
             timeoutSeconds: 10
           livenessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
@@ -68,13 +84,29 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+      runtimeClassName: nvidia
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["k8s-worker3"]
       volumes:
         - name: hf-cache
           persistentVolumeClaim:
             claimName: hf-cache-pvc
+        - name: vllm-tmp
+          emptyDir:
+            sizeLimit: 10Gi

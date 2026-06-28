@@ -42,94 +42,47 @@ spec:
         app: mamoru-mysql
     spec:
       initContainers:
-        - name: mysql-init
-          image: mysql:8.4
+        - name: wipe-dirty-datadir
+          image: busybox:1.37
           command:
             - bash
             - -c
             - |
-              set -e
-              DATA_DIR=/var/lib/mysql
-              MARKER="$DATA_DIR/.mamoru-init-complete"
-              SOCK=/tmp/mysql-init.sock
-
-              if [ -f "$MARKER" ]; then
-                echo "Init marker present. MySQL already initialized."
-                exit 0
-              fi
-
-              echo "Wiping data directory for fresh initialization..."
-              rm -rf "$DATA_DIR"/* "$DATA_DIR"/.??* 2>/dev/null || true
-
-              echo "Running mysqld --initialize-insecure..."
-              mysqld --initialize-insecure --user=mysql --datadir="$DATA_DIR"
-              echo "--initialize-insecure complete."
-
-              echo "Starting temporary MySQL (--skip-networking)..."
-              mysqld --skip-networking --socket="$SOCK" --user=mysql --datadir="$DATA_DIR" &
-              MYSQLD_PID=$!
-
-              echo "Waiting for temporary MySQL to be ready..."
-              for i in $(seq 1 240); do
-                if mysqladmin ping -u root -S "$SOCK" --connect-timeout=5 2>/dev/null; then
-                  echo "Temporary MySQL is ready (attempt $i)."
-                  break
+              # rook-ceph thin provisioning may return sparse blocks from previous volumes.
+              # ibdata1 can appear non-empty (fallocate) but read as all-zeros (unwritten blocks).
+              # [ -s file ] only checks logical size > 0, so use content-based check instead.
+              if [ -f /var/lib/mysql/ibdata1 ]; then
+                HEX=$(od -An -N 4 -t x1 /var/lib/mysql/ibdata1 2>/dev/null | tr -d ' \n')
+                if [ -z "$HEX" ] || [ "$HEX" = "00000000" ]; then
+                  echo "ibdata1 header is zero (sparse/dirty block). Wiping data directory..."
+                  find /var/lib/mysql -mindepth 1 -delete
+                  echo "Wipe complete."
+                else
+                  echo "ibdata1 header OK (${HEX}). Keeping existing data."
                 fi
-                sleep 5
-              done
-
-              echo "Configuring root password, user, and database..."
-              mysql -u root -S "$SOCK" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASSWORD}';"
-              mysql -u root -p"${MYSQL_ROOT_PASSWORD}" -S "$SOCK" -e "
-                CREATE DATABASE IF NOT EXISTS \`mamoru\`;
-                CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${MYSQL_PASSWORD}';
-                GRANT ALL ON \`mamoru\`.* TO '${MYSQL_USER}'@'%';
-                FLUSH PRIVILEGES;
-              "
-
-              echo "Shutting down temporary MySQL..."
-              mysqladmin -u root -p"${MYSQL_ROOT_PASSWORD}" -S "$SOCK" shutdown
-              wait "$MYSQLD_PID"
-              echo "Temporary MySQL stopped."
-
-              touch "$MARKER"
-              echo "MySQL initialization complete. Marker written."
-          env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mamoru-db-secret
-                  key: pass
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: mamoru-db-secret
-                  key: user
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mamoru-db-secret
-                  key: pass
+              else
+                echo "No ibdata1 found. Fresh data directory."
+              fi
           volumeMounts:
             - name: mysql-vol
               mountPath: /var/lib/mysql
       containers:
         - name: mysql
-          image: mysql:8.4
+          image: mariadb:11.4
           env:
-            - name: MYSQL_ROOT_PASSWORD
+            - name: MARIADB_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
                   key: pass
-            - name: MYSQL_DATABASE
+            - name: MARIADB_DATABASE
               value: mamoru
-            - name: MYSQL_USER
+            - name: MARIADB_USER
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
                   key: user
-            - name: MYSQL_PASSWORD
+            - name: MARIADB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mamoru-db-secret
@@ -142,7 +95,7 @@ spec:
           startupProbe:
             exec:
               command:
-                - mysqladmin
+                - mariadb-admin
                 - ping
                 - -h
                 - localhost
@@ -153,7 +106,7 @@ spec:
           livenessProbe:
             exec:
               command:
-                - mysqladmin
+                - mariadb-admin
                 - ping
                 - -h
                 - localhost
@@ -163,7 +116,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - mysqladmin
+                - mariadb-admin
                 - ping
                 - -h
                 - localhost

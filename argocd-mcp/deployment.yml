@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-for-argocd
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-for-argocd
+  template:
+    metadata:
+      labels:
+        app: mcp-for-argocd
+    spec:
+      containers:
+        - name: mcp-for-argocd
+          image: ghcr.io/argoproj-labs/mcp-for-argocd:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: ARGOCD_SERVER
+              value: argocd-server.argocd.svc.cluster.local
+            - name: ARGOCD_USERNAME
+              value: admin
+            - name: ARGOCD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-initial-admin-secret
+                  key: password
+            - name: ARGOCD_INSECURE
+              value: "true"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

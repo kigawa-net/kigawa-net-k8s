@@ -14,7 +14,7 @@ spec:
       releaseName: kuberay-operator
       valuesObject:
         image:
-          repository: kuberay/operator
+          repository: quay.io/kuberay/operator
           tag: "v1.2.1"
         rbac:
           create: true
@@ -30,3 +30,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
