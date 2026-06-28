@@ -19,16 +19,16 @@ spec:
             - |
               set -e
 
-              # Wait for Nextcloud pod to be ready
+              # Wait for Nextcloud pod to be ready (component=app excludes cron pods)
               kubectl wait pod \
                 -n kigawa-net-nextcloud \
-                -l app.kubernetes.io/name=nextcloud \
+                -l app.kubernetes.io/name=nextcloud,app.kubernetes.io/component=app \
                 --for=condition=Ready \
                 --timeout=300s
 
               POD=$(kubectl get pod \
                 -n kigawa-net-nextcloud \
-                -l app.kubernetes.io/name=nextcloud \
+                -l app.kubernetes.io/name=nextcloud,app.kubernetes.io/component=app \
                 -o jsonpath='{.items[0].metadata.name}')
 
               echo "Running occ on pod: $POD"
