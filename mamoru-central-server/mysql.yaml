@@ -45,7 +45,7 @@ spec:
         - name: wipe-dirty-datadir
           image: busybox:1.37
           command:
-            - sh
+            - bash
             - -c
             - |
               # rook-ceph thin provisioning may return sparse blocks from previous volumes.
@@ -102,7 +102,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 180
+            failureThreshold: 60
           livenessProbe:
             exec:
               command:
