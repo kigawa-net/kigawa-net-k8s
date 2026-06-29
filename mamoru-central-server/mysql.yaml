@@ -43,7 +43,7 @@ spec:
     spec:
       initContainers:
         - name: wipe-dirty-datadir
-          image: busybox:1.37
+          image: ubuntu
           command:
             - bash
             - -c
