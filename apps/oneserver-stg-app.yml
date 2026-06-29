@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oneserver-stg
+  namespace: argocd
+spec:
+  project: one
+
+  source:
+    repoURL: https://github.com/OneServerMC/RpgCore.git
+    targetRevision: develop
+    path: k8s/one/overlays/stg
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: onemc-rpgcore-stg
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

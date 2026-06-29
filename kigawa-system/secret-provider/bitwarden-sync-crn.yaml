@@ -34,6 +34,10 @@ spec:
                     kigawa-net-mamoru-main
                     mcp-discord
                     mcp-growi
+                    onemc-rpgcore
+                    onemc-rpgcore-stg
+                    onemc-rpgcore-dev
+                    onemc-build
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash

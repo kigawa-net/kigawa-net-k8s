@@ -25,6 +25,9 @@ spec:
                     prometheus
                     kigawa-net-mamoru-main
                     onemc-rpgcore
+                    onemc-rpgcore-stg
+                    onemc-rpgcore-dev
+                    onemc-build
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
@@ -47,4 +50,3 @@ spec:
   
                     echo "Secret harbor-registry synced successfully at $(date) to $namespace"
                   done
-  
