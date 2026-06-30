@@ -23,11 +23,6 @@ spec:
             - |
               set -e
 
-              if kubectl get secret oauth2-proxy-secret -n argocd > /dev/null 2>&1; then
-                echo "Secret already exists, skipping"
-                exit 0
-              fi
-
               apt-get update -qq && apt-get install -y -qq curl jq
 
               CLIENT_ID=$(kubectl get configmap oauth2-proxy-config -n argocd -o jsonpath='{.data.client-id}')
@@ -58,23 +53,36 @@ spec:
                   -d "{
                     \"clientId\": \"$CLIENT_ID\",
                     \"enabled\": true,
-                    \"publicClient\": false,
-                    \"redirectUris\": [\"https://mcp-argocd.kigawa.net/oauth2/callback\"],
+                    \"publicClient\": true,
+                    \"redirectUris\": [\"https://mcp-argocd.kigawa.net/oauth2/callback\", \"https://claude.ai/api/mcp/auth_callback\"],
                     \"protocol\": \"openid-connect\"
                   }"
-
                 CLIENT_INTERNAL_ID=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients?clientId=$CLIENT_ID" \
                   -H "Authorization: Bearer $TOKEN" | jq -r '.[0].id')
+              else
+                echo "Updating Keycloak client: $CLIENT_ID"
+                curl -sf -X PUT "$KC_URL/admin/realms/$KC_REALM/clients/$CLIENT_INTERNAL_ID" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/json" \
+                  -d "{
+                    \"clientId\": \"$CLIENT_ID\",
+                    \"enabled\": true,
+                    \"publicClient\": true,
+                    \"redirectUris\": [\"https://mcp-argocd.kigawa.net/oauth2/callback\", \"https://claude.ai/api/mcp/auth_callback\"],
+                    \"protocol\": \"openid-connect\"
+                  }"
               fi
 
-              CLIENT_SECRET=$(curl -sf "$KC_URL/admin/realms/$KC_REALM/clients/$CLIENT_INTERNAL_ID/client-secret" \
-                -H "Authorization: Bearer $TOKEN" | jq -r '.value')
+              if kubectl get secret oauth2-proxy-secret -n argocd > /dev/null 2>&1; then
+                echo "Secret already exists, skipping"
+                exit 0
+              fi
 
               COOKIE_SECRET=$(openssl rand -hex 16)
 
               kubectl create secret generic oauth2-proxy-secret \
                 --from-literal=client-id="$CLIENT_ID" \
-                --from-literal=client-secret="$CLIENT_SECRET" \
+                --from-literal=client-secret="dummy" \
                 --from-literal=cookie-secret="$COOKIE_SECRET" \
                 -n argocd
 

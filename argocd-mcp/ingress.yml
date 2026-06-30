@@ -17,6 +17,20 @@ spec:
                 name: mcp-oauth-metadata
                 port:
                   number: 80
+          - path: /authorize
+            pathType: Exact
+            backend:
+              service:
+                name: mcp-oauth-metadata
+                port:
+                  number: 80
+          - path: /token
+            pathType: Exact
+            backend:
+              service:
+                name: mcp-oauth-metadata
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
