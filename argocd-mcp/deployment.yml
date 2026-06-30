@@ -16,7 +16,7 @@ spec:
       serviceAccountName: oauth2-proxy
       initContainers:
         - name: create-argocd-token
-          image: bitnami/kubectl:latest
+          image: ghcr.io/argoproj/argocd:latest
           command:
             - /bin/bash
             - -c
@@ -28,33 +28,15 @@ spec:
                 exit 0
               fi
 
-              ARGOCD_ADMIN_PASSWORD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d)
+              API_TOKEN=$(argocd admin account generate-token --account admin --argocd-namespace argocd)
 
-              SESSION_RESP=$(curl -skL -X POST http://argocd-server.argocd.svc.cluster.local/api/v1/session \
-                -H "Content-Type: application/json" \
-                -d "{\"username\":\"admin\",\"password\":\"$ARGOCD_ADMIN_PASSWORD\"}")
-              echo "Session response: $SESSION_RESP"
-              ARGOCD_SESSION=$(echo "$SESSION_RESP" | jq -r '.token // empty')
-
-              if [ -z "$ARGOCD_SESSION" ]; then
-                echo "ERROR: Failed to get ArgoCD session token"
-                exit 1
-              fi
-
-              TOKEN_RESP=$(curl -skL -X POST "http://argocd-server.argocd.svc.cluster.local/api/v1/account/admin/token" \
-                -H "Authorization: Bearer $ARGOCD_SESSION" \
-                -H "Content-Type: application/json" \
-                -d '{}')
-              echo "Token response: $TOKEN_RESP"
-              ARGOCD_API_TOKEN=$(echo "$TOKEN_RESP" | jq -r '.token // empty')
-
-              if [ -z "$ARGOCD_API_TOKEN" ] || [ "$ARGOCD_API_TOKEN" = "null" ]; then
-                echo "ERROR: Failed to create ArgoCD API token"
+              if [ -z "$API_TOKEN" ]; then
+                echo "ERROR: Failed to generate ArgoCD API token"
                 exit 1
               fi
 
               kubectl create secret generic argocd-mcp-token \
-                --from-literal=token="$ARGOCD_API_TOKEN" \
+                --from-literal=token="$API_TOKEN" \
                 -n argocd
 
               echo "ArgoCD API token created successfully"
