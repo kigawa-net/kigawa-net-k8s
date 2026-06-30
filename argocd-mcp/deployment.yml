@@ -14,32 +14,40 @@ spec:
         app: mcp-for-argocd
     spec:
       serviceAccountName: oauth2-proxy
+      volumes:
+        - name: argocd-token
+          emptyDir: {}
       initContainers:
-        - name: create-argocd-token
+        - name: generate-token
           image: quay.io/argoproj/argocd:v2.11.3
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              argocd admin account generate-token admin > /token/value
+              echo "Token generated"
+          volumeMounts:
+            - name: argocd-token
+              mountPath: /token
+        - name: create-secret
+          image: bitnami/kubectl:latest
           command:
             - /bin/bash
             - -c
             - |
               set -e
-
               if kubectl get secret argocd-mcp-token -n argocd > /dev/null 2>&1; then
                 echo "argocd-mcp-token already exists, skipping"
                 exit 0
               fi
-
-              API_TOKEN=$(argocd admin account generate-token admin)
-
-              if [ -z "$API_TOKEN" ]; then
-                echo "ERROR: Failed to generate ArgoCD API token"
-                exit 1
-              fi
-
               kubectl create secret generic argocd-mcp-token \
-                --from-literal=token="$API_TOKEN" \
+                --from-literal=token="$(cat /token/value)" \
                 -n argocd
-
-              echo "ArgoCD API token created successfully"
+              echo "ArgoCD API token secret created"
+          volumeMounts:
+            - name: argocd-token
+              mountPath: /token
       containers:
         - name: mcp-for-argocd
           image: ghcr.io/argoproj-labs/mcp-for-argocd:latest
