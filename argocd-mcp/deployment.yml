@@ -28,7 +28,7 @@ spec:
                 exit 0
               fi
 
-              API_TOKEN=$(argocd admin account generate-token admin --argocd-namespace argocd)
+              API_TOKEN=$(argocd admin account generate-token admin -n argocd)
 
               if [ -z "$API_TOKEN" ]; then
                 echo "ERROR: Failed to generate ArgoCD API token"
