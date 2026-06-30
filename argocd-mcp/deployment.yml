@@ -16,7 +16,7 @@ spec:
       serviceAccountName: oauth2-proxy
       initContainers:
         - name: create-argocd-token
-          image: ghcr.io/argoproj/argocd:latest
+          image: quay.io/argoproj/argocd:v2.11.3
           command:
             - /bin/bash
             - -c
