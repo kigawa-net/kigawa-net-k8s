@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-oauth-metadata
+  namespace: argocd
+data:
+  default.conf: |
+    server {
+      listen 80;
+      location /.well-known/oauth-authorization-server {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin *;
+        return 200 '{"issuer":"https://user.kigawa.net/realms/manage","authorization_endpoint":"https://user.kigawa.net/realms/manage/protocol/openid-connect/auth","token_endpoint":"https://user.kigawa.net/realms/manage/protocol/openid-connect/token","jwks_uri":"https://user.kigawa.net/realms/manage/protocol/openid-connect/certs","response_types_supported":["code"],"grant_types_supported":["authorization_code","refresh_token"],"code_challenge_methods_supported":["S256"]}';
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-oauth-metadata
+  namespace: argocd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-oauth-metadata
+  template:
+    metadata:
+      labels:
+        app: mcp-oauth-metadata
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+      volumes:
+        - name: config
+          configMap:
+            name: mcp-oauth-metadata
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-oauth-metadata
+  namespace: argocd
+spec:
+  selector:
+    app: mcp-oauth-metadata
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
