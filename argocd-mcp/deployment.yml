@@ -13,6 +13,47 @@ spec:
       labels:
         app: mcp-for-argocd
     spec:
+      serviceAccountName: oauth2-proxy
+      initContainers:
+        - name: create-argocd-token
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              if kubectl get secret argocd-mcp-token -n argocd > /dev/null 2>&1; then
+                echo "argocd-mcp-token already exists, skipping"
+                exit 0
+              fi
+
+              ARGOCD_ADMIN_PASSWORD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}' | base64 -d)
+
+              ARGOCD_SESSION=$(curl -sk -X POST https://argocd-server.argocd.svc.cluster.local/api/v1/session \
+                -H "Content-Type: application/json" \
+                -d "{\"username\":\"admin\",\"password\":\"$ARGOCD_ADMIN_PASSWORD\"}" | jq -r '.token')
+
+              if [ -z "$ARGOCD_SESSION" ] || [ "$ARGOCD_SESSION" = "null" ]; then
+                echo "ERROR: Failed to get ArgoCD session token"
+                exit 1
+              fi
+
+              ARGOCD_API_TOKEN=$(curl -sk -X POST "https://argocd-server.argocd.svc.cluster.local/api/v1/account/admin/token" \
+                -H "Authorization: Bearer $ARGOCD_SESSION" \
+                -H "Content-Type: application/json" \
+                -d '{}' | jq -r '.token')
+
+              if [ -z "$ARGOCD_API_TOKEN" ] || [ "$ARGOCD_API_TOKEN" = "null" ]; then
+                echo "ERROR: Failed to create ArgoCD API token"
+                exit 1
+              fi
+
+              kubectl create secret generic argocd-mcp-token \
+                --from-literal=token="$ARGOCD_API_TOKEN" \
+                -n argocd
+
+              echo "ArgoCD API token created successfully"
       containers:
         - name: mcp-for-argocd
           image: ghcr.io/argoproj-labs/mcp-for-argocd:latest
@@ -21,17 +62,15 @@ spec:
             - containerPort: 3000
               name: http
           env:
-            - name: ARGOCD_SERVER
-              value: argocd-server.argocd.svc.cluster.local:443
-            - name: ARGOCD_USERNAME
-              value: admin
-            - name: ARGOCD_PASSWORD
+            - name: ARGOCD_BASE_URL
+              value: https://argocd-server.argocd.svc.cluster.local
+            - name: ARGOCD_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: argocd-initial-admin-secret
-                  key: password
-            - name: ARGOCD_INSECURE
-              value: "true"
+                  name: argocd-mcp-token
+                  key: token
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
           resources:
             requests:
               cpu: 10m
