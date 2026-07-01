@@ -97,6 +97,26 @@ spec:
                 - name: nextcloud-main
                   mountPath: /var/www/html
 
+          phpConfigs:
+            opcache.ini: |-
+              opcache.enable=1
+              opcache.enable_cli=1
+              opcache.interned_strings_buffer=32
+              opcache.max_accelerated_files=10000
+              opcache.memory_consumption=256
+              opcache.save_comments=1
+              opcache.revalidate_freq=60
+              opcache.jit=1255
+              opcache.jit_buffer_size=128M
+            www.conf: |-
+              [www]
+              pm = dynamic
+              pm.max_children = 20
+              pm.start_servers = 5
+              pm.min_spare_servers = 3
+              pm.max_spare_servers = 10
+              pm.max_requests = 500
+
           podSecurityContext:
             fsGroup: 33
             fsGroupChangePolicy: "OnRootMismatch"
@@ -126,12 +146,14 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 15
           failureThreshold: 40
+          timeoutSeconds: 10
 
         readinessProbe:
           enabled: true
           initialDelaySeconds: 30
           periodSeconds: 15
           failureThreshold: 128
+          timeoutSeconds: 10
 
         startupProbe:
           enabled: true
