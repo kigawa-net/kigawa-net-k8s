@@ -41,9 +41,16 @@ spec:
                   requests:
                     memory: "512Mi"
                     cpu: "500m"
+                    ephemeral-storage: "30Gi"
                   limits:
                     memory: "8Gi"
                     cpu: "4"
+                volumeMounts:
+                  - name: gradle-home
+                    mountPath: /home/runner/.gradle
+            volumes:
+              - name: gradle-home
+                emptyDir: {}
 
   destination:
     server: https://kubernetes.default.svc
