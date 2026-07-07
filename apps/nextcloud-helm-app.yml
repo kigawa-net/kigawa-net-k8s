@@ -243,11 +243,18 @@ spec:
         cronjob:
           enabled: true
           type: cronjob
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
           cronjob:
             schedule: "*/5 * * * *"
             successfulJobsHistoryLimit: 3
-            failedJobsHistoryLimit: 3
-            backoffLimit: 1
+            failedJobsHistoryLimit: 5
+            backoffLimit: 3
             securityContext:
               runAsUser: 33
               runAsGroup: 33
