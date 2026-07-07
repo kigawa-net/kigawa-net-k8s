@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nextcloud-upgrade-33-0-6
+  namespace: kigawa-net-nextcloud
+spec:
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: nextcloud-app-setup-sa
+      containers:
+        - name: upgrade
+          image: bitnami/kubectl:latest
+          command:
+            - bash
+            - -euo
+            - pipefail
+            - -c
+            - |
+              POD=$(kubectl get pods -n kigawa-net-nextcloud \
+                -l app.kubernetes.io/name=nextcloud \
+                --field-selector=status.phase=Running \
+                -o jsonpath='{.items[0].metadata.name}')
+
+              echo "Target pod: $POD"
+
+              echo "=== DB missing indices ==="
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                php occ db:add-missing-indices
+
+              echo "=== Mimetype migration ==="
+              kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                php occ maintenance:repair --include-expensive
+
+              echo "Done"

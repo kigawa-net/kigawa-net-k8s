@@ -165,6 +165,8 @@ spec:
         ingress:
           enabled: true
           className: haproxy
+          annotations:
+            haproxy.org/response-set-header: "Strict-Transport-Security \"max-age=15552000; includeSubDomains\""
           hosts:
             - host: nextcloud.kigawa.net
               paths:
