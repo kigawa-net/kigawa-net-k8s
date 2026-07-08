@@ -144,6 +144,8 @@ spec:
         ingress:
           enabled: true
           className: haproxy
+          annotations:
+            haproxy.org/response-set-header: ""
           hosts:
             - host: nextcloud.kigawa.net
               paths:
