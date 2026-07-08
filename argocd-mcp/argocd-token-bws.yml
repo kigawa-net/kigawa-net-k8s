@@ -1,0 +1,14 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: argocd-mcp-token-bws
+  namespace: argocd
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: argocd-mcp-token
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "REPLACE_WITH_BITWARDEN_SECRET_ID"
+      secretKeyName: token

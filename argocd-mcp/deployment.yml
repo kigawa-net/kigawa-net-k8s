@@ -13,25 +13,24 @@ spec:
       labels:
         app: mcp-for-argocd
     spec:
+      serviceAccountName: oauth2-proxy
       containers:
         - name: mcp-for-argocd
           image: ghcr.io/argoproj-labs/mcp-for-argocd:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
               name: http
           env:
-            - name: ARGOCD_SERVER
-              value: argocd-server.argocd.svc.cluster.local
-            - name: ARGOCD_USERNAME
-              value: admin
-            - name: ARGOCD_PASSWORD
+            - name: ARGOCD_BASE_URL
+              value: https://argocd-server.argocd.svc.cluster.local
+            - name: ARGOCD_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: argocd-initial-admin-secret
-                  key: password
-            - name: ARGOCD_INSECURE
-              value: "true"
+                  name: argocd-mcp-token
+                  key: token
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: "0"
           resources:
             requests:
               cpu: 10m

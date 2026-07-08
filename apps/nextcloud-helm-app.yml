@@ -15,6 +15,9 @@ spec:
     helm:
       releaseName: nextcloud
       valuesObject:
+        image:
+          tag: 33.0.6-apache
+
         nextcloud:
           host: nextcloud.kigawa.net
           existingSecret:
@@ -97,6 +100,24 @@ spec:
                 - name: nextcloud-main
                   mountPath: /var/www/html
 
+          phpConfigs:
+            opcache.ini: |-
+              opcache.enable=1
+              opcache.enable_cli=1
+              opcache.interned_strings_buffer=16
+              opcache.max_accelerated_files=10000
+              opcache.memory_consumption=128
+              opcache.save_comments=1
+              opcache.revalidate_freq=60
+            www.conf: |-
+              [www]
+              pm = dynamic
+              pm.max_children = 8
+              pm.start_servers = 2
+              pm.min_spare_servers = 2
+              pm.max_spare_servers = 4
+              pm.max_requests = 500
+
           podSecurityContext:
             fsGroup: 33
             fsGroupChangePolicy: "OnRootMismatch"
@@ -118,7 +139,7 @@ spec:
             memory: 512Mi
             cpu: 250m
           limits:
-            memory: 2Gi
+            memory: 3Gi
             cpu: 2000m
 
         livenessProbe:
@@ -224,11 +245,18 @@ spec:
         cronjob:
           enabled: true
           type: cronjob
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
           cronjob:
             schedule: "*/5 * * * *"
             successfulJobsHistoryLimit: 3
-            failedJobsHistoryLimit: 3
-            backoffLimit: 1
+            failedJobsHistoryLimit: 5
+            backoffLimit: 3
             securityContext:
               runAsUser: 33
               runAsGroup: 33
