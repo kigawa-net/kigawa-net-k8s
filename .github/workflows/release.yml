@@ -9,6 +9,10 @@ on:
       harborProject:
         required: true
         type: string
+      harborUser:
+        required: false
+        type: string
+        default: 'robot$kigawa-net'
       manifestFile:
         required: true
         type: string
@@ -43,7 +47,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      harborUser: robot$kigawa-net
+      harborUser: ${{ inputs.harborUser }}
       dir: "./"
       dockerFile: ${{ inputs.dockerFile }}
       name: ${{ inputs.name }}
