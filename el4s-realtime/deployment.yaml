@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: el4s-realtime
-          image: harbor.kigawa.net/private/el4s-realtime:main-0000000000000000000000000000000000000000
+          image: harbor.kigawa.net/private/el4s-realtime:main-1ac2d8f22e45f793f7260cc99edf7377b14637ec
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
