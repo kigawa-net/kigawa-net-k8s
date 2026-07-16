@@ -7,9 +7,9 @@ spec:
   project: one
 
   source:
-    repoURL: https://github.com/OneServerMC/k8s.git
+    repoURL: https://github.com/OneServerMC/infra.git
     targetRevision: main
-    path: manifest/rpgcore/one/overlays/stg
+    path: one/overlays/stg
 
   destination:
     server: https://kubernetes.default.svc

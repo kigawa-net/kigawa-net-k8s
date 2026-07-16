@@ -62,10 +62,10 @@ GitHub Actions Runner Controller。OneServerMC org 向けのセルフホスト�
 
 ### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`, `apps/oneserver-*-app.yml`)
 OneServerMC 向け AppProject `one`。namespace `onemc-*` と `https://github.com/OneServerMC/*` を許可。
-マニフェストは全て `OneServerMC/k8s` リポジトリの `manifest/rpgcore/` 配下に集約されている(旧: `OneServerMC/RpgCore` の `k8s/`)。
-- **RpgCore dev**(プラグイン単体の検証環境): `manifest/rpgcore/overlays/dev` を `onemc-rpgcore-dev` にデプロイ
-- **OneServer dev/stg/prod**(ゲームサーバ本体): `manifest/rpgcore/one/overlays/{dev,stg,prod}` をそれぞれ `onemc-rpgcore-dev` / `onemc-rpgcore-stg` / `onemc-rpgcore` にデプロイ
-- **OneServer build**(ビルドパイプライン): `manifest/rpgcore/build` を `onemc-build` にデプロイ
+マニフェストは全て専用リポジトリ `OneServerMC/infra` に集約されている(旧: `OneServerMC/RpgCore` の `k8s/`)。
+- **RpgCore dev**(プラグイン単体の検証環境): `overlays/dev` を `onemc-rpgcore-dev` にデプロイ
+- **OneServer dev/stg/prod**(ゲームサーバ本体): `one/overlays/{dev,stg,prod}` をそれぞれ `onemc-rpgcore-dev` / `onemc-rpgcore-stg` / `onemc-rpgcore` にデプロイ
+- **OneServer build**(ビルドパイプライン): `build` を `onemc-build` にデプロイ
 
 ### Bitwarden / Secret Provider (`kigawa-system/secret-provider/`, `apps/bitwarden-sm-operator-app.yml`)
 Bitwarden Secrets Manager operator syncs secrets into each namespace via `BitwardenSecret` CRDs. Organization ID: `a2b57f3d-6e2b-4467-b499-b31e00bfd804`. Each namespace requires a `bitwarden-sec` secret containing the auth token.
