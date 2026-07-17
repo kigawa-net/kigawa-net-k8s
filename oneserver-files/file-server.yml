@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oneserver-file-server
+  namespace: kigawa-net-oneserver-files
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oneserver-file-server
+  template:
+    metadata:
+      labels:
+        app: oneserver-file-server
+    spec:
+      containers:
+        - name: file-server
+          image: halverneus/static-file-server:latest
+          env:
+            - name: FOLDER
+              value: /data
+            - name: PORT
+              value: "8080"
+            - name: SHOW_LISTING
+              value: "true"
+            - name: CORS
+              value: "false"
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: files
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: files
+          persistentVolumeClaim:
+            claimName: oneserver-files
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oneserver-file-server
+  namespace: kigawa-net-oneserver-files
+spec:
+  selector:
+    app: oneserver-file-server
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
