@@ -43,10 +43,10 @@ spec:
             # Bearer JWTでの機械間認証のみを許可し、ブラウザOAuthフローは使わない
             - --skip-jwt-bearer-tokens=true
             # GitHub Actions(RpgCore CI)のOIDCトークンを検証
-            - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.one.kigawa.net
+            - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.kigawa.net
             # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)
             # 確認コマンド: kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
-            - --extra-jwt-issuers=https://kubernetes.default.svc.cluster.local=https://files.one.kigawa.net
+            - --extra-jwt-issuers=https://kubernetes.default.svc.cluster.local=https://files.kigawa.net
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:

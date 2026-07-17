@@ -70,9 +70,9 @@ OneServerMCのビルドパイプライン用アセット(プラグインJAR・�
 - **file-server**: `halverneus/static-file-server`。PVC `/data` 配下に `plugin/`・`world/` を配置。GET/PUT両対応。
 - **oauth2-proxy**: `argocd-mcp/oauth2-proxy.yml` と同じ構成をBearer専用モードで流用。
   `--skip-jwt-bearer-tokens` + `--extra-jwt-issuers` で以下2つのJWT issuerを検証(実際のOAuthログインフローは使わない):
-  - GitHub Actions: `https://token.actions.githubusercontent.com`(RpgCoreのCIから、audience=`https://files.one.kigawa.net`)
+  - GitHub Actions: `https://token.actions.githubusercontent.com`(RpgCoreのCIから、audience=`https://files.kigawa.net`)
   - クラスタ自身のService Account issuer(`https://kubernetes.default.svc.cluster.local`。world-exporter/world-image-builderから)
-- Ingress: `files.one.kigawa.net`
+- Ingress: `files.kigawa.net`
 
 ### Bitwarden / Secret Provider (`kigawa-system/secret-provider/`, `apps/bitwarden-sm-operator-app.yml`)
 Bitwarden Secrets Manager operator syncs secrets into each namespace via `BitwardenSecret` CRDs. Organization ID: `a2b57f3d-6e2b-4467-b499-b31e00bfd804`. Each namespace requires a `bitwarden-sec` secret containing the auth token.
