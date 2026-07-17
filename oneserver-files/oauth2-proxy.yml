@@ -45,9 +45,8 @@ spec:
             # GitHub Actions(RpgCore CI)のOIDCトークンを検証
             - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.one.kigawa.net
             # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)
-            # TODO: 実際の値に置き換える。クラスタで以下を実行して確認:
-            #   kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
-            - --extra-jwt-issuers=https://kubernetes.default.svc=https://files.one.kigawa.net
+            # 確認コマンド: kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
+            - --extra-jwt-issuers=https://kubernetes.default.svc.cluster.local=https://files.one.kigawa.net
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:

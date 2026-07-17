@@ -71,7 +71,7 @@ OneServerMCのビルドパイプライン用アセット(プラグインJAR・�
 - **oauth2-proxy**: `argocd-mcp/oauth2-proxy.yml` と同じ構成をBearer専用モードで流用。
   `--skip-jwt-bearer-tokens` + `--extra-jwt-issuers` で以下2つのJWT issuerを検証(実際のOAuthログインフローは使わない):
   - GitHub Actions: `https://token.actions.githubusercontent.com`(RpgCoreのCIから、audience=`https://files.one.kigawa.net`)
-  - クラスタ自身のService Account issuer(world-exporter/world-image-builderから。実際の値は要確認: `kubectl get --raw /.well-known/openid-configuration | jq -r .issuer`)
+  - クラスタ自身のService Account issuer(`https://kubernetes.default.svc.cluster.local`。world-exporter/world-image-builderから)
 - Ingress: `files.one.kigawa.net`
 
 ### Bitwarden / Secret Provider (`kigawa-system/secret-provider/`, `apps/bitwarden-sm-operator-app.yml`)
