@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oneserver-files-oauth2-proxy-secret
+  namespace: kigawa-net-oneserver-files
+type: Opaque
+stringData:
+  # bearer-only モード(--skip-jwt-bearer-tokens)では実際のOAuthログインフローを
+  # 使わないため、client-id/client-secret/cookie-secretはoauth2-proxyの起動要件を
+  # 満たすためだけのダミー値。秘匿情報ではない。
+  client-id: oneserver-files
+  client-secret: unused
+  cookie-secret: "0000000000000000000000000000000000000000000000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oneserver-files-oauth2-proxy
+  namespace: kigawa-net-oneserver-files
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oneserver-files-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oneserver-files-oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:latest
+          args:
+            - --provider=oidc
+            # 実際のログインフローは使わないため既存Keycloakレルムを流用(起動要件を満たすためだけ)
+            - --oidc-issuer-url=https://user.kigawa.net/realms/manage
+            - --upstream=http://oneserver-file-server:8080
+            - --http-address=0.0.0.0:4180
+            - --email-domain=*
+            - --skip-provider-button=true
+            - --pass-authorization-header=true
+            - --pass-access-token=true
+            # Bearer JWTでの機械間認証のみを許可し、ブラウザOAuthフローは使わない
+            - --skip-jwt-bearer-tokens=true
+            # GitHub Actions(RpgCore CI)のOIDCトークンを検証
+            - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.one.kigawa.net
+            # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)
+            # TODO: 実際の値に置き換える。クラスタで以下を実行して確認:
+            #   kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
+            - --extra-jwt-issuers=https://kubernetes.default.svc=https://files.one.kigawa.net
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: cookie-secret
+          ports:
+            - containerPort: 4180
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oneserver-files-oauth2-proxy
+  namespace: kigawa-net-oneserver-files
+spec:
+  selector:
+    app: oneserver-files-oauth2-proxy
+  ports:
+    - name: http
+      port: 4180
+      targetPort: 4180

@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: oneserver-files
+  namespace: kigawa-net-oneserver-files
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+    - host: files.one.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: oneserver-files-oauth2-proxy
+                port:
+                  number: 4180
