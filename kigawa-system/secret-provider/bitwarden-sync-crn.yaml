@@ -39,6 +39,7 @@ spec:
                     onemc-rpgcore-stg
                     onemc-rpgcore-dev
                     onemc-build
+                    kigawa-net-admin-panel
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
