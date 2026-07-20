@@ -1,0 +1,60 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-files-scan
+  namespace: kigawa-net-nextcloud
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          serviceAccountName: nextcloud-files-scan-sa
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          containers:
+            - name: files-scan
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  POD=$(kubectl get pod \
+                    -n kigawa-net-nextcloud \
+                    -l app.kubernetes.io/name=nextcloud,app.kubernetes.io/component=app \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')
+
+                  if [ -z "$POD" ]; then
+                    echo "No running Nextcloud app pod found" >&2
+                    exit 1
+                  fi
+
+                  echo "Scanning filesystem via pod: $POD"
+                  kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                    php occ files:scan --all
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65534
+                seccompProfile:
+                  type: RuntimeDefault
