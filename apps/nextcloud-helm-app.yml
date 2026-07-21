@@ -79,12 +79,12 @@ spec:
                   key: dsn
 
           extraVolumes:
-            - name: cephfs-root
+            - name: cephfs-user
               persistentVolumeClaim:
-                claimName: rook-cephfs-root
+                claimName: rook-cephfs-user
 
           extraVolumeMounts:
-            - name: cephfs-root
+            - name: cephfs-user
               mountPath: /mnt/cephfs
 
           extraInitContainers:
