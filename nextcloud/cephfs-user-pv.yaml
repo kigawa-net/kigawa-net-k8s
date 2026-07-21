@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: rook-cephfs-root
+  name: rook-cephfs-user
 spec:
   accessModes:
     - ReadWriteMany
@@ -16,8 +16,12 @@ spec:
       clusterID: kigawa-system-rook-ceph
       fsName: rook-cephfs
       staticVolume: "true"
-      rootPath: /
-    volumeHandle: rook-cephfs-root-static
+      # Scoped to the "user" subtree only (not "/", the whole shared cephfs
+      # root) so this mount can't reach other apps' PVC data under
+      # /volumes/csi/... and so `occ files:scan` has a bounded tree to walk
+      # instead of hanging on the entire cluster's filesystem.
+      rootPath: /user
+    volumeHandle: rook-cephfs-user-static
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   volumeMode: Filesystem
@@ -25,7 +29,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: rook-cephfs-root
+  name: rook-cephfs-user
   namespace: kigawa-net-nextcloud
 spec:
   accessModes:
@@ -34,4 +38,4 @@ spec:
     requests:
       storage: 7Ti
   storageClassName: ""
-  volumeName: rook-cephfs-root
+  volumeName: rook-cephfs-user
