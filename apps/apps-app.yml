@@ -67,6 +67,9 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: arc-runners
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: kube-system
 
   # ----------------------------
   # 許可する Git リポジトリ
