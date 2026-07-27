@@ -196,9 +196,16 @@ spec:
               storageClass: rook-cephfs
               size: 8Gi
             extraFlags: >-
-              --innodb-buffer-pool-size=512M
+              --innodb-buffer-pool-size=768M
+              --innodb-buffer-pool-instances=1
               --innodb-log-file-size=128M
               --innodb-flush-log-at-trx-commit=2
+              --innodb-io-capacity=200
+              --innodb-io-capacity-max=400
+              --innodb-read-io-threads=8
+              --innodb-write-io-threads=4
+              --table-open-cache=2000
+              --table-definition-cache=1000
               --max-connections=150
               --tmp-table-size=64M
               --max-heap-table-size=64M
@@ -206,11 +213,11 @@ spec:
               --sort-buffer-size=4M
             resources:
               requests:
-                memory: 512Mi
-                cpu: 250m
+                memory: 768Mi
+                cpu: 300m
               limits:
-                memory: 1Gi
-                cpu: 1000m
+                memory: 1536Mi
+                cpu: 1500m
             startupProbe:
               enabled: true
               initialDelaySeconds: 120
