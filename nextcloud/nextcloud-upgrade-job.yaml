@@ -5,6 +5,8 @@ metadata:
   namespace: kigawa-net-nextcloud
 spec:
   ttlSecondsAfterFinished: 86400
+  activeDeadlineSeconds: 1800
+  backoffLimit: 3
   template:
     spec:
       restartPolicy: OnFailure

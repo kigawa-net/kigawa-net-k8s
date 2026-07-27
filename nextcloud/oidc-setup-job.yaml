@@ -6,6 +6,12 @@ metadata:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
+  # restartPolicy: OnFailure retries in-place inside the same pod, which never
+  # counts against backoffLimit. Without a deadline, a stuck Nextcloud pod (or
+  # the kubectl wait --timeout=300s failing repeatedly) let this hang for days
+  # and, being a PostSync hook, blocked every later ArgoCD sync indefinitely.
+  activeDeadlineSeconds: 600
+  backoffLimit: 3
   template:
     spec:
       serviceAccountName: nextcloud-oidc-setup-sa
