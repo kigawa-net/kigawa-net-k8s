@@ -40,6 +40,7 @@ spec:
                     onemc-rpgcore-dev
                     onemc-build
                     kigawa-net-admin-panel
+                    github-runner
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
