@@ -4,13 +4,11 @@ metadata:
   name: nextcloud-files-scan
   namespace: kigawa-net-nextcloud
 spec:
-  # Suspended: "/CephFS Root" (datadir /mnt/cephfs) is rootPath: "/" of the whole
-  # shared rook-cephfs filesystem (see cephfs-root-pv.yaml), not a Nextcloud-only
-  # subdirectory. `occ files:scan`, even scoped to just this one mount via --path,
-  # hangs indefinitely walking it, which previously left a run stuck for hours and
-  # (with concurrencyPolicy: Forbid) blocked every later schedule. Keep suspended
-  # until the CephFS mount is re-scoped to a dedicated subvolume/subdirectory.
-  suspend: true
+  # Re-enabled: the CephFS mount (cephfs-user-pv.yaml) is now scoped to rootPath:
+  # /user instead of the whole shared filesystem, so a scan of this one mount is
+  # bounded (~2.3k files, a few seconds once warm) instead of walking the entire
+  # cluster's cephfs. activeDeadlineSeconds below still guards against a hang.
+  suspend: false
   schedule: "*/10 * * * *"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 300
