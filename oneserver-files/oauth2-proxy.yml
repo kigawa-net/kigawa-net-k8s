@@ -8,9 +8,11 @@ stringData:
   # bearer-only モード(--skip-jwt-bearer-tokens)では実際のOAuthログインフローを
   # 使わないため、client-id/client-secret/cookie-secretはoauth2-proxyの起動要件を
   # 満たすためだけのダミー値。秘匿情報ではない。
+  # cookie-secretはAES鍵として使われるため厳密に16/24/32バイトである必要がある
+  # (oauth2-proxyはこれ以外の長さだと起動時にCrashLoopBackOffする)。
   client-id: oneserver-files
   client-secret: unused
-  cookie-secret: "0000000000000000000000000000000000000000000000"
+  cookie-secret: "af0e0253518f4310d0f2b0e61badb826"
 ---
 apiVersion: apps/v1
 kind: Deployment
