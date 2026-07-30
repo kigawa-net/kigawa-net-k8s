@@ -7,9 +7,9 @@ spec:
   project: one
 
   source:
-    repoURL: https://github.com/OneServerMC/RpgCore.git
-    targetRevision: develop
-    path: k8s/build
+    repoURL: https://github.com/OneServerMC/infra.git
+    targetRevision: main
+    path: build
 
   destination:
     server: https://kubernetes.default.svc

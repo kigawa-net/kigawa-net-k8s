@@ -60,9 +60,12 @@ GitHub Actions Runner Controller。OneServerMC org 向けのセルフホスト�
 - **Secret**: `arc/github-secret-bws.yml` — GitHub App 認証 (app_id / installation_id / private_key)
 - 新しい namespace に追加する場合は `bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` にも追記
 
-### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`)
+### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`, `apps/oneserver-*-app.yml`)
 OneServerMC 向け AppProject `one`。namespace `onemc-*` と `https://github.com/OneServerMC/*` を許可。
-- **RpgCore dev**: `k8s/overlays/dev` を `onemc-rpgcore` にデプロイ
+マニフェストは全て専用リポジトリ `OneServerMC/infra` に集約されている(旧: `OneServerMC/RpgCore` の `k8s/`)。
+- **RpgCore dev**(プラグイン単体の検証環境): `overlays/dev` を `onemc-rpgcore-dev` にデプロイ
+- **OneServer dev/stg/prod**(ゲームサーバ本体): `one/overlays/{dev,stg,prod}` をそれぞれ `onemc-rpgcore-dev` / `onemc-rpgcore-stg` / `onemc-rpgcore` にデプロイ
+- **OneServer build**(ビルドパイプライン): `build` を `onemc-build` にデプロイ
 
 ### OneServer Files (`oneserver-files/`, `apps/oneserver-files-app.yml`)
 OneServerMCのビルドパイプライン用アセット(プラグインJAR・ワールドtgz)を配置する認証付き
@@ -135,4 +138,7 @@ argocd app get kigawa-net-keruta-dev-app
 | default | Diver-MC Minecraft |
 | `arc-systems` | ARC controller |
 | `arc-runners` | ARC self-hosted runners (OneServerMC) |
-| `onemc-rpgcore` | RpgCore dev (Minecraft Paper plugin) |
+| `onemc-rpgcore` | OneServer prod (ゲームサーバ本体) |
+| `onemc-rpgcore-dev` | RpgCore dev (プラグイン単体) / OneServer dev (ゲームサーバ) |
+| `onemc-rpgcore-stg` | OneServer stg (ゲームサーバ) |
+| `onemc-build` | OneServer build (ビルドパイプライン) |
