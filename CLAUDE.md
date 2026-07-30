@@ -63,6 +63,10 @@ GitHub Actions Runner Controller。OneServerMC org 向けのセルフホスト�
 ### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`)
 OneServerMC 向け AppProject `one`。namespace `onemc-*` と `https://github.com/OneServerMC/*` を許可。
 - **RpgCore dev**: `k8s/overlays/dev` を `onemc-rpgcore` にデプロイ
+- **oneserver-legacy**(`apps/oneserver-legacy-app.yml`): `OneServerMC/infra` の `overlays/all`
+  (`OneServerMC/k8s` の `manifest/build`・`manifest/growi` をkustomize remote baseとしてコミットSHA固定で参照)
+  を namespace `one` にデプロイ。旧build.onemc.worldビルドサーバ・growi wiki。元々手動運用だった
+  ためGitOps移行の初回は自動sync/pruneを無効にしている(手動でのsync確認が必要)。
 
 ### OneServer Files (`oneserver-files/`, `apps/oneserver-files-app.yml`)
 OneServerMCのビルドパイプライン用アセット(プラグインJAR・ワールドtgz)を配置する認証付き

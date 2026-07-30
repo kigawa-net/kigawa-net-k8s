@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oneserver-legacy
+  namespace: argocd
+spec:
+  project: one
+
+  source:
+    repoURL: https://github.com/OneServerMC/infra.git
+    targetRevision: main
+    path: overlays/all
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: one
+
+  # 旧build.onemc.worldビルドサーバ・growi wikiは元々手動運用だったため、GitOps移行の
+  # 初回は自動sync/pruneを有効にせず、手動で差分を確認してからsyncする。
+  # (namespace `one` に、このリポジトリの26リソース以外の手動作成分が残っている可能性があるため)
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
