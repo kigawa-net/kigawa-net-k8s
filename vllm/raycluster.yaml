@@ -4,6 +4,7 @@ metadata:
   name: vllm-cluster
   namespace: kigawa-net-llm
 spec:
+  suspend: true
   rayVersion: "2.37.0"
   headGroupSpec:
     serviceType: ClusterIP
