@@ -49,6 +49,10 @@ spec:
             # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)
             # 確認コマンド: kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
             - --extra-jwt-issuers=https://kubernetes.default.svc.cluster.local=https://files.kigawa.net
+            # kubernetes.default.svc.cluster.localの証明書はクラスタ内部CA発行のため、
+            # oauth2-proxyのデフォルト信頼ストアでは検証できず上記issuerの鍵取得が
+            # 常に失敗していた。Pod自動マウントのSAトークン用CA証明書を明示的に信頼する。
+            - --provider-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
