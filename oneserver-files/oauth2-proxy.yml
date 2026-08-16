@@ -34,8 +34,21 @@ spec:
           image: quay.io/oauth2-proxy/oauth2-proxy:latest
           args:
             - --provider=oidc
-            # 実際のログインフローは使わないため既存Keycloakレルムを流用(起動要件を満たすためだけ)
-            - --oidc-issuer-url=https://user.kigawa.net/realms/manage
+            # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)。
+            # K8sのdiscoveryドキュメントはOIDC仕様上必須のauthorization_endpointを
+            # 意図的に欠いている(JWT発行専用issuerでフルOAuthプロバイダではないため)。
+            # このためoauth2-proxyのdiscoveryベースのプロバイダ初期化が失敗し、
+            # 「失敗時は<issuer>/.well-known/jwks.jsonを推測してフォールバック」という
+            # 挙動に入るが、K8sは実際には/openid/v1/jwksにしかJWKSを置いていないため
+            # 常に403/404になり検証が不可能だった(RBAC/CA/TLSの設定とは無関係)。
+            # skip-oidc-discoveryでdiscoveryを完全に回避し、正しいJWKS URLを直接指定する。
+            - --skip-oidc-discovery=true
+            - --oidc-issuer-url=https://kubernetes.default.svc.cluster.local
+            - --oidc-jwks-url=https://kubernetes.default.svc.cluster.local/openid/v1/jwks
+            # skip-oidc-discovery使用時は必須項目だが、Bearer専用モード
+            # (skip-jwt-bearer-tokens=true)のため実際には呼ばれない
+            - --login-url=https://kubernetes.default.svc.cluster.local/unused-login
+            - --redeem-url=https://kubernetes.default.svc.cluster.local/unused-redeem
             - --upstream=http://oneserver-file-server:8080
             - --http-address=0.0.0.0:4180
             - --email-domain=*
@@ -44,18 +57,19 @@ spec:
             - --pass-access-token=true
             # Bearer JWTでの機械間認証のみを許可し、ブラウザOAuthフローは使わない
             - --skip-jwt-bearer-tokens=true
-            # GitHub Actions(RpgCore CI)のOIDCトークンを検証
+            # 上記oidc-issuer-url(k8s SA token)のaudienceとして受け付ける値
+            - --oidc-extra-audience=https://files.kigawa.net
+            # GitHub Actions(RpgCore CI)のOIDCトークンを検証。discoveryドキュメントが
+            # OIDC仕様に準拠しているため、extra-jwt-issuersのdiscoveryベース検証で
+            # 問題なく動く(kubernetesのケースとは異なる)
             - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.kigawa.net
-            # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)
-            # 確認コマンド: kubectl get --raw /.well-known/openid-configuration | jq -r .issuer
-            - --extra-jwt-issuers=https://kubernetes.default.svc.cluster.local=https://files.kigawa.net
             # kubernetes.default.svc.cluster.localの証明書はクラスタ内部CA発行のため、
-            # oauth2-proxyのデフォルト信頼ストアでは検証できず上記issuerの鍵取得が
-            # 常に失敗していた。Pod自動マウントのSAトークン用CA証明書を明示的に信頼する。
+            # デフォルト信頼ストアでは検証できない。Pod自動マウントのSAトークン用CA証明書
+            # を明示的に信頼する。
             - --provider-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            # --provider-ca-file指定時、use-system-trust-store=falseだとそのCAのみ
-            # 信頼され公開CAストアが無効化されてしまい、oidc-issuer-url(Keycloak)や
-            # token.actions.githubusercontent.comの検証が壊れるため明示的にtrueにする。
+            # provider-ca-file指定時、use-system-trust-store=falseだとそのCAのみ信頼され
+            # 公開CAストアが無効化されtoken.actions.githubusercontent.comの検証が壊れる
+            # ため明示的にtrueにする。
             - --use-system-trust-store=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
