@@ -53,6 +53,10 @@ spec:
             # oauth2-proxyのデフォルト信頼ストアでは検証できず上記issuerの鍵取得が
             # 常に失敗していた。Pod自動マウントのSAトークン用CA証明書を明示的に信頼する。
             - --provider-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            # --provider-ca-file指定時、use-system-trust-store=falseだとそのCAのみ
+            # 信頼され公開CAストアが無効化されてしまい、oidc-issuer-url(Keycloak)や
+            # token.actions.githubusercontent.comの検証が壊れるため明示的にtrueにする。
+            - --use-system-trust-store=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
