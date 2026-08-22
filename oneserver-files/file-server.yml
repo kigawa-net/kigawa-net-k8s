@@ -1,3 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oneserver-file-server-script
+  namespace: kigawa-net-oneserver-files
+data:
+  server.py: |
+    # halverneus/static-file-server はGET専用でPUT(アップロード)に対応して
+    # おらず、world-exporter/build.ymlからのアップロードが常に404になっていた
+    # (halverneus公式READMEにも書き込み系の機能は存在しない)。
+    # 認証・CORS等はoauth2-proxyが前段で担うため、ここでは
+    # GET(ファイル取得)とPUT(ファイル書き込み、親ディレクトリは自動作成)
+    # のみを実装する最小限のサーバーとする。
+    import http.server
+    import os
+    import pathlib
+
+    FOLDER = os.environ.get("FOLDER", "/data")
+    PORT = int(os.environ.get("PORT", "8080"))
+    ROOT = pathlib.Path(FOLDER).resolve()
+
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def _resolve(self):
+            rel = self.path.lstrip("/")
+            target = (ROOT / rel).resolve()
+            if target != ROOT and ROOT not in target.parents:
+                return None
+            return target
+
+        def do_GET(self):
+            target = self._resolve()
+            if target is None or not target.is_file():
+                self.send_response(404)
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(target.stat().st_size))
+            self.end_headers()
+            with open(target, "rb") as f:
+                self.wfile.write(f.read())
+
+        def do_PUT(self):
+            target = self._resolve()
+            if target is None:
+                self.send_response(403)
+                self.end_headers()
+                return
+            target.parent.mkdir(parents=True, exist_ok=True)
+            remaining = int(self.headers.get("Content-Length", 0))
+            with open(target, "wb") as f:
+                while remaining > 0:
+                    chunk = self.rfile.read(min(65536, remaining))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    remaining -= len(chunk)
+            self.send_response(201)
+            self.end_headers()
+
+        def log_message(self, fmt, *args):
+            print("%s - %s" % (self.address_string(), fmt % args), flush=True)
+
+
+    if __name__ == "__main__":
+        server = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
+        server.serve_forever()
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,22 +84,21 @@ spec:
     spec:
       containers:
         - name: file-server
-          image: halverneus/static-file-server:latest
+          image: python:3.13-alpine
+          command: ["python3", "/app/server.py"]
           env:
             - name: FOLDER
               value: /data
             - name: PORT
               value: "8080"
-            - name: SHOW_LISTING
-              value: "true"
-            - name: CORS
-              value: "false"
           ports:
             - containerPort: 8080
               name: http
           volumeMounts:
             - name: files
               mountPath: /data
+            - name: server-script
+              mountPath: /app
           resources:
             requests:
               cpu: 10m
@@ -42,6 +110,9 @@ spec:
         - name: files
           persistentVolumeClaim:
             claimName: oneserver-files
+        - name: server-script
+          configMap:
+            name: oneserver-file-server-script
 ---
 apiVersion: v1
 kind: Service
