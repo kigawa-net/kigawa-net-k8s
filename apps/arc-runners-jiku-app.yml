@@ -35,16 +35,24 @@ spec:
                             - k8s-worker3
             containers:
               - name: runner
-                image: ghcr.io/actions/actions-runner:2.334.0
+                image: ghcr.io/actions/actions-runner:2.336.0
                 imagePullPolicy: IfNotPresent
                 command: ["/home/runner/run.sh"]
+                # 他のrunner-set(kigawa01/onemc/infra)はlimits.memory: 8Giだが、jikuの
+                # deploy-frontend.yml「Test」ステップ(testAndroidHostTest+jsTest+wasmJsTest)は
+                # Gradleデーモン(4096M)+Kotlinデーモン(3072M)+Node.js+ヘッドレスChromeを
+                # 同時に抱え、8Giでは頻繁にコンテナのメモリ上限でプロセスがOOM Killされていた
+                # (2026-08-21〜22、mainのDeploy Frontend (Pages)が4回連続で
+                # 「Cannot find node module kotlin-web-helpers/...」で失敗。OutOfMemoryErrorの
+                # 文字列はログに出ないが、npm/nodeプロセスがカーネルのOOM killerでSIGKILLされ
+                # インストールが不完全になった結果と一致する)。そのため16Giに増設している
                 resources:
                   requests:
-                    memory: "512Mi"
-                    cpu: "500m"
+                    memory: "4Gi"
+                    cpu: "2"
                     ephemeral-storage: "30Gi"
                   limits:
-                    memory: "8Gi"
+                    memory: "16Gi"
                     cpu: "4"
                 volumeMounts:
                   - name: gradle-home
