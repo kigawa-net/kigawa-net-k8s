@@ -29,6 +29,8 @@ spec:
                     onemc-rpgcore-dev
                     onemc-build
                     kigawa-net-el4s-realtime
+                    platform-lipl-dev
+                    platform-lipl-stg
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
