@@ -30,6 +30,7 @@ spec:
                     onemc-build
                     kigawa-net-el4s-realtime
                     platform-lipl-stg
+                    platform-lipl-main
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$

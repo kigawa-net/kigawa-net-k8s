@@ -41,6 +41,7 @@ spec:
                     onemc-build
                     kigawa-net-admin-panel
                     platform-lipl-stg
+                    platform-lipl-main
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
