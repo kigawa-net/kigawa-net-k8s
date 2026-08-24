@@ -40,7 +40,6 @@ spec:
                     onemc-rpgcore-dev
                     onemc-build
                     kigawa-net-admin-panel
-                    github-runner
                     platform-lipl-stg
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
@@ -56,9 +55,12 @@ spec:
 
                   sync_namespace() {
                     local namespace="$1"
-                    kubectl create secret generic bitwarden-sec \
+                    if ! kubectl create secret generic bitwarden-sec \
                       --from-literal=token="$token" \
-                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
+                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -; then
+                      echo "WARN: failed to sync bitwarden-sec to $namespace, skipping" >&2
+                      return 0
+                    fi
 
                     echo "Secret bitwarden-sec synced successfully at $(date) to $namespace"
                   }

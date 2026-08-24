@@ -47,11 +47,14 @@ spec:
                   sync_namespace() {
                     local namespace="$1"
                     # Create or update the harbor-registry secret with correct type
-                    kubectl create secret docker-registry harbor-registry \
+                    if ! kubectl create secret docker-registry harbor-registry \
                       --docker-server=harbor.kigawa.net \
                       --docker-username="$USERNAME" \
                       --docker-password="$PASSWORD" \
-                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
+                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -; then
+                      echo "WARN: failed to sync harbor-registry to $namespace, skipping" >&2
+                      return 0
+                    fi
 
                     echo "Secret harbor-registry synced successfully at $(date) to $namespace"
                   }
