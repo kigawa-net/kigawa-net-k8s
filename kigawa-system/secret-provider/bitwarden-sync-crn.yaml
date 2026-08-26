@@ -42,9 +42,12 @@ spec:
                     kigawa-net-admin-panel
                     platform-lipl-stg
                     platform-lipl-main
+                    kaft-stg
+                    kaft-main
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
+                    ^kaft-dev-pr-[0-9]+$
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
