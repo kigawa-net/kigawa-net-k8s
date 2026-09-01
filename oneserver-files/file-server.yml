@@ -14,6 +14,7 @@ data:
     import http.server
     import os
     import pathlib
+    import shutil
 
     FOLDER = os.environ.get("FOLDER", "/data")
     PORT = int(os.environ.get("PORT", "8080"))
@@ -38,8 +39,11 @@ data:
             self.send_header("Content-Type", "application/octet-stream")
             self.send_header("Content-Length", str(target.stat().st_size))
             self.end_headers()
+            # f.read()でファイル全体を一度にメモリへ読み込むとOOMKilledする
+            # (実際に2.4GBのワールドアーカイブ配信でコンテナがOOMKilledした)。
+            # shutil.copyfileobjでチャンク単位にストリーミングする。
             with open(target, "rb") as f:
-                self.wfile.write(f.read())
+                shutil.copyfileobj(f, self.wfile, length=65536)
 
         def do_PUT(self):
             target = self._resolve()
