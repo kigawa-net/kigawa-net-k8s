@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fusha-task-dev
+  namespace: argocd
+spec:
+  project: project-fusha
+
+  source:
+    repoURL: https://github.com/project-fusha/platform.git
+    targetRevision: main
+    path: fusha-task/overlays/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fusha-task-dev
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

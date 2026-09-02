@@ -77,6 +77,20 @@ OneServerMCのビルドパイプライン用アセット(プラグインJAR・�
   - クラスタ自身のService Account issuer(`https://kubernetes.default.svc.cluster.local`。world-exporter/world-image-builderから)
 - Ingress: `files.kigawa.net`
 
+### project-fusha (`apps/project-fusha-project.yml`, `apps/fusha-task-*-app.yml`)
+project-fusha org 向け AppProject `project-fusha`。namespace `fusha-task-*` と
+`https://github.com/project-fusha/*` を許可（`one`/OneServerMCと同じ「別orgが既存
+クラスタに相乗りする」パターン）。project-fusha自体はGitHub/Cloudflare/1Password等を
+kigawa個人インフラから分離する方針だが、k8sクラスタ自体はユーザーの判断で意図的に
+このクラスタへ相乗りしている（詳細な経緯は`project-fusha/platform`リポジトリの
+CLAUDE.md参照）。
+- マニフェストは専用リポジトリ `project-fusha/platform` に集約（`OneServerMC/infra`+
+  `OneServerMC/platform`と違い、overlay/baseとも同一リポジトリ内。サービスが
+  fusha-task 1つのみのため）
+- **fusha-task dev/stg**: `fusha-task/overlays/{dev,stg}` をそれぞれ `fusha-task-dev` /
+  `fusha-task-stg` にデプロイ。MariaDB（StatefulSet）も同じnamespace内に同居させている
+- prod環境は未着手（専用k8sクラスタ用意待ち）
+
 ### Bitwarden / Secret Provider (`kigawa-system/secret-provider/`, `apps/bitwarden-sm-operator-app.yml`)
 Bitwarden Secrets Manager operator syncs secrets into each namespace via `BitwardenSecret` CRDs. Organization ID: `a2b57f3d-6e2b-4467-b499-b31e00bfd804`. Each namespace requires a `bitwarden-sec` secret containing the auth token.
 
@@ -142,3 +156,5 @@ argocd app get kigawa-net-keruta-dev-app
 | `onemc-rpgcore-dev` | RpgCore dev (プラグイン単体) / OneServer dev (ゲームサーバ) |
 | `onemc-rpgcore-stg` | OneServer stg (ゲームサーバ) |
 | `onemc-build` | OneServer build (ビルドパイプライン) |
+| `fusha-task-dev` | project-fusha fusha-task backend development |
+| `fusha-task-stg` | project-fusha fusha-task backend staging |
