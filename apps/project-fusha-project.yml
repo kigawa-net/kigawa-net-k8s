@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: project-fusha
+  namespace: argocd
+spec:
+  description: Project for project-fusha resources (existing cluster piggybacked, see project-fusha/platform CLAUDE.md)
+
+  destinations:
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: fusha-task-*
+
+  sourceRepos:
+    - https://github.com/project-fusha/*
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
