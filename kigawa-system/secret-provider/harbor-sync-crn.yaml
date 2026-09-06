@@ -37,6 +37,7 @@ spec:
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
                     ^kaft-dev-pr-[0-9]+$
+                    ^onemc-rpgcore-pr-[0-9]+$
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash

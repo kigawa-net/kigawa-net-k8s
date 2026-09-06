@@ -1,0 +1,18 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: rpgcore-pr-github-app-bws
+  namespace: argocd
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: rpgcore-pr-github-app
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "320f3982-890e-4865-8c15-b4b0005154aa"
+      secretKeyName: githubAppID
+    - bwSecretId: "c7f0811a-19e1-41b9-8c05-b4bd011896cd"
+      secretKeyName: githubAppInstallationID
+    - bwSecretId: "97b6eba7-6bd2-418d-9d64-b48a007a097a"
+      secretKeyName: githubAppPrivateKey
