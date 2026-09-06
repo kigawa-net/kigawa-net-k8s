@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: rpgcore-pr-preview
+  namespace: argocd
+spec:
+  generators:
+    - pullRequest:
+        github:
+          owner: OneServerMC
+          repo: RpgCore
+          appSecretName: rpgcore-pr-github-app
+        requeueAfterSeconds: 60
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  template:
+    metadata:
+      name: 'rpgcore-pr-{{.number}}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: one
+      source:
+        repoURL: https://github.com/OneServerMC/infra.git
+        targetRevision: main
+        path: overlays/dev
+        kustomize:
+          namespace: 'onemc-rpgcore-pr-{{.number}}'
+          images:
+            - 'harbor.kigawa.net/private/rpgcore:pr-{{.number}}'
+          commonAnnotations:
+            mc-router.itzg.me/externalServerName: 'pr-{{.number}}.onemc.world'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'onemc-rpgcore-pr-{{.number}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
