@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rpgcore-pr-ci-read-applications
+  namespace: argocd
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rpgcore-pr-ci-read-applications
+  namespace: argocd
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: Role
+  name: rpgcore-pr-ci-read-applications
+  apiGroup: rbac.authorization.k8s.io
