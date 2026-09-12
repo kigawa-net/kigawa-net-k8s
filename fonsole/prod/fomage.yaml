@@ -49,4 +49,16 @@ spec:
                 secretKeyRef:
                   key: pass
                   name: mongo
+            # Keycloak(OIDC)認証。prodはmanageレルム(高権限アカウント向け)を使用
+            - name: KEYCLOAK_URL
+              value: https://user.kigawa.net
+            - name: KEYCLOAK_REALM
+              value: manage
+            - name: KEYCLOAK_CLIENT_ID
+              value: fomage
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fomage-keycloak
+                  key: client-secret
       restartPolicy: Always
