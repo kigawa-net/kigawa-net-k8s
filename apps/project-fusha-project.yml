@@ -10,6 +10,9 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: fusha-task-*
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: shifutomo-*
 
   sourceRepos:
     - https://github.com/project-fusha/*
