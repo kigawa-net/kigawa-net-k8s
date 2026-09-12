@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: fomage
-          image: harbor.kigawa.net/library/fomage:main-1e3ecdc53724644744ca99ebcf1ee4347b2f74d0
+          image: harbor.kigawa.net/library/fomage:pr-3-5542cbe9bccbca6fc4155346bc45e6bcfe2c862e
           imagePullPolicy: IfNotPresent
           startupProbe:
             httpGet:
