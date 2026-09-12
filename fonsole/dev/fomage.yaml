@@ -31,22 +31,13 @@ spec:
             - containerPort: 8080
               protocol: TCP
           env:
+            # dev専用のダミーMongoDB(fonsole/dev/mongo.yaml)を参照。本番DBとは無関係。
             - name: MONGODB_URI
-              value: mongodb://mongo-svc.fonsole.svc.cluster.local:27017/fomage
+              value: mongodb://fomage-mongo-svc:27017/fomage
             - name: MONGODB_DATABASE
               value: fomage
             - name: SERVER_PORT
               value: "8080"
             - name: LOG_LEVEL
               value: INFO
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  key: user
-                  name: mongo
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: pass
-                  name: mongo
       restartPolicy: Always

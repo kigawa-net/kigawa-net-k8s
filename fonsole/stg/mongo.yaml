@@ -1,0 +1,59 @@
+# stg環境専用のMongoDB。本番(fonsole)のMongoDBとは分離された別インスタンスで、
+# 本番データの一部(サブセット)を別途投入して使用する想定(投入作業自体は本マニフェストの範囲外)。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fomage-mongo-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fomage-mongo
+  labels:
+    app: fomage-mongo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: fomage-mongo
+  template:
+    metadata:
+      name: fomage-mongo
+      labels:
+        app: fomage-mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7.0
+          ports:
+            - containerPort: 27017
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: fomage-mongo-data
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fomage-mongo-svc
+spec:
+  selector:
+    app: fomage-mongo
+  ports:
+    - port: 27017
+      targetPort: 27017
+      protocol: TCP
+  type: ClusterIP
