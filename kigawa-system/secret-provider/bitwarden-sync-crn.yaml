@@ -46,6 +46,8 @@ spec:
                     kaft-main
                     fusha-task-dev
                     fusha-task-stg
+                    shifutomo-dev
+                    shifutomo-stg
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
