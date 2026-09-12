@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: onemc-rpgcore-stg-plugin
+  namespace: argocd
+spec:
+  project: one
+
+  source:
+    repoURL: https://github.com/OneServerMC/infra.git
+    targetRevision: main
+    path: overlays/stg
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: onemc-rpgcore-stg
+
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
