@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  pull_request:
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install yamllint
+        run: pip install --break-system-packages yamllint
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .
+
+  dry-run:
+    runs-on: arc-runner-set
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed YAML files
+        id: changed
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          files=$(git diff --name-only "origin/${{ github.base_ref }}" -- '*.yml' '*.yaml' | grep -v '^\.github/' || true)
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: kubectl apply --dry-run=server + ArgoCD Application status
+        run: |
+          echo "## CI dry-run 結果" >> "$GITHUB_STEP_SUMMARY"
+
+          files="${{ steps.changed.outputs.files }}"
+          if [ -z "$files" ]; then
+            echo "変更されたYAMLファイルはありません。" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          overall_status=0
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || { echo "- \`$f\`: 削除されたファイルのためスキップ" >> "$GITHUB_STEP_SUMMARY"; continue; }
+
+            echo "### \`$f\`" >> "$GITHUB_STEP_SUMMARY"
+
+            if ! result=$(kubectl apply --dry-run=server -f "$f" 2>&1); then
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "- ❌ dry-run(server)失敗" >> "$GITHUB_STEP_SUMMARY"
+              overall_status=1
+              continue
+            fi
+            echo "- ✅ dry-run(server) OK" >> "$GITHUB_STEP_SUMMARY"
+
+            # apps/*.yml は1ファイル1Applicationという規約(README/CLAUDE.md)を前提に、
+            # 素朴にmetadata.nameを取り出す(多ドキュメントYAMLはこの規約の対象外なので触らない)
+            case "$f" in
+              apps/*.yml|apps/*.yaml)
+                name=$(awk '/^metadata:/{f=1;next} f && /^  name:/{print $2; exit}' "$f")
+                if [ -n "$name" ]; then
+                  if status=$(kubectl get application "$name" -n argocd -o jsonpath='{.status.sync.status} / {.status.health.status}' 2>&1); then
+                    echo "- ArgoCD Application \`$name\`: ${status}" >> "$GITHUB_STEP_SUMMARY"
+                  else
+                    echo "- ArgoCD Application \`$name\`: 現在クラスタに存在しません(新規追加の場合は正常)" >> "$GITHUB_STEP_SUMMARY"
+                  fi
+                fi
+                ;;
+            esac
+          done <<< "$files"
+
+          exit "$overall_status"
