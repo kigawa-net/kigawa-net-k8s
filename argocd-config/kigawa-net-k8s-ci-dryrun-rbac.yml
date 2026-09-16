@@ -1,0 +1,664 @@
+# kigawa-net-k8s 自身のPR CI(.github/workflows/ci.yml)が `kubectl apply --dry-run=server`
+# でCRD込みの検証をするための権限。
+#
+# ClusterRole自体はClusterRoleBindingで束ねず、このリポジトリが実際に管理している各
+# namespaceにRoleBindingとして個別に配ることで、権限をそのnamespace内に閉じている。
+# dry-runは何も永続化しないが、RBAC上は本物のcreate/update/patchと同じverbが必要な
+# ため、新しいnamespaceを追加する場合は下のRoleBinding一覧にも追記すること。
+# ServiceAccountはARC runnerの共有アカウント(arc-runner-set-gha-rs-no-permission)で
+# あり、この権限は同じrunnerプールを使う他リポジトリのCIジョブからも技術的には行使
+# 可能な点に注意(RpgCore PR previewの既存RBACと同じ制約)。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: arc-runners
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: arc-systems
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: argocd
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: fonsole
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: fusha-task-dev
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: fusha-task-stg
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: gpu-operator
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: keycloak
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-admin-panel
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-el4s-realtime
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-fomage-dev
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-fomage-prod
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-fomage-stg
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-beta
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-dev
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-dev-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-main
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-main-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-stg
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-keruta-stg-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-llm
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-llm-proxy
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-llm-ui
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-lp-main
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-maas
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-mamoru-main
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-mc-ftb-mc
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-oneserver-files
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-secret-provider
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-net-sentry
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kigawa-system-rook-ceph
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+# 注意: kube-system は coredns/coredns-configmap.yaml がここに配置される都合で対象に
+# 含めている。他のnamespaceより機微度が高いため、この行を追加した理由として明記する。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: one
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: onemc
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: onemc-build
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: onemc-rpgcore
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: onemc-rpgcore-dev
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: onemc-rpgcore-stg
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: rook-ceph
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: shifutomo-dev
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: shifutomo-stg
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: sm-operator-system
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-dryrun
+  namespace: tidb-system
+subjects:
+  - kind: ServiceAccount
+    name: arc-runner-set-gha-rs-no-permission
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
