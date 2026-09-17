@@ -10,6 +10,12 @@ spec:
     repoURL: https://github.com/OneServerMC/infra.git
     targetRevision: main
     path: overlays/stg
+    kustomize:
+      # 常設環境なのでmc-routerのコールドスタート(auto-scale-up/down)
+      # は無効化する(有効なのはRpgCoreのPRプレビュー環境のみ)。
+      commonAnnotations:
+        mc-router.itzg.me/autoScaleUp: "false"
+        mc-router.itzg.me/autoScaleDown: "false"
 
   destination:
     server: https://kubernetes.default.svc

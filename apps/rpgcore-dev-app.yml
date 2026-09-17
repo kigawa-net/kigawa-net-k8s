@@ -10,6 +10,14 @@ spec:
     repoURL: https://github.com/OneServerMC/infra.git
     targetRevision: main
     path: overlays/dev
+    kustomize:
+      # overlays/devはRpgCoreのPRプレビュー環境(rpgcore-pr-preview
+      # ApplicationSet)とも共有しているテンプレートのため、コール
+      # ドスタート(mc-routerのauto-scale-up/down)はデフォルトで
+      # 有効になる。この常設dev環境だけは明示的にオプトアウトする。
+      commonAnnotations:
+        mc-router.itzg.me/autoScaleUp: "false"
+        mc-router.itzg.me/autoScaleDown: "false"
 
   destination:
     server: https://kubernetes.default.svc
