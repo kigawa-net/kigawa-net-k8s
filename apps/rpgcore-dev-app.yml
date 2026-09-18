@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: https://github.com/OneServerMC/infra.git
     targetRevision: main
-    path: overlays/dev
+    path: overlays/dev-velocity
 
   destination:
     server: https://kubernetes.default.svc
