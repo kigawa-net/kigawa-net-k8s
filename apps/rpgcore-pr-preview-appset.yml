@@ -30,8 +30,11 @@ spec:
           namespace: 'onemc-rpgcore-pr-{{.number}}'
           images:
             - 'harbor.kigawa.net/private/rpgcore:pr-{{.number}}'
-          commonAnnotations:
-            mc-router.itzg.me/externalServerName: 'pr-{{.number}}.onemc.world'
+        # PR環境へのmc-router経由の直接接続(pr-{{.number}}.onemc.world)は廃止した。
+        # dev.onemc.worldに接続後、Velocityの/serverコマンドでpr-{{.number}}へ
+        # 移動する経路に一本化する(OneServerMC/velocity-pr-discovery)。
+        # mc-routerとVelocityが同じDeploymentを別々の基準でauto-scaleすると
+        # 競合するため、経路を1つに絞る。
       destination:
         server: https://kubernetes.default.svc
         namespace: 'onemc-rpgcore-pr-{{.number}}'
