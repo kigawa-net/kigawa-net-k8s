@@ -49,7 +49,7 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "00000000-0000-0000-0000-000000000000"
+    - bwSecretId: "07428cf5-588e-4c28-9215-b4cf00b3cf7a"
       secretKeyName: private-key
 ---
 apiVersion: v1
