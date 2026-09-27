@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karmada
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # 公式 Karmada Helm リポジトリ (karmada-io/karmada の charts/ を raw.githubusercontent.com 経由で公開)
+    repoURL: https://raw.githubusercontent.com/karmada-io/karmada/master/charts
+    chart: karmada
+    targetRevision: v1.19.0
+    helm:
+      releaseName: karmada
+      valuesObject:
+        etcd:
+          # mode: internal (チャートデフォルト) を明示。self-managed etcdをMVPとして採用し、
+          # 外部3ノードetcdへの移行は別タスクとする。
+          mode: internal
+          internal:
+            # 単一レプリカ・PVC永続化 (MVP)。デフォルトは hostPath のため rook-ceph-rbd の PVC に変更。
+            replicaCount: 1
+            storageType: pvc
+            pvc:
+              storageClass: rook-ceph-rbd
+              size: 10Gi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karmada-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
