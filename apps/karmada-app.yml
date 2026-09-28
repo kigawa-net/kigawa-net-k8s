@@ -7,48 +7,37 @@ spec:
   project: default
 
   source:
-    # 公式 Karmada Helm リポジトリ (karmada-io/karmada の charts/ を raw.githubusercontent.com 経由で公開)
-    repoURL: https://raw.githubusercontent.com/karmada-io/karmada/master/charts
-    chart: karmada
-    targetRevision: v1.19.0
-    helm:
-      releaseName: karmada
-      valuesObject:
-        etcd:
-          # mode: internal (チャートデフォルト) を明示。self-managed etcdをMVPとして採用し、
-          # 外部3ノードetcdへの移行は別タスクとする。
-          mode: internal
-          internal:
-            # 単一レプリカ・PVC永続化 (MVP)。デフォルトは hostPath のため rook-ceph-rbd の PVC に変更。
-            replicaCount: 1
-            storageType: pvc
-            pvc:
-              storageClass: rook-ceph-rbd
-              size: 10Gi
+    # 公式Karmada Helmチャート(v1.19.0)をvendoringした静的マニフェスト。
+    # 理由: 生のHelmチャートを直接ArgoCDでsyncすると2つの問題がある。
+    #   1. ArgoCDの既知バグ(argoproj/argo-cd#12936): PreSync hookリソースが
+    #      ServerSideApply=true/Replace=trueいずれのsyncOptionsも尊重されず、
+    #      KarmadaのCRD用ConfigMap(karmada-crds-policy-bases等、262144バイト超)が
+    #      "metadata.annotations: Too long"で常に失敗する。
+    #   2. チャートにhelm.sh/hook: post-deleteが付与されたJob(karmada-post-delete)が
+    #      含まれており、Helmのフックセマンティクスを持たないツール(kubectl apply等)
+    #      で適用すると「helm uninstall時のみ実行されるべき削除処理」が即座に実行され、
+    #      karmada-systemのリソースを丸ごと削除してしまう。
+    # このvendored manifest(karmada/manifest.yaml)は、公式チャートをレンダリングした上で
+    #   - karmada-post-delete Jobを除外(上記2の回避)
+    #   - 全リソースからhelm.sh/hook*アノテーションを除去(hookではない通常リソースとして
+    #     syncOptionsが正しく適用されるようにするため。上記1の回避)
+    #   - etcd StatefulSetのvolumeClaimTemplates storageサイズが空でレンダリングされる
+    #     チャート/レンダリング側の不具合を10Giに修正
+    # した結果を静的YAMLとしてコミットしたもの。
+    # チャートバージョンを上げる場合は同様の手順(レンダリング→post-delete除外→
+    # hookアノテーション除去→PVCサイズ確認)でこのファイルを再生成すること。
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: karmada
 
   destination:
     server: https://kubernetes.default.svc
     namespace: karmada-system
 
   syncPolicy:
-    # automated sync(prune含む)は一時的に無効化している。ArgoCDの既知バグ
-    # (argoproj/argo-cd#12936: PreSync hookがServerSideApply/Replace両方の
-    # syncOptionsを尊重しない)により、KarmadaのCRD用ConfigMapが常にPreSync
-    # 段階で "metadata.annotations: Too long" エラーで失敗する。この状態で
-    # automated+prune=trueを有効にしたままだと、手動で
-    # `kubectl apply --server-side` によりブートストラップした
-    # karmada-systemのリソース(Deployment/StatefulSet/Job/Namespace自体)を、
-    # ArgoCDの定期リコンサイル(prune=true)が数十秒〜数分単位で丸ごと
-    # 削除してしまう(実際に2回発生・確認済み)。上流バグが解消されるか
-    # 別の回避策が見つかるまで、このApplicationは手動同期のみで運用する。
+    automated:
+      prune: true
+      selfHeal: false
     syncOptions:
       - CreateNamespace=true
-      # KarmadaのCRD群を含むConfigMap(karmada-crds-policy-bases等)が大きく、
-      # クライアントサイドapplyのlast-applied-configurationアノテーション上限
-      # (262144バイト)を超えて "metadata.annotations: Too long" で失敗する。
-      # ServerSideApply=trueのみでは解消しなかったため(PreSync hookリソースの
-      # 適用経路がsyncOptionsを完全には踏襲していない可能性)、エラーメッセージが
-      # 提案するもう一方の回避策であるReplace=true(kubectl replace相当、
-      # アノテーションを介さない)も併用する。
       - ServerSideApply=true
-      - Replace=true
