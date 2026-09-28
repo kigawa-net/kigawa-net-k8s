@@ -41,3 +41,24 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+
+  # karmada-crds-patches / karmada-static-resources は、静的マニフェスト上は
+  # ca_crtプレースホルダー({{ ca_crt }})を含んだ未置換状態でコミットされている。
+  # 実際の置換は karmada-pre-upgrade Jobが実行時にkarmada-cert Secretから
+  # 生成済みCAを読み取ってsedで書き換え、kubectl applyし直すことで行われる
+  # (Helm本来のpre-upgrade hookの役割)。
+  # pre-upgrade Jobは一度Completeすると同じ内容では再実行されないため、ArgoCDの
+  # syncがこの2つのConfigMapを毎回git上の(未置換の)内容に巻き戻してしまうと、
+  # karmada-static-resource Jobがkustomizeの"wrong node kind"エラーで
+  # 恒久的に失敗し続ける(実際に発生・確認済み)。
+  # このためArgoCDにこの2つのConfigMapのdataフィールドの差分を無視させ、
+  # 一度Job側が置換した内容を上書きしないようにする。
+  ignoreDifferences:
+    - kind: ConfigMap
+      name: karmada-crds-patches
+      jsonPointers:
+        - /data
+    - kind: ConfigMap
+      name: karmada-static-resources
+      jsonPointers:
+        - /data
