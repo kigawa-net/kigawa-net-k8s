@@ -817,6 +817,7 @@ metadata:
   name: karmada-static-resource
   namespace: karmada-system
   labels: null
+  annotations: {}
 spec:
   parallelism: 1
   completions: 1
@@ -10655,6 +10656,8 @@ metadata:
   name: karmada-pre-install
   namespace: karmada-system
   labels: null
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
 spec:
   parallelism: 1
   completions: 1
@@ -10794,6 +10797,8 @@ metadata:
   name: karmada-pre-upgrade
   namespace: karmada-system
   labels: null
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
 spec:
   parallelism: 1
   completions: 1
