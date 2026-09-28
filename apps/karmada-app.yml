@@ -38,6 +38,10 @@ spec:
       - CreateNamespace=true
       # KarmadaのCRD群を含むConfigMap(karmada-crds-policy-bases等)が大きく、
       # クライアントサイドapplyのlast-applied-configurationアノテーション上限
-      # (262144バイト)を超えて "metadata.annotations: Too long" で失敗するため、
-      # Server-Side Applyを使う(アノテーションを使わないためこの上限に掛からない)。
+      # (262144バイト)を超えて "metadata.annotations: Too long" で失敗する。
+      # ServerSideApply=trueのみでは解消しなかったため(PreSync hookリソースの
+      # 適用経路がsyncOptionsを完全には踏襲していない可能性)、エラーメッセージが
+      # 提案するもう一方の回避策であるReplace=true(kubectl replace相当、
+      # アノテーションを介さない)も併用する。
       - ServerSideApply=true
+      - Replace=true
