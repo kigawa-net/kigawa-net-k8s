@@ -31,9 +31,16 @@ spec:
     namespace: karmada-system
 
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: false
+    # automated sync(prune含む)は一時的に無効化している。ArgoCDの既知バグ
+    # (argoproj/argo-cd#12936: PreSync hookがServerSideApply/Replace両方の
+    # syncOptionsを尊重しない)により、KarmadaのCRD用ConfigMapが常にPreSync
+    # 段階で "metadata.annotations: Too long" エラーで失敗する。この状態で
+    # automated+prune=trueを有効にしたままだと、手動で
+    # `kubectl apply --server-side` によりブートストラップした
+    # karmada-systemのリソース(Deployment/StatefulSet/Job/Namespace自体)を、
+    # ArgoCDの定期リコンサイル(prune=true)が数十秒〜数分単位で丸ごと
+    # 削除してしまう(実際に2回発生・確認済み)。上流バグが解消されるか
+    # 別の回避策が見つかるまで、このApplicationは手動同期のみで運用する。
     syncOptions:
       - CreateNamespace=true
       # KarmadaのCRD群を含むConfigMap(karmada-crds-policy-bases等)が大きく、
