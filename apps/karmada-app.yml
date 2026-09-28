@@ -41,6 +41,13 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      # ignoreDifferencesは「差分とみなさない(sync要否の判定・ステータス表示)」
+      # だけで、実際のsync実行時には対象から除外されない。ApplyOutOfSyncOnly=true
+      # を付けて初めて、ignoreDifferences済みで実質Synced扱いのリソースが
+      # sync操作の適用対象から実際にスキップされる。これが無いと、他のリソース
+      # の変更を含む同期のたびにkarmada-crds-patches/karmada-static-resources
+      # のdataが未置換内容へ巻き戻される(実際に発生・確認済み)。
+      - ApplyOutOfSyncOnly=true
 
   # karmada-crds-patches / karmada-static-resources は、静的マニフェスト上は
   # ca_crtプレースホルダー({{ ca_crt }})を含んだ未置換状態でコミットされている。
