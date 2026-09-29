@@ -48,11 +48,12 @@ spec:
             - name: annotator
               image: rancher/kubectl:v1.31.14
               command:
-                - sh
-                - -c
-                - |
-                  kubectl annotate role,rolebinding \
-                    -n arc-runners \
-                    -l app.kubernetes.io/component=runner-scale-set-listener \
-                    argocd.argoproj.io/compare-options=IgnoreExtraneous \
-                    --overwrite
+                - kubectl
+                - annotate
+                - role,rolebinding
+                - -n
+                - arc-runners
+                - -l
+                - app.kubernetes.io/component=runner-scale-set-listener
+                - argocd.argoproj.io/compare-options=IgnoreExtraneous
+                - --overwrite
