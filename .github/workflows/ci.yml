@@ -19,11 +19,70 @@ jobs:
         run: yamllint -c .yamllint.yml .
 
   dry-run:
-    runs-on: arc-runner-set
+    # arc-runner-set(自己ホスト)が詰まる問題の回避のため、GitHub-hosted runnerから
+    # ionosの専用WireGuardピア(172.31.254.22)経由でk8s API(10.0.0.100:6443)へ接続する。
+    # 権限は専用ServiceAccount ci-wireguard-dryrun(argocd-config/kigawa-net-k8s-ci-wireguard-rbac.yml)。
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Install bws CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q jq unzip curl
+          BWS_VERSION=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/bitwarden/sdk-sm/releases?per_page=30" \
+            | jq -r '[.[] | select(.tag_name | startswith("bws-v"))][0].tag_name')
+          BWS_TAG=${BWS_VERSION#bws-v}
+          curl -Lo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_TAG}.zip"
+          unzip bws.zip bws
+          sudo mv bws /usr/local/bin/
+          bws --version
+
+      - name: WireGuardトンネルを張る
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          sudo apt-get install -y -q wireguard
+          PRIVATE_KEY=$(bws -c no secret get 80c81732-ff0b-4859-b6bb-b4d4009fa5ef | jq -r '.value')
+          sudo install -d -m 700 /etc/wireguard
+          sudo tee /etc/wireguard/wg0.conf > /dev/null <<WG_EOF
+          [Interface]
+          Address = 172.31.254.22/24
+          PrivateKey = ${PRIVATE_KEY}
+
+          [Peer]
+          PublicKey = OH5QiXaMfpmH8nHVU1Onnfom4BZcq4zx5Ux6R6R4LR0=
+          AllowedIPs = 172.31.254.0/24, 10.0.0.0/24
+          Endpoint = 74.208.55.86:51820
+          PersistentKeepalive = 25
+          WG_EOF
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+          for i in $(seq 1 10); do
+            if ping -c 1 -W 2 10.0.0.100; then
+              echo "10.0.0.100 reachable"
+              break
+            fi
+            echo "retry $i..."
+            sleep 2
+          done
+          sudo wg show
+
+      - name: kubeconfigを作成
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          TOKEN=$(bws -c no secret get 88ae86c2-3556-4bf1-89b1-b4d400d4aa59 | jq -r '.value')
+          echo "::add-mask::$TOKEN"
+          kubectl config set-cluster kigawa-net --server=https://10.0.0.100:6443 --insecure-skip-tls-verify=true
+          kubectl config set-credentials ci-wireguard-dryrun --token="$TOKEN"
+          kubectl config set-context ci --cluster=kigawa-net --user=ci-wireguard-dryrun
+          kubectl config use-context ci
+          kubectl get ns argocd
 
       - name: Determine changed YAML files
         id: changed
@@ -79,3 +138,7 @@ jobs:
           done <<< "$files"
 
           exit "$overall_status"
+
+      - name: WireGuardを切断
+        if: always()
+        run: sudo wg-quick down wg0 || true
