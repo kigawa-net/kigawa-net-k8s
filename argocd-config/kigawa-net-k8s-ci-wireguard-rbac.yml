@@ -1,0 +1,666 @@
+# kigawa-net-k8s の PR CI(.github/workflows/ci.yml)dry-runジョブが
+# GitHub-hosted ubuntu-latest + WireGuardトンネル経由でクラスタAPI(k8s.kigawa.net)へ
+# 接続する際に使う、専用ServiceAccount。
+#
+# 既存のkigawa-net-k8s-ci-dryrun ClusterRole(kigawa-net-k8s-ci-dryrun-rbac.yml)を
+# 再利用しつつ、共有ランナープールのarc-runner-set-gha-rs-no-permissionとは別の
+# 専用ServiceAccountにバインドし直す(WireGuard経由の接続元はGitHub-hosted
+# ubuntu-latestであり、共有arc-runnerプールとは異なる識別子で権限を分離する)。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-wireguard-dryrun
+  namespace: arc-runners
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ci-wireguard-dryrun-token
+  namespace: arc-runners
+  annotations:
+    kubernetes.io/service-account.name: ci-wireguard-dryrun
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: arc-runners
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: arc-systems
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: argocd
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: fonsole
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: fusha-task-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: fusha-task-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: gpu-operator
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: keycloak
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-admin-panel
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-el4s-realtime
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-fomage-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-fomage-prod
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-fomage-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-beta
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-dev-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-main
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-main-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-keruta-stg-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-llm
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-llm-proxy
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-llm-ui
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-lp-main
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-maas
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-mamoru-main
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-mc-ftb-mc
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-nextcloud
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-oneserver-files
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-secret-provider
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-sentry
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-system-rook-ceph
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: one
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: onemc
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: onemc-build
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: onemc-rpgcore
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: onemc-rpgcore-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: onemc-rpgcore-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: rook-ceph
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: shifutomo-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: shifutomo-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: sm-operator-system
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: tidb-system
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
