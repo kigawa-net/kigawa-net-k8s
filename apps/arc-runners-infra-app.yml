@@ -24,6 +24,9 @@ spec:
         maxRunners: 3
         template:
           spec:
+            # kigawa-net/infra#165: ノードのリソース逼迫時にCeph/Karmada等の
+            # 重要コンポーネントより先にEvict/Preemptされるよう低優先度化
+            priorityClassName: workload-low
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:

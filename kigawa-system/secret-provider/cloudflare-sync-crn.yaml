@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cloudflare-sync-crn
+spec:
+  schedule: "*/5 * * * *"  # Run every 5 minutes
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 300
+      template:
+        spec:
+          serviceAccountName: sec-sync-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: create-secret
+              env:
+                - name: TARGET_NAMESPACES
+                  value: |
+                    kigawa-net-admin-panel
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -e
+
+                  # Read Cloudflare API token from source secret
+                  API_TOKEN=$(kubectl get secret cloudflare-token -n harbor -o jsonpath='{.data.api-token}' | base64 -d)
+
+                  sync_namespace() {
+                    local namespace="$1"
+                    if ! kubectl create secret generic cloudflare-token \
+                      --from-literal=api-token="$API_TOKEN" \
+                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -; then
+                      echo "WARN: failed to sync cloudflare-token to $namespace, skipping" >&2
+                      return 0
+                    fi
+
+                    echo "Secret cloudflare-token synced successfully at $(date) to $namespace"
+                  }
+
+                  echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                    if [[ -z "$namespace" ]]; then continue; fi
+                    sync_namespace "$namespace"
+                  done

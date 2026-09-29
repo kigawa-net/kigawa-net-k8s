@@ -13,6 +13,11 @@ rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["roles", "rolebindings"]
     verbs: ["get", "list", "patch"]
+  # annotation更新でもRBACの権限昇格防止検査が走る。listener Roleが持つ権限
+  # (ephemeralrunners等のpatch)をこのSAは持たないため、escalate/bindが必要。
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["escalate", "bind"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -46,13 +51,14 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: annotator
-              image: bitnami/kubectl:1.31
+              image: rancher/kubectl:v1.31.14
               command:
-                - sh
-                - -c
-                - |
-                  kubectl annotate role,rolebinding \
-                    -n arc-runners \
-                    -l app.kubernetes.io/component=runner-scale-set-listener \
-                    argocd.argoproj.io/compare-options=IgnoreExtraneous \
-                    --overwrite
+                - kubectl
+                - annotate
+                - role,rolebinding
+                - -n
+                - arc-runners
+                - -l
+                - app.kubernetes.io/component=runner-scale-set-listener
+                - argocd.argoproj.io/compare-options=IgnoreExtraneous
+                - --overwrite

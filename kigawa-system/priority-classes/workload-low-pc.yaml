@@ -1,0 +1,12 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: workload-low
+value: -1
+globalDefault: false
+description: >-
+  CI runner・開発/検証環境など、ノードのリソース逼迫時に真っ先に
+  Evict/Preemptされて構わないワークロード向けの低優先度クラス。
+  system-node-critical/system-cluster-critical(Ceph mon/osd/mgr,
+  Karmada control plane)より確実に低く、未指定(デフォルト0)の
+  通常ワークロードよりも低く設定する(kigawa-net/infra#165)。

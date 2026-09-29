@@ -1,23 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kigawa-net-sentry-manifest
+  name: priority-classes-app
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
 spec:
-  project: kigawa-net
+  project: default
 
   source:
     repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
     targetRevision: main
-    path: sentry
+    path: kigawa-system/priority-classes
     directory:
       recurse: true
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: kigawa-net-sentry
+    namespace: default
 
   syncPolicy:
     automated:
