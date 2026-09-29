@@ -46,7 +46,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: annotator
-              image: bitnami/kubectl:1.31
+              image: rancher/kubectl:v1.31.14
               command:
                 - sh
                 - -c
