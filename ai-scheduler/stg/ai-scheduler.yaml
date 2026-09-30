@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-scheduler
+  labels:
+    app: ai-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-scheduler
+  template:
+    metadata:
+      name: ai-scheduler
+      labels:
+        app: ai-scheduler
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: ai-scheduler
+          image: harbor.kigawa.net/library/ai-scheduler:stg-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          env:
+            - name: AISCHEDULER_DB_JDBC_URL
+              value: "jdbc:mariadb://ai-scheduler-db:3306/ai_scheduler"
+            - name: AISCHEDULER_DB_USER
+              value: "ai-scheduler"
+            - name: AISCHEDULER_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-scheduler-db
+                  key: pass
+            - name: AISCHEDULER_REALTIME_WORKER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-scheduler
+                  key: openai-api-key
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      restartPolicy: Always

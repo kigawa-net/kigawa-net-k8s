@@ -179,6 +179,34 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-ai-scheduler-dev
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-ai-scheduler-stg
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
   namespace: kigawa-net-el4s-realtime
 subjects:
   - kind: ServiceAccount
