@@ -9,9 +9,9 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "00000000-0000-0000-0000-000000000000"
+    - bwSecretId: "8e9cf188-125a-449d-b2fa-b4d500cf411c"
       secretKeyName: root-pass
-    - bwSecretId: "00000000-0000-0000-0000-000000000000"
+    - bwSecretId: "fa5a057a-ce1e-4baf-b5f6-b4d500cf4f26"
       secretKeyName: pass
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
