@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-scheduler-ingress
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: ai-scheduler-stg.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-scheduler-svc
+                port:
+                  number: 8080
