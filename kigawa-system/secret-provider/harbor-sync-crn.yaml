@@ -39,6 +39,8 @@ spec:
                     fusha-task-stg
                     shifutomo-dev
                     shifutomo-stg
+                    kigawa-net-ai-scheduler-dev
+                    kigawa-net-ai-scheduler-stg
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
