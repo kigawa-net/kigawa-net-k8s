@@ -4,11 +4,20 @@ metadata:
   name: harbor-sync-crn
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
+  # worker5のcontainerd詰まりでkigawa-net-secret-provider
+  # namespaceにContainerCreatingのPodが42個蓄積した事故を受けた再発防止策。
+  # concurrencyPolicy未設定(デフォルトAllow)だと、前回実行がPendingの
+  # まま詰まっていても5分毎に新しい実行が無制限に積み重なってしまう。
+  # Forbidにして前回実行の完了を待つようにし、activeDeadlineSecondsで
+  # 詰まったPodを強制的にタイムアウト・失敗させることで無限蓄積を防ぐ。
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 180
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 300
+      activeDeadlineSeconds: 120
       template:
         spec:
           serviceAccountName: sec-sync-sa
