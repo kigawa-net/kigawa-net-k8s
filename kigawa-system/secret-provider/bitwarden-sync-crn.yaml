@@ -37,6 +37,7 @@ spec:
                     mcp-discord
                     mcp-growi
                     argocd
+                    prometheus
                     onemc-rpgcore
                     onemc-rpgcore-stg
                     onemc-rpgcore-dev
