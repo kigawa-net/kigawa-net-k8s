@@ -25,6 +25,7 @@ spec:
           containers:
             - name: create-secret
               env:
+                # exkes 用 namespace（#250 参照）
                 - name: TARGET_NAMESPACES
                   value: |
                     kigawa-net-keruta-dev
@@ -54,6 +55,8 @@ spec:
                     kigawa-net-admin-panel
                     platform-lipl-stg
                     platform-lipl-main
+                    platform-exkes-stg
+                    platform-exkes-main
                     kaft-stg
                     kaft-main
                     fusha-task-dev
