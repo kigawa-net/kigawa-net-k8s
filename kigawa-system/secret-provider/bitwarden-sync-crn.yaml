@@ -32,6 +32,7 @@ spec:
                     kigawa-net-keruta-main
                     kigawa-net-keruta-stg
                     kigawa-net-keruta-beta
+                    kigawa-net-kalender
                     kigawa-net-lp-main
                     kigawa-net-nextcloud
                     develop
