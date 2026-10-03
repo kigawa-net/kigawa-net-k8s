@@ -1,16 +1,43 @@
+# harbor-registry Secret の全 namespace 同期 CronJob
+#
+# 【2026-02-16 → 2026-10-03 事故記録】
+# 2026-02-16 02:45 実行の Job (harbor-sync-crn-29520165) が
+# serviceAccountName `keruta-dev-sa` を指定していたが、当該 ServiceAccount が
+# 存在せず Pod が 1 つも作れなかった(complete しない active Job として残留)。
+# concurrencyPolicy が Forbid だったため CronJob 自身が永久にブロックされ、
+# LAST SCHEDULE が 2026-02-16 で停止したまま 47h(≒2日)続き、
+# platform-exkes-stg / platform-exkes-main をはじめとする全 namespace で
+# harbor-registry Secret が配布されない状態が続いた(手動でゾンビ Job を
+# 削除して 2026-10-03 に復旧)。
+#
+# 【再発防止策】
+# 1. concurrencyPolicy: Forbid → Allow
+#    1つの実行が詰まっていても CronJob 全体がブロックされなくなる。
+#    並列実行の accumulation リスクは startingDeadlineSeconds と
+#    activeDeadlineSeconds で抑える(下記)。
+# 2. startingDeadlineSeconds + activeDeadlineSeconds(120s)で、
+#    実行が詰まる/长时间化する場合は強制タイムアウトさせて失敗・後始末させる。
+# 3. serviceAccountName の実在をレビューする(manifest には
+#    実在する `sec-sync-sa` を指定している)。
+#
+# 参考: worker5のcontainerd詰まりでkigawa-net-secret-provider
+# namespaceにContainerCreatingのPodが42個蓄積した事故を受けた再発防止策。
+# concurrencyPolicy未設定(デフォルトAllow)だと、前回実行がPendingの
+# まま詰まっていても5分毎に新しい実行が無制限に積み重なってしまうため、
+# startingDeadlineSecondsでスキップし、activeDeadlineSecondsで
+# 詰まったPodを強制的にタイムアウト・失敗させることで無限蓄積を防ぐ。
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: harbor-sync-crn
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
-  # worker5のcontainerd詰まりでkigawa-net-secret-provider
-  # namespaceにContainerCreatingのPodが42個蓄積した事故を受けた再発防止策。
-  # concurrencyPolicy未設定(デフォルトAllow)だと、前回実行がPendingの
-  # まま詰まっていても5分毎に新しい実行が無制限に積み重なってしまう。
-  # Forbidにして前回実行の完了を待つようにし、activeDeadlineSecondsで
-  # 詰まったPodを強制的にタイムアウト・失敗させることで無限蓄積を防ぐ。
-  concurrencyPolicy: Forbid
+  # ゾンビ Job(never-complete)が発生しても CronJob 自身が永久ブロック
+  # されないよう Forbid ではなく Allow とする。
+  # 重複実行の积累は startingDeadlineSeconds と
+  # jobTemplate.spec.activeDeadlineSeconds で抑え、個別 Job が
+  # 2分で必ず終了(成功 or 失敗)するようにする。
+  concurrencyPolicy: Allow
   startingDeadlineSeconds: 180
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
@@ -53,6 +80,8 @@ spec:
                     shifutomo-stg
                     kigawa-net-ai-scheduler-dev
                     kigawa-net-ai-scheduler-stg
+                    mcp-discord
+                    mcp-growi
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
