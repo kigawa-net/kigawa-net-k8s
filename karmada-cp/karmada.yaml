@@ -32,6 +32,9 @@ spec:
         metallb.universe.tf/loadBalancerIPs: 10.0.0.242
       certSANs:
         - 10.0.0.242
+        # 3 拠点 HA の共通の入口(issue #268 の決定: ドメインは onemc.world)
+        - api.karmada.onemc.world
+        # 旧名。DNS(infra #211)で引ける間は残す
         - karmada.kigawa.net
         - localhost
         - 127.0.0.1
