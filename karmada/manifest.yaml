@@ -1,3 +1,11 @@
+# 【vendoring 後の手作業の変更】チャートを再レンダリングして再生成するときは、これも再適用すること。
+# (apps/karmada-app.yml のコメントの手順に加えて)
+#   - karmada-controller-manager / karmada-scheduler / karmada-kube-controller-manager に
+#     --leader-elect-lease-duration=60s / --leader-elect-renew-deadline=45s /
+#     --leader-elect-retry-period=10s を追加(既定は 15s / 10s / 2s)。
+#     理由: karmada 専用の etcd が Ceph RBD 上で、読み取りだけでも 0.5〜2 秒かかり(期待値 100ms)、
+#     リース更新が renew-deadline を超えて "leader election lost" で自分から終了し、
+#     数日で数百回再起動していた(2026-10-04 確認)。
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -392,6 +400,9 @@ spec:
         - --kubeconfig=/etc/kubeconfig
         - --cluster-status-update-frequency=10s
         - --leader-elect-resource-namespace=karmada-system
+        - --leader-elect-lease-duration=60s
+        - --leader-elect-renew-deadline=45s
+        - --leader-elect-retry-period=10s
         - --metrics-bind-address=$(POD_IP):8080
         - --health-probe-bind-address=$(POD_IP):10357
         - --v=2
@@ -475,6 +486,9 @@ spec:
         - --metrics-bind-address=$(POD_IP):8080
         - --health-probe-bind-address=$(POD_IP):10351
         - --leader-elect-resource-namespace=karmada-system
+        - --leader-elect-lease-duration=60s
+        - --leader-elect-renew-deadline=45s
+        - --leader-elect-retry-period=10s
         - --scheduler-estimator-ca-file=/etc/karmada/pki/server-ca.crt
         - --scheduler-estimator-cert-file=/etc/karmada/pki/karmada.crt
         - --scheduler-estimator-key-file=/etc/karmada/pki/karmada.key
@@ -659,6 +673,9 @@ spec:
         - --controllers=namespace,garbagecollector,serviceaccount-token,ttl-after-finished,bootstrapsigner,tokencleaner,csrcleaner,csrsigning,clusterrole-aggregation
         - --kubeconfig=/etc/kubeconfig
         - --leader-elect=true
+        - --leader-elect-lease-duration=60s
+        - --leader-elect-renew-deadline=45s
+        - --leader-elect-retry-period=10s
         - --node-cidr-mask-size=24
         - --root-ca-file=/etc/karmada/pki/server-ca.crt
         - --service-account-private-key-file=/etc/karmada/pki/karmada.key
