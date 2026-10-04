@@ -65,3 +65,10 @@ worker3 のローカルディスクは、`dd oflag=dsync` で 0.6ms/回を実測
   3. `etcdutl snapshot restore <スナップショット> --data-dir <新しいディレクトリ> --name inuyama --initial-cluster inuyama=https://10.0.0.243:2380 --initial-advertise-peer-urls https://10.0.0.243:2380 --initial-cluster-token karmada-etcd-prod` で、worker3 の `/var/lib/karmada-etcd` に復元する(古いデータは、先に退避する)。
   4. etcd を起動して `endpoint health` を確認し、Karmada を戻す。
   - 3 member 化した後は、手順が変わる(全 member を止めて、1 つに復元してから、残りを足し直す)。
+
+## peer の SAN の照合(--peer-skip-client-san-verification)
+
+- etcd は、peer 接続のクライアント証明書の SAN を、**接続元の IP と照合**する。3 拠点の peer 通信は、NAT・flannel の SNAT を通り、接続元が証明書の SAN と一致しない(実測: Soichiro → Inuyama は k8s4 の flannel の `172.16.8.0`、Inuyama → Soichiro は worker3 の `192.168.1.130`)ため、`--peer-skip-client-san-verification=true` で、この照合を外している。**全メンバーで同じ設定にする。**
+- **CA の署名の検証は、残る。** 接続できるのは、`karmada-etcd-ca` が署名した証明書を持つ相手のみ。CA の秘密鍵は Bitwarden(`karmada-etcd-ca-key`)に隔離している。
+- 逆方向(Inuyama → Soichiro)は、このフラグに加えて、戻りの経路が要る(infra の k8s4 での MASQUERADE。infra #225)。
+- 根本対応(送信元を証明書の SAN に合わせて、このフラグを外す)は、issue #272 の案 B。

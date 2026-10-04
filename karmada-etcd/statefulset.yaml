@@ -48,6 +48,11 @@ spec:
             # Inuyama ↔ IONOS の RTT は約 157ms。3 member で同じ値を使う(既定は 100ms / 1000ms)。
             - --heartbeat-interval=500
             - --election-timeout=5000
+            # peer のクライアント証明書の SAN と、接続元の IP の照合を外す(署名した CA の検証は残る)。
+            # 3 拠点の peer 通信は、NAT・flannel の SNAT を経由し、接続元が証明書の SAN と一致しない
+            # (Soichiro → Inuyama は 172.16.8.0、Inuyama → Soichiro は 192.168.1.130)。issue #272。
+            # 根本対応(送信元を証明書に合わせる)は、#272 の案 B。
+            - --peer-skip-client-san-verification=true
             - --quota-backend-bytes=4294967296
             - --listen-metrics-urls=http://0.0.0.0:2381
             - --logger=zap
