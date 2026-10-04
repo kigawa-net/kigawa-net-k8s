@@ -5,7 +5,7 @@ Karmada 専用の external etcd(Inuyama の etcd #1)。`karmada-etcd` namespace�
 
 ## 構成
 
-- StatefulSet `karmada-etcd`(1 レプリカ、Guaranteed QoS)、PVC は `rook-ceph-rbd` 10Gi
+- StatefulSet `karmada-etcd`(1 レプリカ、Guaranteed QoS)、データは worker3 のローカルディスク(hostPath)
 - `karmada-etcd-lb`(LoadBalancer、`10.0.0.243`、`externalTrafficPolicy: Local`): client 2379 / peer 2380
 - 証明書は Bitwarden(プロジェクト `infra`)から `BitwardenSecret` で同期。**Git には入っていない**
   - `karmada-etcd-ca-crt` / `karmada-etcd-ca-key`: etcd の CA(秘密鍵は**クラスタに渡さない**。member 追加時の証明書発行用)
@@ -14,21 +14,32 @@ Karmada 専用の external etcd(Inuyama の etcd #1)。`karmada-etcd` namespace�
   - `karmada-apiserver-ca-crt` / `-key`: Operator の `customCertificate.apiServerCACert`(段階 2 で他拠点と共有する CA)
 - 証明書の有効期限: CA 10 年、リーフ 5 年(2031-10-03)。更新前に、新しいリーフを同じ CA で発行して Bitwarden を更新する。
 
-## ストレージの注意(重要)
+## ストレージ(重要): worker3 のローカルディスク
 
-既存の Karmada の etcd は Ceph RBD 上で、読み取りに 0.5〜5 秒かかり、リース更新に失敗して
-コンポーネントが数百回再起動した(2026-10-04)。ストレージを Ceph RBD にする判断は維持しているが、
-**Karmada CR を適用する前に、次を確認する**:
+etcd のデータは、**worker3(ベアメタル SSD)の `/var/lib/karmada-etcd`**(hostPath)に置く。
 
-```
-# etcd のメトリクス(Prometheus)
-histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{namespace="karmada-etcd"}[5m]))
-histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{namespace="karmada-etcd"}[5m]))
-```
+当初は Ceph RBD(`rook-ceph-rbd`)だったが、実際の PVC で `etcdctl check perf --load=s` を実行したところ、
+基準を大きく超えて **FAIL** した(2026-10-04):
 
-- 基準: wal_fsync の p99 が **25ms 以下**、backend_commit の p99 が **100ms 以下**。
-- 超える場合は、worker3(ベアメタル SSD、fsync 0.6ms を実測)のローカルディスクに切り替える
-  (StatefulSet の `volumeClaimTemplates` を `hostPath`(`DirectoryOrCreate`)+ nodeAffinity に変更)。
+| 指標 | 基準 | Ceph RBD(実測) |
+|---|---|---|
+| 書き込みスループット | 150 writes/s 以上 | **11 writes/s**(リクエストのタイムアウトあり) |
+| 最も遅いリクエスト | 約 1 秒以内 | **8.1 秒** |
+| `wal_fsync` の p50 / p99 | p99 25ms 以下 | p50 約 0.5 秒 / p99 約 8 秒 |
+| `backend_commit` の p50 / p99 | p99 100ms 以下 | p50 約 4 秒 / p99 約 8 秒 |
+
+(既存の Karmada の etcd も、Ceph RBD 上で読み取りに 0.5〜5 秒かかり、リース更新に失敗して数百回再起動していた。)
+worker3 のローカルディスクは、`dd oflag=dsync` で 0.6ms/回を実測している(worker4 は 75ms、worker1 は 289ms)。
+
+- etcd は worker3 に固定される(nodeAffinity)。worker3 が落ちると etcd #1 も止まる。3 member 化で冗長化する。
+- データはノードのローカルにあるので、worker3 を作り直す場合は、事前に `etcdctl snapshot save` を取る。
+- 切り替え後は、同じコマンドで確認する:
+  ```
+  kubectl -n karmada-etcd exec karmada-etcd-0 -- etcdctl --endpoints=https://127.0.0.1:2379 \
+    --cacert=/etc/etcd/pki/ca.crt --cert=/etc/etcd/pki/tls.crt --key=/etc/etcd/pki/tls.key check perf --load=s
+  ```
+  メトリクス: `histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{namespace="karmada-etcd"}[5m]))`
+  (基準: wal_fsync の p99 が 25ms 以下、backend_commit の p99 が 100ms 以下)
 
 ## 3 member にするとき
 

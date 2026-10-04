@@ -95,21 +95,26 @@ spec:
             - name: pki
               mountPath: /etc/etcd/pki
               readOnly: true
+      # etcd のデータは、worker3(ベアメタル SSD)のローカルディスクに置く。
+      # Ceph RBD の PVC では、etcdctl check perf が 11 writes/s・最大 8.1 秒・タイムアウトで FAIL し、
+      # wal_fsync の中央値が約 0.5 秒だった(2026-10-04 実測)。worker3 のローカルは fsync 0.6ms/回(実測)。
+      # ローカルディスクなので、etcd は worker3 に固定される(ほかのノードでは同じデータを使えない)。
+      # 3 member 化したあとは、etcd の Raft の複製が冗長性を担う。
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k8s-worker3
       volumes:
+        - name: data
+          hostPath:
+            path: /var/lib/karmada-etcd
+            type: DirectoryOrCreate
         - name: pki
           secret:
             secretName: karmada-etcd-server
             defaultMode: 0400
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        # 注: Ceph RBD は fsync が遅くなりやすい(既存の Karmada の etcd は読み取りに 0.5〜5 秒かかった)。
-        # 投入後に wal_fsync / backend_commit のレイテンシを確認し、基準を超えるなら
-        # worker3 のローカル SSD(hostPath)に切り替える。docs/karmada-etcd.md を参照。
-        storageClassName: rook-ceph-rbd
-        resources:
-          requests:
-            storage: 10Gi
