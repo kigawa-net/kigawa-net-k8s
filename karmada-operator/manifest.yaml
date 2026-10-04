@@ -14926,7 +14926,7 @@ metadata:
     helm.sh/chart: karmada-operator-0.0.1
     app.kubernetes.io/instance: karmada-operator
     app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/version: "v1.1.0"
+    app.kubernetes.io/version: v1.1.0
     app: karmada-operator
 spec:
   replicas: 1
@@ -14947,19 +14947,19 @@ spec:
         helm.sh/chart: karmada-operator-0.0.1
         app.kubernetes.io/instance: karmada-operator
         app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/version: "v1.1.0"
+        app.kubernetes.io/version: v1.1.0
         app: karmada-operator
-    spec:      
+    spec:
       containers:
-      - name: karmada-operator
-        image: docker.io/karmada/karmada-operator:v1.19.0
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8080
-          name: metrics
-          protocol: TCP
-        command:
-        - /bin/karmada-operator
-        - --leader-elect-resource-namespace=karmada-operator
-        - --v=2
+        - name: karmada-operator
+          image: docker.io/karmada/karmada-operator:v1.19.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
+          command:
+            - /bin/karmada-operator
+            - --leader-elect-resource-namespace=karmada-operator
+            - --v=2
       serviceAccountName: karmada-operator
