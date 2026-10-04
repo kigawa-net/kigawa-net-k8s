@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karmada-operator
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # 公式 Helm チャート karmada-operator(v1.19.0)を helm template でレンダリングした静的マニフェスト。
+    # フックを持たない ServiceAccount / CRD / ClusterRole / ClusterRoleBinding / Deployment のみ。
+    # 再生成: karmada-io/karmada の charts/karmada-operator(タグ v1.19.0)で `helm dependency build` のあと
+    #   helm template karmada-operator . --namespace karmada-operator --set operator.image.tag=v1.19.0
+    # (チャートの既定はイメージが latest なので、必ずタグを固定する)
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: karmada-operator
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karmada-operator
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Karmada の CRD(karmadas.operator.karmada.io)は 1.1MB あり、client-side apply の
+      # last-applied アノテーション(262144 バイト上限)に収まらないので、Server-Side Apply を使う
+      - ServerSideApply=true

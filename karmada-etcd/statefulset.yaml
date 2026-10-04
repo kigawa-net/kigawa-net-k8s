@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: karmada-etcd
+  namespace: karmada-etcd
+  labels:
+    app: karmada-etcd
+spec:
+  replicas: 1
+  serviceName: karmada-etcd
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: karmada-etcd
+  template:
+    metadata:
+      labels:
+        app: karmada-etcd
+    spec:
+      priorityClassName: system-cluster-critical
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: etcd
+          image: registry.k8s.io/etcd:3.6.8-0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /usr/local/bin/etcd
+            - --name=inuyama
+            - --data-dir=/var/lib/etcd
+            # external etcd として公開するアドレス(VIP)。将来の member も同じ形式で advertise する。
+            - --listen-client-urls=https://0.0.0.0:2379
+            - --advertise-client-urls=https://10.0.0.243:2379
+            - --listen-peer-urls=https://0.0.0.0:2380
+            - --initial-advertise-peer-urls=https://10.0.0.243:2380
+            # 段階 1 は単独で起動する。3 member にするときは `etcdctl member add` で足す
+            # (initial-cluster に未起動の member を書くと、起動できなくなる)。
+            - --initial-cluster=inuyama=https://10.0.0.243:2380
+            - --initial-cluster-state=new
+            - --initial-cluster-token=karmada-etcd-prod
+            - --client-cert-auth=true
+            - --trusted-ca-file=/etc/etcd/pki/ca.crt
+            - --cert-file=/etc/etcd/pki/tls.crt
+            - --key-file=/etc/etcd/pki/tls.key
+            - --peer-client-cert-auth=true
+            - --peer-trusted-ca-file=/etc/etcd/pki/ca.crt
+            - --peer-cert-file=/etc/etcd/pki/tls.crt
+            - --peer-key-file=/etc/etcd/pki/tls.key
+            # Inuyama ↔ IONOS の RTT は約 157ms。3 member で同じ値を使う(既定は 100ms / 1000ms)。
+            - --heartbeat-interval=250
+            - --election-timeout=3000
+            - --quota-backend-bytes=4294967296
+            - --listen-metrics-urls=http://0.0.0.0:2381
+            - --logger=zap
+            - --log-level=info
+          ports:
+            - name: client
+              containerPort: 2379
+            - name: peer
+              containerPort: 2380
+            - name: metrics
+              containerPort: 2381
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            # ディスクが遅いときに liveness で再起動を繰り返さないよう、緩めにしてある
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+            failureThreshold: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            periodSeconds: 5
+            failureThreshold: 60
+          # requests = limits で Guaranteed QoS(メモリ逼迫での退避の順位を最後にする)
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: 250m
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/etcd
+            - name: pki
+              mountPath: /etc/etcd/pki
+              readOnly: true
+      volumes:
+        - name: pki
+          secret:
+            secretName: karmada-etcd-server
+            defaultMode: 0400
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        # 注: Ceph RBD は fsync が遅くなりやすい(既存の Karmada の etcd は読み取りに 0.5〜5 秒かかった)。
+        # 投入後に wal_fsync / backend_commit のレイテンシを確認し、基準を超えるなら
+        # worker3 のローカル SSD(hostPath)に切り替える。docs/karmada-etcd.md を参照。
+        storageClassName: rook-ceph-rbd
+        resources:
+          requests:
+            storage: 10Gi
