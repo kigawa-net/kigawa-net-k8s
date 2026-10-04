@@ -43,7 +43,11 @@ worker3 のローカルディスクは、`dd oflag=dsync` で 0.6ms/回を実測
 
 ## 3 member にするとき
 
-- etcd の timer(`--heartbeat-interval=250` / `--election-timeout=3000`)は、Inuyama ↔ IONOS の RTT(約 157ms)に合わせてある。全 member で同じ値にする。
+- etcd の timer(`--heartbeat-interval=500` / `--election-timeout=5000`)は、全 member で同じ値にする。
+  - 通常の経路: Inuyama ↔ Soichiro は Oracle 経由(実測 平均 約 12ms)。Inuyama ↔ IONOS は約 157ms。
+  - 予備の経路(Oracle が止まったとき): Inuyama ↔ Soichiro は IONOS 経由で、実測 平均 354ms、最大 1078ms(Soichiro 担当者の計測、2026-10-04)。
+  - 予備の経路でも、最大の揺れ(約 1.1 秒)に対して election が約 4.6 倍の余裕を持つように、500 / 5000 にした(以前は 250 / 3000 で、余裕は約 2.8 倍)。
+  - 代償: リーダーが落ちたときの検知が、3 秒から 5 秒に伸びる。通常の書き込み遅延には影響しない。
 - 新しい member は `etcdctl member add` で足す(`--initial-cluster-state=existing`)。リーダーが遅いディスクの member
   (Inuyama の Ceph RBD)になった場合は、`etcdctl move-leader` で速い member に移す。
 - 各 member の証明書は、`karmada-etcd-ca-key` で署名して、SAN に実際に advertise する IP を入れる。
