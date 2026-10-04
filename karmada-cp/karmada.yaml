@@ -1,0 +1,71 @@
+# Karmada control plane(Karmada Operator が、この CR から各コンポーネントを作る)。
+#
+# - etcd: external etcd #1(karmada-etcd namespace、VIP 10.0.0.243)。将来、Soichiro / IONOS の member を足す。
+# - API サーバー: LoadBalancer、VIP 10.0.0.242、karmada.kigawa.net の SAN を含む。
+# - 証明書: API サーバーの CA は Bitwarden の karmada-apiserver-ca-*(BitwardenSecret karmada-apiserver-ca-bws)。
+#   front-proxy CA と ServiceAccount 鍵は Operator が自動生成し、クラスタ内の Secret に保管する
+#   (3 拠点化するときに、他拠点へ配る必要がある)。
+# - 各コンポーネントは 2 レプリカで、worker に分散する(固定しない)。
+apiVersion: operator.karmada.io/v1alpha1
+kind: Karmada
+metadata:
+  name: karmada
+  namespace: karmada-system
+spec:
+  customCertificate:
+    apiServerCACert:
+      name: karmada-apiserver-ca
+      namespace: karmada-system
+    leafCertValidityDays: 1825
+  components:
+    etcd:
+      external:
+        endpoints:
+          - https://10.0.0.243:2379
+        secretRef:
+          name: karmada-external-etcd
+          namespace: karmada-system
+    karmadaAPIServer:
+      replicas: 2
+      serviceType: LoadBalancer
+      serviceAnnotations:
+        metallb.universe.tf/loadBalancerIPs: 10.0.0.242
+      certSANs:
+        - 10.0.0.242
+        - karmada.kigawa.net
+        - localhost
+        - 127.0.0.1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+    karmadaAggregatedAPIServer:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+    kubeControllerManager:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+    karmadaControllerManager:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+    karmadaScheduler:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+    karmadaWebhook:
+      replicas: 2
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
