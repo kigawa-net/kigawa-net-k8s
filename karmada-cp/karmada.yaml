@@ -23,7 +23,7 @@ spec:
         endpoints:
           - https://10.0.0.243:2379
         secretRef:
-          name: karmada-external-etcd
+          name: karmada-etcd-cert
           namespace: karmada-system
     karmadaAPIServer:
       replicas: 2
