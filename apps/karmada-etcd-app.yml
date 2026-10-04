@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karmada-etcd
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # Karmada 専用の external etcd(Inuyama の etcd #1)。VIP 10.0.0.243 で公開する。
+    # 将来 Soichiro / IONOS の member を追加して 3 member にする前提(docs 参照)。
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: karmada-etcd
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karmada-etcd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

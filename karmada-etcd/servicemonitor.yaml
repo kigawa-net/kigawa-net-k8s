@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: karmada-etcd-metrics
+  namespace: karmada-etcd
+  labels:
+    app: karmada-etcd
+    component: metrics
+spec:
+  clusterIP: None
+  selector:
+    app: karmada-etcd
+  ports:
+    - name: metrics
+      port: 2381
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: karmada-etcd
+  namespace: karmada-etcd
+  labels:
+    release: prometheus-helm
+spec:
+  selector:
+    matchLabels:
+      app: karmada-etcd
+      component: metrics
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

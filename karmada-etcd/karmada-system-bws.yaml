@@ -1,0 +1,42 @@
+# Karmada CR(karmada-system namespace)が参照する Secret を、Bitwarden から同期する。
+# karmada-external-etcd: Operator の spec.components.etcd.external.secretRef(ca.crt / tls.crt / tls.key)
+# karmada-apiserver-ca: Operator の spec.customCertificate.apiServerCACert(tls.crt / tls.key)
+# 注: karmada-system namespace は旧 karmada Application が作成済み。bitwarden-sec は
+#     bitwarden-sync-crn で配布される(TARGET_NAMESPACES に karmada-system を含める)。
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: karmada-external-etcd-bws
+  namespace: karmada-system
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: karmada-external-etcd
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  onlyMappedSecrets: true
+  map:
+    - bwSecretId: "df7ddb87-7e4e-4c1d-bf60-b4d900631a6c"
+      secretKeyName: ca.crt
+    - bwSecretId: "a2459a6c-e27c-40c1-9333-b4d900632d78"
+      secretKeyName: tls.crt
+    - bwSecretId: "b15d19fe-3cc1-4ec9-8b43-b4d900632e0d"
+      secretKeyName: tls.key
+---
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: karmada-apiserver-ca-bws
+  namespace: karmada-system
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: karmada-apiserver-ca
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  onlyMappedSecrets: true
+  map:
+    - bwSecretId: "ffdd1692-e664-4841-a87a-b4d900632eab"
+      secretKeyName: tls.crt
+    - bwSecretId: "c5907fb5-a182-4343-bede-b4d900632f4b"
+      secretKeyName: tls.key
