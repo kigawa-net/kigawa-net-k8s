@@ -51,3 +51,17 @@ worker3 のローカルディスクは、`dd oflag=dsync` で 0.6ms/回を実測
 - 新しい member は `etcdctl member add` で足す(`--initial-cluster-state=existing`)。リーダーが遅いディスクの member
   (Inuyama の Ceph RBD)になった場合は、`etcdctl move-leader` で速い member に移す。
 - 各 member の証明書は、`karmada-etcd-ca-key` で署名して、SAN に実際に advertise する IP を入れる。
+
+## バックアップと復元
+
+- **定期バックアップ**: `backup-cronjob.yaml`(毎日 03:00 JST)。`etcdctl snapshot save` → `etcdutl snapshot status` で検証 → PVC `karmada-etcd-backup`(Ceph RBD)に `etcd-<日時>.db` で保存し、直近 14 世代を残す。
+- **限界**: 保存先の PVC は、同じクラスタの Ceph の中にある。クラスタ全体の障害には備えられない。別の場所(オブジェクトストレージなど)へのコピーは、認証情報が要るため、別途対応する(未実施)。
+- **手動で今すぐ取る**: `kubectl -n karmada-etcd create job --from=cronjob/karmada-etcd-backup backup-manual-$(date +%s)`
+- **結果の確認**: `kubectl -n karmada-etcd logs job/<job名> -c store`(`etcdutl snapshot status` の結果は `-c verify`)
+- **世代の一覧**: PVC `karmada-etcd-backup` をマウントした Pod で `ls -la /backup` を見る。
+- **復元(Karmada の停止を伴う。実施前に必ず確認する)**:
+  1. Karmada の apiserver などを止める(Operator の CR を一時的に外す、または Deployment を 0 にする)。
+  2. etcd を止める(StatefulSet を 0 に)。
+  3. `etcdutl snapshot restore <スナップショット> --data-dir <新しいディレクトリ> --name inuyama --initial-cluster inuyama=https://10.0.0.243:2380 --initial-advertise-peer-urls https://10.0.0.243:2380 --initial-cluster-token karmada-etcd-prod` で、worker3 の `/var/lib/karmada-etcd` に復元する(古いデータは、先に退避する)。
+  4. etcd を起動して `endpoint health` を確認し、Karmada を戻す。
+  - 3 member 化した後は、手順が変わる(全 member を止めて、1 つに復元してから、残りを足し直す)。
