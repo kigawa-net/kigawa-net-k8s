@@ -4,7 +4,7 @@ metadata:
   name: zookeeper-ktse
 spec:
   serviceName: zookeeper-ktse
-  replicas: 3
+  replicas: 0
   selector:
     matchLabels:
       app: zookeeper-ktse
