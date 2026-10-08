@@ -36,7 +36,6 @@ spec:
                     karmada-system
                     kigawa-net-lp-main
                     kigawa-net-nextcloud
-                    develop
                     kigawa-net-maas
                     kigawa-net-mc-ftb-mc
                     kigawa-net-llm
