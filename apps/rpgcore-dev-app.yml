@@ -11,11 +11,7 @@ spec:
     targetRevision: main
     path: overlays/dev-velocity
     kustomize:
-      # overlays/dev-velocityの土台であるoverlays/devはRpgCoreのPR
-      # プレビュー環境(rpgcore-pr-preview ApplicationSet)とも共有
-      # しているテンプレートのため、コールドスタート(mc-routerの
-      # auto-scale-up/down)はデフォルトで有効になる。この常設dev
-      # 環境だけは明示的にオプトアウトする。
+      # 常設dev環境ではmc-routerによるauto-scale-up/downを無効化する。
       commonAnnotations:
         mc-router.itzg.me/autoScaleUp: "false"
         mc-router.itzg.me/autoScaleDown: "false"
