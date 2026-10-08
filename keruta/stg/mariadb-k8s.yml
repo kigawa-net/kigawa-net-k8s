@@ -19,6 +19,7 @@ kind: MariaDB
 metadata:
   name: mariadb-k8s
 spec:
+  replicas: 0
   rootPasswordSecretKeyRef:
     name: mariadb-k8s
     key: root-pass
