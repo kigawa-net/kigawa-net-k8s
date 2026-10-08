@@ -19,6 +19,7 @@ kind: MariaDB
 metadata:
   name: mariadb-ktse
 spec:
+  replicas: 0
   rootPasswordSecretKeyRef:
     name: mariadb-ktse
     key: root-pass
