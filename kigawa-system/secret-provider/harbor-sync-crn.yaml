@@ -51,6 +51,8 @@ spec:
                     shifutomo-stg
                     kigawa-net-ai-scheduler-dev
                     kigawa-net-ai-scheduler-stg
+                    mcp-discord
+                    mcp-growi
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
