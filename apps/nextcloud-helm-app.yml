@@ -40,6 +40,15 @@ spec:
                 'sentry.dsn' => getenv('SENTRY_DSN'),
                 'sentry.minimum.log.level' => 2,
               ];
+            security.config.php: |-
+              <?php
+              // user.kigawa.net (Keycloak) resolves to a private IP via internal DNS
+              // forwarding (coredns), which Nextcloud's SSRF guard blocks by default -
+              // that's the OIDC provider this instance authenticates against, so it's
+              // an intentional, expected destination, not an SSRF risk.
+              $CONFIG = [
+                'allow_local_remote_servers' => true,
+              ];
             performance.config.php: |-
               <?php
               $CONFIG = [
