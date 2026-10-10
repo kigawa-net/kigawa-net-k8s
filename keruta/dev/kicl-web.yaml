@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: kicl-web
-          image: harbor.kigawa.net/private/kicl-web:638/merge-3838507bf7fb1a735adfdb31679979e1470cc71c
+          image: harbor.kigawa.net/private/kicl-web:641/merge-98e575cd84c75490a9555aa503e784892f406ef0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
