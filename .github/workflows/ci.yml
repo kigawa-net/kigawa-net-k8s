@@ -111,6 +111,24 @@ jobs:
 
             echo "### \`$f\`" >> "$GITHUB_STEP_SUMMARY"
 
+            # ClusterRole / ClusterRoleBinding を含むファイルは、サーバー側の dry-run ができない。
+            # CI の ServiceAccount は、namespace の RoleBinding でしか権限を持たず、ClusterRole を get できない。
+            # (更新も、RBAC の権限昇格の防止で、権限を持たない主体には拒否される。権限を足すと、昇格の経路になるため足さない。)
+            # このため、構文と種類(kind)の確認だけを、クライアント側で行う。フィールドの誤りまでは、検出できない。
+            # 適用は、マージ後に ArgoCD が行う。
+            if grep -qE '^kind: (ClusterRole|ClusterRoleBinding)\s*$' "$f"; then
+              if ! result=$(kubectl create --dry-run=client -f "$f" 2>&1); then
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "- ❌ dry-run(client)失敗" >> "$GITHUB_STEP_SUMMARY"
+                overall_status=1
+                continue
+              fi
+              echo "- ⚠️ ClusterRole / ClusterRoleBinding を含むため、サーバー側の dry-run を省略(構文・kind の確認のみ OK)" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
             if ! result=$(kubectl apply --dry-run=server -f "$f" 2>&1); then
               echo '```' >> "$GITHUB_STEP_SUMMARY"
               echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
