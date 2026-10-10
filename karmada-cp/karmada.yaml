@@ -6,6 +6,9 @@
 #   front-proxy CA と ServiceAccount 鍵は Operator が自動生成し、クラスタ内の Secret に保管する
 #   (3 拠点化するときに、他拠点へ配る必要がある)。
 # - 各コンポーネントは 2 レプリカで、worker に分散する(固定しない)。
+#   同じコンポーネントの 2 レプリカは別のノードへ(弱い podAntiAffinity)、I/O が重い worker1 と worker5 は避ける(弱い nodeAffinity)。
+#   弱い指定にしているのは、ノードが足りないときに Pod がスケジュールできなくなるのを避けるため(kigawa-net-k8s#274)。
+#   kube-controller-manager は、Operator の既定の必須 anti-affinity を、そのまま明示している(CR で affinity を指定すると既定が上書きされる)。
 apiVersion: operator.karmada.io/v1alpha1
 kind: Karmada
 metadata:
@@ -27,6 +30,26 @@ spec:
           namespace: karmada-system
     karmadaAPIServer:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-apiserver
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       serviceType: LoadBalancer
       serviceAnnotations:
         metallb.universe.tf/loadBalancerIPs: 10.0.0.242
@@ -44,31 +67,151 @@ spec:
           memory: 256Mi
     karmadaAggregatedAPIServer:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-aggregated-apiserver
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       resources:
         requests:
           cpu: 50m
           memory: 64Mi
     kubeControllerManager:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: karmada
+                  app.kubernetes.io/name: kube-controller-manager
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       resources:
         requests:
           cpu: 50m
           memory: 64Mi
     karmadaControllerManager:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-controller-manager
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       resources:
         requests:
           cpu: 50m
           memory: 64Mi
     karmadaScheduler:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-scheduler
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       resources:
         requests:
           cpu: 25m
           memory: 32Mi
     karmadaWebhook:
       replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-webhook
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
       resources:
         requests:
           cpu: 25m
           memory: 32Mi
+    karmadaMetricsAdapter:
+      replicas: 2
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: karmada
+                    app.kubernetes.io/name: karmada-metrics-adapter
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - k8s-worker1
+                      - k8s-worker5
