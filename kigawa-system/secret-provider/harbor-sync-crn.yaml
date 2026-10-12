@@ -43,6 +43,8 @@ spec:
                     platform-lipl-main
                     platform-exkes-stg
                     platform-exkes-main
+                    platform-exkes-stg-sandbox
+                    platform-exkes-main-sandbox
                     kaft-stg
                     kaft-main
                     fusha-task-dev
