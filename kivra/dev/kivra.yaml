@@ -23,7 +23,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: kivra
-          image: harbor.kigawa.net/library/kivra:main-4e14a63f5645fc332fafea79875f91a7503a0033
+          image: harbor.kigawa.net/library/kivra:main-92fa7c084e5d0dbd646fdc6a2fc76ec338b913eb
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -53,10 +53,19 @@ spec:
               value: "false"
             - name: KIVRA_METRICS_ENABLED
               value: "false"
-            # Task API(/api/tasks、/api/runs)は、一時的に無効(KIVRA_AUTH_MODE を設定しない=ルートを登録しない)。
-            # 理由: このクラスタの CNI は Flannel で、NetworkPolicy を実行しない(実測: oauth2-proxy 以外の同 namespace の Pod から、
-            # 偽装した X-Auth-Request-* ヘッダーで /api/runs に到達できた)。ヘッダーを信頼する認証は、クラスタ内の Pod からなりすませる。
-            # kivra#116(Keycloak の JWT を kivra が直接検証する oidc-jwt モード)が入ったら、KIVRA_AUTH_MODE=oidc-jwt で有効にする。
+            # Task API(/api/tasks、/api/runs)を、Keycloak のアクセストークン(JWT)を kivra 自身が検証して有効にする(kivra#116)。
+            # このクラスタの CNI は Flannel で NetworkPolicy を実行しないため、oauth2-proxy のヘッダーを信頼する方式は使えない。
+            # 署名・iss・aud・exp・ロールを検証するので、偽装されたトークンは、クラスタ内の Pod からでも拒否される。
+            - name: KIVRA_AUTH_MODE
+              value: "oidc-jwt"
+            - name: KIVRA_OIDC_ISSUER
+              value: "https://user.kigawa.net/realms/kigawa-net"
+            # Keycloak の kivra-dev クライアントの audience mapper(k8s-system#275)が aud に入れる値
+            - name: KIVRA_OIDC_AUDIENCE
+              value: "kivra-dev"
+            # admin-panel クライアントの admin ロール(resource_access.admin-panel.roles)のみ
+            - name: KIVRA_OIDC_REQUIRED_ROLE
+              value: "admin-panel:admin"
             - name: KIVRA_FUSHA_ENV
               value: "dev"
           resources:

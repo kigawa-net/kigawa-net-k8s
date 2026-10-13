@@ -42,7 +42,7 @@ spec:
             - --reverse-proxy=true
             - --skip-provider-button=true
             - --set-xauthrequest=true
-            - --pass-access-token=false
+            - --pass-access-token=true
             - --http-address=0.0.0.0:4180
             - --silence-ping-logging
           env:
