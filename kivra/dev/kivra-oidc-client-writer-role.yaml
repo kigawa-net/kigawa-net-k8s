@@ -1,0 +1,18 @@
+# k8s-system の Keycloak クライアント設定 Job(ServiceAccount keycloak-client-setup-sa、namespace keycloak)が、
+# Secret kivra-oidc-client(client-id / client-secret)を作成/更新できるようにする。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kivra-oidc-client-writer-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+rules:
+  # 既存の kivra-oidc-client の取得・更新のみ(名前で限定)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["kivra-oidc-client"]
+    verbs: ["get", "update", "patch"]
+  # create は resourceNames で限定できない
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]

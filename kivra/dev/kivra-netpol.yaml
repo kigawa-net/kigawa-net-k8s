@@ -1,0 +1,22 @@
+# kivra Pod への ingress を同じ namespace からのみに制限する(oauth2-proxy など、同 namespace の Pod からのみ到達できる)。
+# CNI が NetworkPolicy に対応していない場合は無視される(害はない)。
+#
+# 意図的に含めていないもの(クラスタで実際のラベル/接続元を確認してから段階的に追加する):
+#  - kivra の egress 制限: DNS(独自の CoreDNS)と MariaDB のラベルが実際と違うと、kivra が起動できなくなる
+#  - kivra-db の ingress 制限: MariaDB operator が別 namespace から DB に接続する場合、Database/User/Grant の反映が止まる
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kivra-netpol
+spec:
+  podSelector:
+    matchLabels:
+      app: kivra
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080

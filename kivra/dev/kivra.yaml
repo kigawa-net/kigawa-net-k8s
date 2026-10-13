@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kivra
+  labels:
+    app: kivra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kivra
+  template:
+    metadata:
+      name: kivra
+      labels:
+        app: kivra
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: kivra
+          image: harbor.kigawa.net/library/kivra:main-da5ecc985ae49cd27020dc6c587d2781c5b53fd5
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          env:
+            - name: KIVRA_DB_JDBC_URL
+              value: "jdbc:mariadb://kivra-db:3306/kivra?sessionVariables=time_zone='+00:00'"
+            - name: KIVRA_DB_USER
+              value: "kivra"
+            - name: KIVRA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db
+                  key: pass
+            - name: KIVRA_RUNTIME_ENV
+              value: "server"
+            - name: KIVRA_DEV_DEMO_ENABLED
+              value: "false"
+            - name: KIVRA_FUSHA_STATUS_WRITE_ENABLED
+              value: "false"
+            - name: KIVRA_METRICS_ENABLED
+              value: "false"
+            - name: KIVRA_FUSHA_ENV
+              value: "dev"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      restartPolicy: Always
