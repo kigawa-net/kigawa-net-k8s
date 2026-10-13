@@ -1,0 +1,97 @@
+# Draft deployment only. Provision 'kivra-db' secret and private MariaDB first.
+# Do not add an Argo CD Application or merge before completing issue kigawa-net/kivra#112.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kivra
+  labels:
+    app: kivra
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kivra
+  template:
+    metadata:
+      labels:
+        app: kivra
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: kivra
+          image: harbor.kigawa.net/library/kivra:dev-bootstrap-placeholder
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: KIVRA_RUNTIME_ENV
+              value: "server"
+            - name: KIVRA_DEV_DEMO_ENABLED
+              value: "false"
+            - name: KIVRA_FUSHA_STATUS_WRITE_ENABLED
+              value: "false"
+            - name: KIVRA_METRICS_ENABLED
+              value: "false"
+            - name: KIVRA_DB_JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db
+                  key: jdbc-url
+            - name: KIVRA_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db
+                  key: username
+            - name: KIVRA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db
+                  key: password
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kivra
+  labels:
+    app: kivra
+spec:
+  type: ClusterIP
+  selector:
+    app: kivra
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
