@@ -1,0 +1,100 @@
+# kivra-dev の OIDC 認証プロキシ(oauth2-proxy)。Keycloak(kigawa-net realm)の admin-panel クライアントの client role admin を持つユーザーだけを、kivra に通す。
+# Client ID / Client Secret は kivra-oidc-client Secret(k8s-system の Keycloak Job が作成/更新)、cookie secret は kivra-oidc-cookie Secret(kivra-secret-init-job が作成)から読む。
+# Secret が無い間は CreateContainerConfigError になる(kivra 本体は影響を受けない)。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kivra-oauth2-proxy
+  labels:
+    app: kivra-oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kivra-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: kivra-oauth2-proxy
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5
+          imagePullPolicy: IfNotPresent
+          args:
+            - --provider=keycloak-oidc
+            - --oidc-issuer-url=https://user.kigawa.net/realms/kigawa-net
+            - --redirect-url=https://kivra-dev.kigawa.net/oauth2/callback
+            - --upstream=http://kivra-svc:8080
+            # admin-panel クライアントの client role admin を持つユーザーだけ通す(kigawa-net realm は自己登録が許可されているため必須)
+            - --allowed-role=admin-panel:admin
+            - --email-domain=*
+            - --cookie-secure=true
+            - --cookie-samesite=lax
+            - --code-challenge-method=S256
+            # HAProxy Ingress の背後で動かす
+            - --reverse-proxy=true
+            - --skip-provider-button=true
+            - --set-xauthrequest=true
+            - --pass-access-token=false
+            - --http-address=0.0.0.0:4180
+            - --silence-ping-logging
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-oidc-client
+                  key: client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-oidc-client
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-oidc-cookie
+                  key: cookie-secret
+          ports:
+            - containerPort: 4180
+              name: http
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "10m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

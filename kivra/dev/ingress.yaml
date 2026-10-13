@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kivra-ingress
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: kivra-dev.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kivra-oauth2-proxy-svc
+                port:
+                  number: 4180
