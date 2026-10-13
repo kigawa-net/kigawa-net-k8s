@@ -53,6 +53,10 @@ spec:
               value: "false"
             - name: KIVRA_METRICS_ENABLED
               value: "false"
+            # Task API(/api/tasks、/api/runs)を、oauth2-proxy のヘッダーで認証して有効にする。未設定ならルートは登録されない。
+            # 前提: kivra には oauth2-proxy 経由でのみ到達できる(kivra-netpol.yaml)。
+            - name: KIVRA_AUTH_MODE
+              value: "oauth2-proxy"
             - name: KIVRA_FUSHA_ENV
               value: "dev"
           resources:

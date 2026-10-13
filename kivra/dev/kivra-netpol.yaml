@@ -1,4 +1,4 @@
-# kivra Pod への ingress を同じ namespace からのみに制限する(oauth2-proxy など、同 namespace の Pod からのみ到達できる)。
+# kivra Pod への ingress を oauth2-proxy の Pod からのみに制限する(Task API が X-Auth-Request-* ヘッダーを信頼するため)。
 # CNI が NetworkPolicy に対応していない場合は無視される(害はない)。
 #
 # 意図的に含めていないもの(クラスタで実際のラベル/接続元を確認してから段階的に追加する):
@@ -15,8 +15,12 @@ spec:
   policyTypes:
     - Ingress
   ingress:
+    # oauth2-proxy の Pod からのみ。kivra は X-Auth-Request-* ヘッダーを信頼する(Task API)ので、これ以外から到達できると
+    # ヘッダーを偽装されて他人になりすませる。同じ namespace の他の Pod(MariaDB、Job など)からも到達させない。
     - from:
-        - podSelector: {}
+        - podSelector:
+            matchLabels:
+              app: kivra-oauth2-proxy
       ports:
         - protocol: TCP
           port: 8080
