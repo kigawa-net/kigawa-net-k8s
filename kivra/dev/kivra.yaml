@@ -22,7 +22,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: kivra
-          image: harbor.kigawa.net/library/kivra:bootstrap
+          image: harbor.kigawa.net/library/kivra:main-da5ecc985ae49cd27020dc6c587d2781c5b53fd5
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
