@@ -5,9 +5,7 @@ metadata:
   labels:
     app: kivra
 spec:
-  # 一時的に 0: DB の fsync 設定(myCnf)が反映される前に Flyway の migration が始まり、遅いディスクで中断されるのを防ぐ。
-  # DB が新しい設定で再起動したのを確認してから、別の PR で 1 に戻す。
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: kivra
