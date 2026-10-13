@@ -53,10 +53,10 @@ spec:
               value: "false"
             - name: KIVRA_METRICS_ENABLED
               value: "false"
-            # Task API(/api/tasks、/api/runs)を、oauth2-proxy のヘッダーで認証して有効にする。未設定ならルートは登録されない。
-            # 前提: kivra には oauth2-proxy 経由でのみ到達できる(kivra-netpol.yaml)。
-            - name: KIVRA_AUTH_MODE
-              value: "oauth2-proxy"
+            # Task API(/api/tasks、/api/runs)は、一時的に無効(KIVRA_AUTH_MODE を設定しない=ルートを登録しない)。
+            # 理由: このクラスタの CNI は Flannel で、NetworkPolicy を実行しない(実測: oauth2-proxy 以外の同 namespace の Pod から、
+            # 偽装した X-Auth-Request-* ヘッダーで /api/runs に到達できた)。ヘッダーを信頼する認証は、クラスタ内の Pod からなりすませる。
+            # kivra#116(Keycloak の JWT を kivra が直接検証する oidc-jwt モード)が入ったら、KIVRA_AUTH_MODE=oidc-jwt で有効にする。
             - name: KIVRA_FUSHA_ENV
               value: "dev"
           resources:
