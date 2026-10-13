@@ -22,7 +22,8 @@ spec:
       memory: "256Mi"
       cpu: "100m"
     limits:
-      memory: "512Mi"
+      # 512Mi では、新しい PVC への初回の初期化が中断され、ibdata1 が壊れた状態で CrashLoopBackOff になった(OOM の可能性)。
+      memory: "1Gi"
       cpu: "500m"
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
