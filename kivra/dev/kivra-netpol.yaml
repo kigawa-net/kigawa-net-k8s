@@ -1,9 +1,13 @@
-# kivra Pod への ingress を同じ namespace からのみに制限する(oauth2-proxy など、同 namespace の Pod からのみ到達できる)。
-# CNI が NetworkPolicy に対応していない場合は無視される(害はない)。
+# Limit ingress to the Kivra application to the authenticated oauth2-proxy Pod.
+# A namespace-wide selector would let ANY Pod in kigawa-net-kivra-dev bypass
+# Keycloak by connecting directly to the app's unauthenticated ClusterIP.
 #
-# 意図的に含めていないもの(クラスタで実際のラベル/接続元を確認してから段階的に追加する):
-#  - kivra の egress 制限: DNS(独自の CoreDNS)と MariaDB のラベルが実際と違うと、kivra が起動できなくなる
-#  - kivra-db の ingress 制限: MariaDB operator が別 namespace から DB に接続する場合、Database/User/Grant の反映が止まる
+# This is defense-in-depth, NOT a substitute for application-layer AuthN/AuthZ.
+# ServiceAccount privileges (including kubectl port-forward) and node-origin
+# traffic are governed separately. Verify CNI enforcement in the live cluster.
+#
+# Egress and MariaDB ingress are intentionally deferred until actual DNS,
+# MariaDB operator, and collector traffic identities are validated.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -16,7 +20,9 @@ spec:
     - Ingress
   ingress:
     - from:
-        - podSelector: {}
+        - podSelector:
+            matchLabels:
+              app: kivra-oauth2-proxy
       ports:
         - protocol: TCP
           port: 8080
