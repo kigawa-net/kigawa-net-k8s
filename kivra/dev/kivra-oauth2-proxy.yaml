@@ -43,6 +43,12 @@ spec:
             - --skip-provider-button=true
             - --set-xauthrequest=true
             - --pass-access-token=true
+            # kivra は Keycloak のアクセストークン(JWT)を自分で検証する(kivra#116)。アクセストークンの寿命は 5 分なので、
+            # 更新しないと、ログインの 5 分後から、期限切れのトークンが渡されて /api/* が 401 になる。
+            # 4 分ごとにセッションを更新し(refresh token で、新しいアクセストークンを取得して保存)、常に新しいトークンを渡す。
+            - --cookie-refresh=4m
+            # upstream へ Authorization: Bearer <access token> でも渡す(kivra は、Authorization を優先して受け付ける)
+            - --pass-authorization-header=true
             - --http-address=0.0.0.0:4180
             - --silence-ping-logging
           env:
