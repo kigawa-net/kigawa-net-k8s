@@ -40,4 +40,16 @@ spec:
               value: "8080"
             - name: LOG_LEVEL
               value: INFO
+            # Keycloak(OIDC)認証。dev/stgはdevelopレルムを共用
+            - name: KEYCLOAK_URL
+              value: https://user.kigawa.net
+            - name: KEYCLOAK_REALM
+              value: develop
+            - name: KEYCLOAK_CLIENT_ID
+              value: fomage
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fomage-keycloak
+                  key: client-secret
       restartPolicy: Always
