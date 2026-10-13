@@ -5,7 +5,9 @@ metadata:
   labels:
     app: kivra
 spec:
-  replicas: 1
+  # 一時的に 0: DB の fsync 設定(myCnf)が反映される前に Flyway の migration が始まり、遅いディスクで中断されるのを防ぐ。
+  # DB が新しい設定で再起動したのを確認してから、別の PR で 1 に戻す。
+  replicas: 0
   selector:
     matchLabels:
       app: kivra
@@ -71,7 +73,8 @@ spec:
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 5
-            failureThreshold: 60
+            # Flyway の migration は、遅いディスクで数十分かかりうる。強制終了されると migration が中途半端な状態で残る。
+            failureThreshold: 360
           readinessProbe:
             httpGet:
               path: /health
