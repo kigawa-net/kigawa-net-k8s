@@ -10,6 +10,13 @@ spec:
   port: 3306
   updateStrategy:
     autoUpdateDataPlane: true
+  # rook-ceph-rbd の fsync が極端に遅い(4KB の同期書き込みが 1 回あたり約 2.4 秒。2026-10-13 に実測)ため、
+  # コミットごとの fsync をやめて 1 秒ごとにまとめる。dev の DB(再作成できるデータ)のみ。電源断で直近 1 秒を失いうる。
+  # 本番/永続性が必要な環境には使わない。Ceph が安定したら、この設定は外す。
+  myCnf: |
+    [mariadb]
+    innodb_flush_log_at_trx_commit=2
+    sync_binlog=0
   startupProbe:
     # rook-ceph-rbd が遅い/不安定(HEALTH_WARN、OSD の再起動多数)なため、初回の初期化(ibdata1 と redo log の作成、fsync)が
     # 10 分を超えることがある。許容を超えると強制終了され、ibdata1 がゼロのまま壊れて CrashLoopBackOff になる。1 時間まで待つ。
