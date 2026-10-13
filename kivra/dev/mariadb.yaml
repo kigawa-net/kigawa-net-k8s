@@ -11,9 +11,11 @@ spec:
   updateStrategy:
     autoUpdateDataPlane: true
   startupProbe:
+    # rook-ceph-rbd が遅い/不安定(HEALTH_WARN、OSD の再起動多数)なため、初回の初期化(ibdata1 と redo log の作成、fsync)が
+    # 10 分を超えることがある。許容を超えると強制終了され、ibdata1 がゼロのまま壊れて CrashLoopBackOff になる。1 時間まで待つ。
     initialDelaySeconds: 20
     periodSeconds: 10
-    failureThreshold: 60
+    failureThreshold: 360
   storage:
     size: 1Gi
     storageClassName: rook-ceph-rbd
@@ -22,7 +24,8 @@ spec:
       memory: "256Mi"
       cpu: "100m"
     limits:
-      memory: "512Mi"
+      # 512Mi では、新しい PVC への初回の初期化が中断され、ibdata1 が壊れた状態で CrashLoopBackOff になった(OOM の可能性)。
+      memory: "1Gi"
       cpu: "500m"
 ---
 apiVersion: k8s.mariadb.com/v1alpha1
