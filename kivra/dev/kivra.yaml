@@ -20,6 +20,7 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
+        runAsGroup: 1000
       containers:
         - name: kivra
           image: harbor.kigawa.net/library/kivra:main-da5ecc985ae49cd27020dc6c587d2781c5b53fd5
@@ -44,6 +45,12 @@ spec:
                 secretKeyRef:
                   name: kivra-db
                   key: pass
+            - name: KIVRA_RUNTIME_ENV
+              value: "server"
+            - name: KIVRA_DEV_DEMO_ENABLED
+              value: "false"
+            - name: KIVRA_FUSHA_STATUS_WRITE_ENABLED
+              value: "false"
             - name: KIVRA_METRICS_ENABLED
               value: "false"
             - name: KIVRA_FUSHA_ENV
