@@ -47,8 +47,9 @@ spec:
             # 更新しないと、ログインの 5 分後から、期限切れのトークンが渡されて /api/* が 401 になる。
             # 4 分ごとにセッションを更新し(refresh token で、新しいアクセストークンを取得して保存)、常に新しいトークンを渡す。
             - --cookie-refresh=4m
-            # upstream へ Authorization: Bearer <access token> でも渡す(kivra は、Authorization を優先して受け付ける)
-            - --pass-authorization-header=true
+            # ID tokenをAuthorizationに転送しない。KivraはアクセストークンをX-Forwarded-Access-Tokenから検証する。
+            # --pass-access-token=true は上で設定済み。ID tokenのaud/roleが異なるため混同させない。
+            - --pass-authorization-header=false
             - --http-address=0.0.0.0:4180
             - --silence-ping-logging
           env:
