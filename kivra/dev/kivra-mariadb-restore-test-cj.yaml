@@ -1,0 +1,209 @@
+# リストア試験。手動実行専用(suspend: true。GitOps の同期では実行されない)。
+#
+# 実行(クラスタへの変更になるので、実行するのは人間の判断で):
+#   kubectl -n kigawa-net-kivra-dev create job --from=cronjob/kivra-mariadb-restore-test-cj kivra-restore-test-$(date +%s)
+#   kubectl -n kigawa-net-kivra-dev logs -f job/<上で作った Job 名>
+#   後片付け: kubectl -n kigawa-net-kivra-dev delete job <Job 名>
+#
+# 内容:
+# - /backup の最新のダンプを選んで gzip -t で検査する。
+# - この Pod の中に、使い捨ての MariaDB を emptyDir で起動する(ネットワークなし、ランダムな root パスワードは Job 内だけで生成)。
+# - ダンプを流し込み、テーブル数と、各テーブルの行数を、本体(kivra-db)と比較して表示する。
+# - 本体への接続は読み取りの SELECT / information_schema のみ。本体の DB には書き込まない。
+# - 終了時に使い捨て MariaDB を止める。PVC(バックアップ)は読み取り専用でマウントする。
+#
+# 判定: 復元の失敗、復元後のテーブル数 0、復元後に flyway_schema_history が無い場合は失敗。
+#       行数の差は失敗にしない(ダンプの後に本体へ書き込みがあれば差は出る)。差は表示するので確認する。
+#
+# 注意: バックアップ PVC は RWO。バックアップ CronJob(毎日 03:00 JST)の Pod と別ノードで同時に起動すると Attach に失敗する。
+#       バックアップ Job の実行中を避けて手動で実行する。
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kivra-mariadb-restore-test-cj
+  labels:
+    app: kivra-mariadb-restore-test
+spec:
+  # 手動実行専用。ArgoCD が同期しても、これでは実行されない。
+  suspend: true
+  # 形式上のスケジュール(suspend のため実行されない)
+  schedule: "0 0 1 1 *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: kivra-mariadb-restore-test
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: restore-test
+              # kivra-db と同じダイジェスト(mariadb:11)。サーバーとクライアントのバージョンを揃える
+              image: mariadb:11@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  # 最新のダンプを選ぶ(名前は時刻順。glob は昇順なので、最後が最新)
+                  latest=""
+                  for f in /backup/kivra-*.sql.gz; do
+                    if [ -f "$f" ]; then latest="$f"; fi
+                  done
+                  if [ -z "$latest" ]; then
+                    echo "no backup found in /backup" >&2
+                    exit 1
+                  fi
+                  echo "restore target: ${latest}"
+                  gzip -t "$latest"
+
+                  # 使い捨て MariaDB の root パスワード(この Job の中だけで生成する。表示しない)
+                  MARIADB_ROOT_PASSWORD=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')
+                  export MARIADB_ROOT_PASSWORD
+                  SOCK=/run/mysqld/mysqld.sock
+
+                  srv_pid=""
+                  cleanup() {
+                    if [ -n "$srv_pid" ]; then
+                      MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb-admin -S "$SOCK" -u root shutdown >/dev/null 2>&1 || true
+                      wait "$srv_pid" 2>/dev/null || true
+                    fi
+                  }
+                  trap cleanup EXIT
+
+                  # 使い捨て MariaDB を起動する(ネットワークなし。ソケットだけ。データは emptyDir)
+                  docker-entrypoint.sh mariadbd --skip-networking --socket="$SOCK" &
+                  srv_pid=$!
+
+                  ready=0
+                  for i in $(seq 1 120); do
+                    if MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root -e 'SELECT 1' >/dev/null 2>&1; then
+                      ready=1
+                      break
+                    fi
+                    if ! kill -0 "$srv_pid" 2>/dev/null; then
+                      break
+                    fi
+                    sleep 2
+                  done
+                  if [ "$ready" != 1 ]; then
+                    echo "local mariadb did not start" >&2
+                    exit 1
+                  fi
+                  # 初期化用の一時サーバーに接続している可能性があるので、少し待って再確認する
+                  sleep 5
+                  MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root -e 'SELECT 1' >/dev/null
+
+                  local_q() { MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root -N -B -e "$1"; }
+                  # 本体(kivra-db)への読み取り専用の問い合わせ。SELECT / information_schema のみ
+                  src_q() { MYSQL_PWD="$KIVRA_DB_PASSWORD" mariadb -h kivra-db -P 3306 -u kivra -N -B -e "$1"; }
+
+                  echo "== restore"
+                  gzip -dc "$latest" | MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root
+                  echo "restored"
+
+                  Q_TABLES="SELECT table_name FROM information_schema.tables WHERE table_schema='kivra' AND table_type='BASE TABLE' ORDER BY table_name"
+                  local_tables=$(local_q "$Q_TABLES") || { echo "failed to list restored tables" >&2; exit 1; }
+                  src_tables=$(src_q "$Q_TABLES") || { echo "failed to read main DB kivra-db (read-only SELECT)" >&2; exit 1; }
+                  local_count=$(local_q "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='kivra' AND table_type='BASE TABLE'")
+                  src_count=$(src_q "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='kivra' AND table_type='BASE TABLE'")
+                  echo "== table count: restored=${local_count} main=${src_count}"
+                  if [ "$local_count" -eq 0 ]; then
+                    echo "restored database has no tables" >&2
+                    exit 1
+                  fi
+
+                  printf '%s\n' "$local_tables" > /tmp/local-tables.txt
+                  printf '%s\n' "$src_tables" > /tmp/src-tables.txt
+
+                  echo "== flyway_schema_history"
+                  local_flyway=$(local_q "SELECT CONCAT(COUNT(*), ' rows, max rank ', IFNULL(MAX(installed_rank), 0), ', failed ', SUM(success = 0)) FROM kivra.flyway_schema_history") \
+                    || { echo "flyway_schema_history not found in restored database" >&2; exit 1; }
+                  src_flyway=$(src_q "SELECT CONCAT(COUNT(*), ' rows, max rank ', IFNULL(MAX(installed_rank), 0), ', failed ', SUM(success = 0)) FROM kivra.flyway_schema_history") \
+                    || src_flyway="(unavailable)"
+                  echo "restored: ${local_flyway}"
+                  echo "main:     ${src_flyway}"
+
+                  echo "== row counts (table / restored / main)"
+                  diffs=0
+                  # 本体にあって復元にないもの、復元にあって本体にないものも含めて比較する
+                  all_tables=$(printf '%s\n%s\n' "$local_tables" "$src_tables" | sort -u)
+                  while IFS= read -r t; do
+                    [ -n "$t" ] || continue
+                    r="-"
+                    s="-"
+                    if grep -Fxq -- "$t" /tmp/local-tables.txt; then
+                      r=$(local_q "SELECT COUNT(*) FROM \`kivra\`.\`${t}\`")
+                    fi
+                    if grep -Fxq -- "$t" /tmp/src-tables.txt; then
+                      s=$(src_q "SELECT COUNT(*) FROM \`kivra\`.\`${t}\`")
+                    fi
+                    mark=""
+                    if [ "$r" != "$s" ]; then
+                      mark="  <-- differs"
+                      diffs=$(( diffs + 1 ))
+                    fi
+                    printf '%-40s %12s %12s%s\n' "$t" "$r" "$s" "$mark"
+                  done <<EOF
+                  ${all_tables}
+                  EOF
+                  echo "tables with differing row counts: ${diffs} (main may have been written after the dump)"
+
+                  echo "RESULT: restore test passed (${latest})"
+              env:
+                - name: KIVRA_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: kivra-db
+                      key: pass
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 1000m
+                  memory: 1Gi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+                - name: run
+                  mountPath: /run/mysqld
+                - name: data
+                  mountPath: /var/lib/mysql
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: kivra-mariadb-backup-pvc
+                readOnly: true
+            - name: tmp
+              emptyDir: {}
+            - name: run
+              emptyDir: {}
+            - name: data
+              emptyDir: {}

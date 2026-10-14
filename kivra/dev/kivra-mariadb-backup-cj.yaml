@@ -1,0 +1,122 @@
+# kivra-db(dev MariaDB)の毎日のダンプ。毎日 03:00 JST。
+#
+# - mariadb-dump --single-transaction で読むだけ(書き込まない、テーブルロックなし)。
+# - 保存: 別 PVC(kivra-mariadb-backup-pvc)の /backup/kivra-YYYYmmdd-HHMMSS.sql.gz。直近 7 世代を残す。
+# - ダンプ後の検査: gzip -t、サイズ > 0、末尾の "Dump completed" マーカー。どれか失敗したら Job を失敗させ、ファイルは残さない。
+# - 資格情報は既存の Secret kivra-db の pass(アプリ用ユーザー kivra。kivra.* に ALL PRIVILEGES)を使う。新しい Secret は作らない。
+# - 保存先 A の限界: Ceph 障害時は本体と同時に失われる。
+# - リストア試験: kivra-mariadb-restore-test-cj.yaml(手動実行)。
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kivra-mariadb-backup-cj
+  labels:
+    app: kivra-mariadb-backup
+spec:
+  schedule: "0 3 * * *"
+  timeZone: Asia/Tokyo
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      # Ceph の fsync が遅い(約 2.4 秒/4KB)ため、余裕を持たせる
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: kivra-mariadb-backup
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            # PVC を mysql(999)が書けるようにする
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              # mariadb.yaml(kivra-db)が実行しているイメージと同じダイジェスト(mariadb:11)。mariadb-dump が入っている
+              image: mariadb:11@sha256:79d59758afc91b89b120b0a8904d637f5a3b3e1c4900f29b740d6d46c72fef68
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  ts=$(date -u +%Y%m%d-%H%M%S)
+                  final="/backup/kivra-${ts}.sql.gz"
+                  tmp="/backup/.kivra-${ts}.sql.gz.partial"
+                  # 失敗したときに、途中のファイルを残さない
+                  trap 'rm -f "$tmp"' EXIT
+
+                  echo "dump start -> ${final}"
+                  # 資格情報は環境変数 MYSQL_PWD で渡す(引数・ファイルには出さない)。値は表示しない
+                  mariadb-dump -h kivra-db -P 3306 -u kivra \
+                    --single-transaction --routines --triggers --events \
+                    --databases kivra \
+                    | gzip -c > "$tmp"
+
+                  # 検査 1: 空でないこと
+                  test -s "$tmp"
+                  # 検査 2: gzip の整合性
+                  gzip -t "$tmp"
+                  # 検査 3: ダンプが最後まで書かれていること(mariadb-dump は終了時にこの行を出す)
+                  last=$(gzip -dc "$tmp" | tail -n 2)
+                  case "$last" in
+                    *"-- Dump completed"*) ;;
+                    *) echo "dump is incomplete: no completion marker" >&2; exit 1 ;;
+                  esac
+
+                  mv "$tmp" "$final"
+                  echo "saved $(stat -c %s "$final") bytes: ${final}"
+
+                  # 直近 7 世代を残し、古いものを消す(ファイル名は時刻順に並ぶ。glob は昇順)
+                  keep=7
+                  set -- /backup/kivra-*.sql.gz
+                  total=$#
+                  if [ "$total" -gt "$keep" ]; then
+                    drop=$(( total - keep ))
+                    for old in "${@:1:$drop}"; do
+                      rm -f -- "$old"
+                      echo "deleted old backup: ${old}"
+                    done
+                  fi
+                  ls -la /backup
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: kivra-db
+                      key: pass
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: kivra-mariadb-backup-pvc
+            - name: tmp
+              emptyDir: {}
