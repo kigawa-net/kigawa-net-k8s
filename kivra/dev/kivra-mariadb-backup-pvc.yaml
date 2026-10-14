@@ -1,0 +1,19 @@
+# kivra-db(dev MariaDB)のダンプの保存先。MariaDB 本体の PVC(storage-kivra-db-0)とは別の PVC。
+#
+# - 保存先 A: 同じ Ceph(rook-ceph-rbd)の中。Ceph 障害時は本体と同時に失われる(クラスタ外へのコピーは未対応)。
+# - Prune=false: ArgoCD の prune で、バックアップ(PVC ごと)が消えないようにする。
+# - RWO のため、バックアップ CronJob の Pod と、リストア試験の Pod が別ノードで同時に起動すると Attach に失敗する。
+#   リストア試験は、バックアップ CronJob(毎日 03:00 JST)の実行中を避けて手動で実行する。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kivra-mariadb-backup-pvc
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      storage: 5Gi
