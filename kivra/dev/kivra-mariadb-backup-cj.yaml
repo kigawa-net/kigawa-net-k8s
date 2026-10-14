@@ -3,7 +3,7 @@
 # - mariadb-dump --single-transaction で読むだけ(書き込まない、テーブルロックなし)。
 # - 保存: 別 PVC(kivra-mariadb-backup-pvc)の /backup/kivra-YYYYmmdd-HHMMSS.sql.gz。直近 7 世代を残す。
 # - ダンプ後の検査: gzip -t、サイズ > 0、末尾の "Dump completed" マーカー。どれか失敗したら Job を失敗させ、ファイルは残さない。
-# - 資格情報は既存の Secret kivra-db の pass(アプリ用ユーザー kivra。kivra.* に ALL PRIVILEGES)を使う。新しい Secret は作らない。
+# - 資格情報は Secret kivra-db-backup の pass(バックアップ専用ユーザー kivra-backup。kivra.* の SELECT, SHOW VIEW, TRIGGER, EVENT のみ)を使う。
 # - 保存先 A の限界: Ceph 障害時は本体と同時に失われる。
 # - リストア試験: kivra-mariadb-restore-test-cj.yaml(手動実行)。
 apiVersion: batch/v1
@@ -57,7 +57,7 @@ spec:
 
                   echo "dump start -> ${final}"
                   # 資格情報は環境変数 MYSQL_PWD で渡す(引数・ファイルには出さない)。値は表示しない
-                  mariadb-dump -h kivra-db -P 3306 -u kivra \
+                  mariadb-dump -h kivra-db -P 3306 -u kivra-backup \
                     --single-transaction --routines --triggers --events \
                     --databases kivra \
                     | gzip -c > "$tmp"
@@ -92,7 +92,7 @@ spec:
                 - name: MYSQL_PWD
                   valueFrom:
                     secretKeyRef:
-                      name: kivra-db
+                      name: kivra-db-backup
                       key: pass
                 - name: HOME
                   value: /tmp

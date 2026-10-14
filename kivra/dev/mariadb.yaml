@@ -65,9 +65,70 @@ metadata:
 spec:
   mariaDbRef:
     name: kivra-db
+  # アプリ用。DDL・DROP・GRANT は付けない(マイグレーションは kivra-migrator が行う)
+  privileges:
+    - "SELECT"
+    - "INSERT"
+    - "UPDATE"
+    - "DELETE"
+  database: kivra
+  table: "*"
+  username: kivra
+  grantOption: false
+---
+# Flyway の migration 専用(kivra.* のみ)。アプリ(kivra)とは別の資格情報
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: kivra-migrator
+spec:
+  mariaDbRef:
+    name: kivra-db
+  passwordSecretKeyRef:
+    name: kivra-db-migrator
+    key: pass
+  maxUserConnections: 5
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: kivra-migrator
+spec:
+  mariaDbRef:
+    name: kivra-db
   privileges:
     - "ALL PRIVILEGES"
   database: kivra
   table: "*"
-  username: kivra
+  username: kivra-migrator
+  grantOption: false
+---
+# バックアップ(mariadb-dump)とリストア試験の読み取り専用。書き込み・DDL は付けない
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: kivra-backup
+spec:
+  mariaDbRef:
+    name: kivra-db
+  passwordSecretKeyRef:
+    name: kivra-db-backup
+    key: pass
+  maxUserConnections: 2
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: kivra-backup
+spec:
+  mariaDbRef:
+    name: kivra-db
+  privileges:
+    - "SELECT"
+    - "SHOW VIEW"
+    - "TRIGGER"
+    - "EVENT"
+  database: kivra
+  table: "*"
+  username: kivra-backup
   grantOption: false

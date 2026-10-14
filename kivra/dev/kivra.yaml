@@ -45,6 +45,15 @@ spec:
                 secretKeyRef:
                   name: kivra-db
                   key: pass
+            # Flyway の migration 専用ユーザー(kivra-migrator、kivra.* の ALL PRIVILEGES)。
+            # 読めるのは kivra 側の対応 PR(feat/db-migration-credentials)がマージされたイメージのみ。それ以前のイメージは未知の env を無視する。
+            - name: KIVRA_DB_MIGRATION_USER
+              value: "kivra-migrator"
+            - name: KIVRA_DB_MIGRATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db-migrator
+                  key: pass
             - name: KIVRA_RUNTIME_ENV
               value: "server"
             - name: KIVRA_DEV_DEMO_ENABLED
