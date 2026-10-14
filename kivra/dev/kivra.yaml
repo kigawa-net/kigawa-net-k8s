@@ -95,9 +95,11 @@ spec:
             periodSeconds: 5
             # Flyway の migration は、遅いディスクで数十分かかりうる。強制終了されると migration が中途半端な状態で残る。
             failureThreshold: 360
+          # readiness は /ready を見る (DB 疎通を確認する)。DB が落ちたら Ready を外してトラフィックを止める。
+          # startup と liveness は /health のまま。liveness が DB に依存すると、DB 障害で再起動が繰り返され、migration の途中で強制終了されるおそれがあるため。
           readinessProbe:
             httpGet:
-              path: /health
+              path: /ready
               port: 8080
             periodSeconds: 10
             timeoutSeconds: 5
