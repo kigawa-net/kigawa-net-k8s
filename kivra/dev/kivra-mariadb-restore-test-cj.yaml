@@ -111,7 +111,7 @@ spec:
 
                   local_q() { MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root -N -B -e "$1"; }
                   # 本体(kivra-db)への読み取り専用の問い合わせ。SELECT / information_schema のみ
-                  src_q() { MYSQL_PWD="$KIVRA_DB_PASSWORD" mariadb -h kivra-db -P 3306 -u kivra -N -B -e "$1"; }
+                  src_q() { MYSQL_PWD="$KIVRA_BACKUP_PASSWORD" mariadb -h kivra-db -P 3306 -u kivra-backup -N -B -e "$1"; }
 
                   echo "== restore"
                   gzip -dc "$latest" | MYSQL_PWD="$MARIADB_ROOT_PASSWORD" mariadb -S "$SOCK" -u root
@@ -166,10 +166,10 @@ spec:
 
                   echo "RESULT: restore test passed (${latest})"
               env:
-                - name: KIVRA_DB_PASSWORD
+                - name: KIVRA_BACKUP_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: kivra-db
+                      name: kivra-db-backup
                       key: pass
                 - name: HOME
                   value: /tmp
