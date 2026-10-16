@@ -96,7 +96,7 @@ spec:
             - name: KIVRA_SELFDEV_ANTHROPIC_SERVICE_ACCOUNT_ID
               value: "svac_01A9uD3ntRek4ZWKFBq3FFJM"
             - name: KIVRA_SELFDEV_ANTHROPIC_WORKSPACE_ID
-              value: "wrkspc_01VrFbbWYkkcZobvKvqFNZVw"
+              value: "wrkspc_01E6uq7ZNqUrt7p9oyiJgPVL"
             - name: KIVRA_SELFDEV_ANTHROPIC_IDENTITY_TOKEN_FILE
               value: "/var/run/secrets/anthropic.com/token"
           resources:
