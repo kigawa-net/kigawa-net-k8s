@@ -17,6 +17,7 @@ spec:
     spec:
       imagePullSecrets:
         - name: harbor-registry
+      serviceAccountName: kivra
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
@@ -99,6 +100,9 @@ spec:
             - name: github-app
               mountPath: /var/run/kivra/github-app
               readOnly: true
+            - name: anthropic-token
+              mountPath: /var/run/secrets/anthropic.com
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health
@@ -132,4 +136,13 @@ spec:
             secretName: kivra-github-app
             optional: true
             defaultMode: 0440
+        # Anthropic Workload Identity Federation 用の projected ServiceAccount トークン(kubelet が期限前にローテーションする)。
+        # audience はフェデレーションルールの audience と一致させる。automountServiceAccountToken: false でも、この projection は有効。
+        - name: anthropic-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: https://api.anthropic.com
+                  expirationSeconds: 3600
+                  path: token
       restartPolicy: Always
