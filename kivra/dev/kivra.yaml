@@ -21,6 +21,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: kivra
           image: harbor.kigawa.net/library/kivra:main-5d5111c9e712bc1f94a614c80f21a5c6a3b62d0d
@@ -77,6 +78,14 @@ spec:
               value: "admin-panel:admin"
             - name: KIVRA_FUSHA_ENV
               value: "dev"
+            # 自己開発(KIVRA_SELFDEV_ENABLED は未設定=無効)が GitHub App(kivra-gh)として認証するための設定。
+            # 無効の間は読まれない。App ID / インストール ID は秘密ではない。秘密鍵はマウントしたファイルのパスで渡す。
+            - name: KIVRA_SELFDEV_GITHUB_APP_ID
+              value: "5339566"
+            - name: KIVRA_SELFDEV_GITHUB_APP_INSTALLATION_ID
+              value: "171932237"
+            - name: KIVRA_SELFDEV_GITHUB_APP_PRIVATE_KEY
+              value: "/var/run/kivra/github-app/private-key.pem"
           resources:
             requests:
               memory: "256Mi"
@@ -87,6 +96,9 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: github-app
+              mountPath: /var/run/kivra/github-app
+              readOnly: true
           startupProbe:
             httpGet:
               path: /health
@@ -114,4 +126,10 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+        # BitwardenSecret(kivra-github-app-bws.yaml)が作る Secret。同期前でも pod が起動できるよう optional にする
+        - name: github-app
+          secret:
+            secretName: kivra-github-app
+            optional: true
+            defaultMode: 0440
       restartPolicy: Always
