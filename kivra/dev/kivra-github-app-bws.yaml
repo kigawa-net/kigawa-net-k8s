@@ -1,0 +1,16 @@
+# kivra 自己開発が GitHub App(kivra-gh)として認証するための秘密鍵。
+# Bitwarden Secrets Manager(プロジェクト infra、キー kivra-github-app-private-key)から、Secret kivra-github-app へ同期する。
+# 秘密鍵は pod にファイルとしてマウントして使う(環境変数には渡さない)。鍵の実値は git に置かない。
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: kivra-github-app
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: kivra-github-app
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "e113563c-7e97-43e8-893f-b4e500263854"
+      secretKeyName: private-key.pem
