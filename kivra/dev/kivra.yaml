@@ -99,6 +99,19 @@ spec:
               value: "wrkspc_01E6uq7ZNqUrt7p9oyiJgPVL"
             - name: KIVRA_SELFDEV_ANTHROPIC_IDENTITY_TOKEN_FILE
               value: "/var/run/secrets/anthropic.com/token"
+            # 自己開発を有効にする(ADR 0008)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。
+            - name: KIVRA_SELFDEV_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_MODEL_REGISTRY_PATH
+              value: "/var/run/kivra/model-registry/model-registry.yaml"
+            # 為替(USD→JPY)。基準日から 7 日を過ぎると USD の呼び出しは UNKNOWN_COST で止まるので、週次の更新が要る。
+            # 165 は 52 週最高値(約 164 円)を上回る、費用を多めに見積もる値(kivra がさらに余裕 10% と税 10% を上乗せ)。
+            - name: KIVRA_FX_USD_JPY
+              value: "165"
+            - name: KIVRA_FX_AS_OF
+              value: "2026-10-16"
+            - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
+              value: "10000"
           resources:
             requests:
               memory: "256Mi"
@@ -114,6 +127,9 @@ spec:
               readOnly: true
             - name: anthropic-token
               mountPath: /var/run/secrets/anthropic.com
+              readOnly: true
+            - name: model-registry
+              mountPath: /var/run/kivra/model-registry
               readOnly: true
           startupProbe:
             httpGet:
@@ -150,6 +166,12 @@ spec:
             defaultMode: 0440
         # Anthropic Workload Identity Federation 用の projected ServiceAccount トークン(kubelet が期限前にローテーションする)。
         # audience はフェデレーションルールの audience と一致させる。automountServiceAccountToken: false でも、この projection は有効。
+        - name: model-registry
+          configMap:
+            name: kivra-model-registry-cm
+            items:
+              - key: model-registry.yaml
+                path: model-registry.yaml
         - name: anthropic-token
           projected:
             sources:
