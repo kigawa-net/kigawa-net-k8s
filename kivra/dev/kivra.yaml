@@ -87,6 +87,18 @@ spec:
               value: "171932237"
             - name: KIVRA_SELFDEV_GITHUB_APP_PRIVATE_KEY
               value: "/var/run/kivra/github-app/private-key.pem"
+            # 自己開発が Anthropic API に認証するための Workload Identity Federation(静的 API キーは使わない)。
+            # 以下の ID は秘密ではない。JWT は projected ServiceAccount トークン(下の anthropic-token)を毎回読み直す。
+            - name: KIVRA_SELFDEV_ANTHROPIC_FEDERATION_RULE_ID
+              value: "fdrl_01WihqEEcLc4oG7oufUtSqHm"
+            - name: KIVRA_SELFDEV_ANTHROPIC_ORGANIZATION_ID
+              value: "e1c1d300-e0a4-440c-badb-98548fdf42dc"
+            - name: KIVRA_SELFDEV_ANTHROPIC_SERVICE_ACCOUNT_ID
+              value: "svac_01A9uD3ntRek4ZWKFBq3FFJM"
+            - name: KIVRA_SELFDEV_ANTHROPIC_WORKSPACE_ID
+              value: "wrkspc_01VrFbbWYkkcZobvKvqFNZVw"
+            - name: KIVRA_SELFDEV_ANTHROPIC_IDENTITY_TOKEN_FILE
+              value: "/var/run/secrets/anthropic.com/token"
           resources:
             requests:
               memory: "256Mi"
