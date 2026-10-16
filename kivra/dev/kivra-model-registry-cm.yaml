@@ -1,0 +1,50 @@
+# 自己開発(SelfDev)用モデル registry。kivra が KIVRA_SELFDEV_MODEL_REGISTRY_PATH で読む。シークレットは書かない。
+# モデルは Haiku 5.5 のみ(基本方針: 安価なモデルを使う)。Sonnet 等を足すときはモデルを追加する。
+# 価格: https://platform.claude.com/docs/en/about-claude/pricing(2026-10-16 取得、USD/100 万トークン)。
+#   プロンプトが 100,000 トークン以下と超過で 2 段階。top-level は超過側、tiers[0] が 100k 以下。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kivra-model-registry-cm
+data:
+  model-registry.yaml: |
+    registryVersion: "2026-10-16-kivra-dev-1"
+    providers:
+      - id: anthropic
+        adapter: anthropic
+        trustZone: EXTERNAL
+        dataHandling:
+          # 商用規約 Section B: Anthropic は API の入力・出力(Customer Content)でモデルを訓練しない。
+          status: CONFIRMED
+          confirmedBy: kigawa
+          confirmedAt: 2026-10-16
+          sourceUrl: https://www.anthropic.com/legal/commercial-terms
+        enabled: true
+        endpoint: https://api.anthropic.com
+        # Workload Identity Federation を使うため認証には使われない(registry の必須フィールドのみ)
+        credentialRef: ANTHROPIC_API_KEY
+    models:
+      - id: claude-haiku
+        providerId: anthropic
+        providerModelName: claude-haiku-5-5
+        lifecycle: ACTIVE
+        capabilities: [TEXT, VISION_INPUT, TOOL_CALLING, STRUCTURED_OUTPUT_NATIVE, STREAMING, SYSTEM_PROMPT, LONG_CONTEXT, PROMPT_CACHING]
+        contextWindowTokens: 1000000
+        maxOutputTokens: 128000
+        price:
+          # プロンプトが 100,000 トークンを超える場合
+          inputPerMtok: "0.50"
+          outputPerMtok: "2.50"
+          cachedInputPerMtok: "0.05"
+          cacheWrite5mPerMtok: "0.625"
+          cacheWrite1hPerMtok: "1.00"
+          currency: USD
+          sourceRef: "https://platform.claude.com/docs/en/about-claude/pricing (取得 2026-10-16)"
+          tiers:
+            # プロンプトが 100,000 トークン以下の場合
+            - inputTokensUpTo: 100000
+              inputPerMtok: "0.10"
+              outputPerMtok: "0.50"
+              cachedInputPerMtok: "0.01"
+              cacheWrite5mPerMtok: "0.125"
+              cacheWrite1hPerMtok: "0.20"
