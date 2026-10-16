@@ -112,6 +112,10 @@ spec:
               value: "2026-10-16"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
+            # 同時に進める自己開発 Run の上限。UNKNOWN の Run は運用者の解放(未実装)まで active として数えられるので、
+            # 診断の再現のため暫定で 2 にする(解放の機能が入ったら 1 に戻す)。
+            - name: KIVRA_SELFDEV_MAX_ACTIVE_RUNS
+              value: "2"
           resources:
             requests:
               memory: "256Mi"
