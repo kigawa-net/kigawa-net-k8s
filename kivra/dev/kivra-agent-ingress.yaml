@@ -1,0 +1,23 @@
+# ローカルエージェント(kivra-agent、ユーザーの PC)用の経路。ADR 0010 / kivra#187。
+# /api/agent/ だけを、oauth2-proxy を通さず kivra に直接渡す。エージェントは Keycloak の client credentials で取得した
+# Bearer JWT(azp=kivra-agent、ロール kivra-agent:agent、audience kivra-dev)を送り、kivra(AgentIdentity)が署名・iss・aud・exp・
+# azp・ロールを検証する。kivra の認可が、この経路の唯一の関門になる(Authorization ヘッダー以外は信頼しない)。
+# /api/agent/ 以外のパスは、従来どおり kivra-ingress(oauth2-proxy 経由、admin-panel:admin のみ)。
+# kivra 側は KIVRA_AGENT_API_ENABLED が有効なときだけルートを登録する(既定は無効=404)。この Ingress は、無効の間は 404 が返るだけ。
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kivra-agent-ingress
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: kivra-dev.kigawa.net
+      http:
+        paths:
+          - path: /api/agent/
+            pathType: Prefix
+            backend:
+              service:
+                name: kivra-svc
+                port:
+                  number: 8080
