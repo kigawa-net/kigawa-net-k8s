@@ -116,8 +116,11 @@ spec:
               value: "2026-10-16"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
-            # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。API 自体は KIVRA_AGENT_API_ENABLED を設定するまで無効(404)。
-            # 有効化はエージェント本体の完成後に、別の PR で行う。値は Keycloak の client kivra-agent(k8s-system#278)と一致させる。
+            # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
+            # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
+            - name: KIVRA_AGENT_API_ENABLED
+              value: "true"
+            # 値は Keycloak の client kivra-agent(k8s-system#278)と一致させる。
             - name: KIVRA_AGENT_AZP
               value: "kivra-agent"
             - name: KIVRA_AGENT_REQUIRED_ROLE
