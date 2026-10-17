@@ -116,9 +116,9 @@ spec:
             # 為替(USD→JPY)。基準日から 7 日を過ぎると USD の呼び出しは UNKNOWN_COST で止まるので、週次の更新が要る。
             # 165 は 52 週最高値(約 164 円)を上回る、費用を多めに見積もる値(kivra がさらに余裕 10% と税 10% を上乗せ)。
             - name: KIVRA_FX_USD_JPY
-              value: "165"
+              value: "164"
             - name: KIVRA_FX_AS_OF
-              value: "2026-10-16"
+              value: "2026-10-17"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
