@@ -161,6 +161,13 @@ spec:
             # Planner が計画待ちの Goal を探す間隔(秒、既定値。5〜3600)。
             - name: KIVRA_SELFDEV_AUTOPILOT_PLAN_INTERVAL_SECONDS
               value: "30"
+            # 自己開発 PR の基点の追従(kivra#276、kivra#279)。レビュー待ちの PR が main に対して behind のとき、kivra-gh が update-branch で追従する。
+            # 追従の後の新しい head は、親が「旧 head と main 先頭」の 2 つ、PR 自身の差分が前後で同一、のときだけ記録し直す(満たさなければ、人に残す)。
+            # 1 PR あたり、1 時間に 1 回、合計 3 回まで。監査は PR_REBASE_* の固定コードだけ。
+            # 止め方: この env を外すか false にして再デプロイする(外すと追従は止まり、既存の PR はそのまま残る)。
+            # 必要な image: kivra#279 を含む(main-d0619b3 以降)。古い image は、この env を読まない。
+            - name: KIVRA_SELFDEV_PR_REBASE_ENABLED
+              value: "true"
             # MCP サーバー(ADR 0013 / kivra#181)。読み取りだけを有効にする(2026-10-19)。書き込み(KIVRA_MCP_WRITE_ENABLED)は、まだ有効にしない。
             # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。有効の間、kivra の JWT 検証(MCP 専用の audience、署名、iss、exp、ロール、スコープ)が唯一の認証になる。
             # 接続: `claude mcp add --transport http kivra https://kivra-dev.kigawa.net/mcp`(Keycloak の client kivra-mcp、PKCE。k8s-system#280)。
