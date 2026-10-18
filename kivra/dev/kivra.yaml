@@ -134,17 +134,21 @@ spec:
             # 診断の再現のため暫定で 2 にする(解放の機能が入ったら 1 に戻す)。
             - name: KIVRA_SELFDEV_MAX_ACTIVE_RUNS
               value: "2"
-            # MCP サーバー(ADR 0013 / kivra#181)。既定は無効のまま。KIVRA_MCP_ENABLED は、この PR では追加しない(無効の間は他の MCP の設定を読まれないよう、env を置かない)。
-            # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。無効の間、/mcp は kivra の 404 を返す。
-            # 有効化は別の PR で、次の env をまとめて追加する(その PR の前に、kivra 側の MCP の骨格(kivra PR 1)を含むイメージへ更新し、k8s-system の MCP 用 Keycloak の設定(PR 2)をマージしておくこと):
-            #   KIVRA_MCP_ENABLED: "true"
-            #   KIVRA_MCP_AUDIENCE: "https://kivra-dev.kigawa.net/mcp"   (ADR 0013 §10 の PR 3 の表記は KIVRA_MCP_OIDC_AUDIENCE。kivra 側の実装の名前に合わせて確定する)
-            #   KIVRA_MCP_ALLOWED_HOSTS: "kivra-dev.kigawa.net"
-            #   KIVRA_MCP_ALLOWED_ORIGINS: ""   (空、または claude.ai)
-            #   KIVRA_MCP_RATE_PER_MINUTE: "60"
-            #   KIVRA_MCP_WRITE_ENABLED: "false" は、書き込み(PR 4)のあとの PR で扱う。この時点では追加しない。
-            # 有効化で /mcp は oauth2-proxy を通らず、kivra の JWT 検証が唯一の認証になる。有効化の前に、kivra 側の認証のテスト(audience、scope、Origin、Host)を確認すること。
-            # 止める(無効に戻す)ときは、KIVRA_MCP_ENABLED を外して再デプロイする(キルスイッチ)。
+            # MCP サーバー(ADR 0013 / kivra#181)。読み取りだけを有効にする(2026-10-19)。書き込み(KIVRA_MCP_WRITE_ENABLED)は、まだ有効にしない。
+            # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。有効の間、kivra の JWT 検証(MCP 専用の audience、署名、iss、exp、ロール、スコープ)が唯一の認証になる。
+            # 接続: `claude mcp add --transport http kivra https://kivra-dev.kigawa.net/mcp`(Keycloak の client kivra-mcp、PKCE。k8s-system#280)。
+            # 止める(無効に戻す)ときは、KIVRA_MCP_ENABLED を外して再デプロイする(キルスイッチ。外すと /mcp は 404 に戻る)。
+            - name: KIVRA_MCP_ENABLED
+              value: "true"
+            # MCP のアクセストークンが持つべき aud。Keycloak の client kivra-mcp の audience mapper と一致させる。
+            - name: KIVRA_MCP_AUDIENCE
+              value: "https://kivra-dev.kigawa.net/mcp"
+            # 許可する Host(DNS リバインディング対策)。Origin は、ブラウザ以外のクライアントを想定して許可リストを置かない(Origin ヘッダーがある要求は拒否される)。
+            - name: KIVRA_MCP_ALLOWED_HOSTS
+              value: "kivra-dev.kigawa.net"
+            # 主体ごとの毎分の上限(既定と同じ値を明示)。超過は 429。
+            - name: KIVRA_MCP_RATE_PER_MINUTE
+              value: "60"
           resources:
             requests:
               memory: "256Mi"
