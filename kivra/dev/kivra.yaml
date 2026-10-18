@@ -25,7 +25,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: kivra
-          image: harbor.kigawa.net/library/kivra:main-50e0c1fb6dc54767b6f45a8d07c20362a50013c8
+          image: harbor.kigawa.net/library/kivra:main-9fabd8ee17da7e43c3b180f83018df3c200da28c
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -161,6 +161,21 @@ spec:
             # Planner が計画待ちの Goal を探す間隔(秒、既定値。5〜3600)。
             - name: KIVRA_SELFDEV_AUTOPILOT_PLAN_INTERVAL_SECONDS
               value: "30"
+            # MCP サーバー(ADR 0013 / kivra#181)。読み取りだけを有効にする(2026-10-19)。書き込み(KIVRA_MCP_WRITE_ENABLED)は、まだ有効にしない。
+            # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。有効の間、kivra の JWT 検証(MCP 専用の audience、署名、iss、exp、ロール、スコープ)が唯一の認証になる。
+            # 接続: `claude mcp add --transport http kivra https://kivra-dev.kigawa.net/mcp`(Keycloak の client kivra-mcp、PKCE。k8s-system#280)。
+            # 止める(無効に戻す)ときは、KIVRA_MCP_ENABLED を外して再デプロイする(キルスイッチ。外すと /mcp は 404 に戻る)。
+            - name: KIVRA_MCP_ENABLED
+              value: "true"
+            # MCP のアクセストークンが持つべき aud。Keycloak の client kivra-mcp の audience mapper と一致させる。
+            - name: KIVRA_MCP_AUDIENCE
+              value: "https://kivra-dev.kigawa.net/mcp"
+            # 許可する Host(DNS リバインディング対策)。Origin は、ブラウザ以外のクライアントを想定して許可リストを置かない(Origin ヘッダーがある要求は拒否される)。
+            - name: KIVRA_MCP_ALLOWED_HOSTS
+              value: "kivra-dev.kigawa.net"
+            # 主体ごとの毎分の上限(既定と同じ値を明示)。超過は 429。
+            - name: KIVRA_MCP_RATE_PER_MINUTE
+              value: "60"
           resources:
             requests:
               memory: "256Mi"
