@@ -24,7 +24,8 @@ data:
         # Workload Identity Federation を使うため認証には使われない(registry の必須フィールドのみ)
         credentialRef: ANTHROPIC_API_KEY
     models:
-      - id: claude-haiku
+      # id は kivra の Planner が固定で探す値(AutopilotPlanner.PLANNER_MODEL_ID)に合わせる。違うと、オートパイロットを有効にした起動が止まる。
+      - id: claude-haiku-5-5
         providerId: anthropic
         providerModelName: claude-haiku-5-5
         lifecycle: ACTIVE
