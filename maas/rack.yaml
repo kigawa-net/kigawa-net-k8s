@@ -21,7 +21,7 @@ spec:
         maas.kigawa.net/rack: "true"
       containers:
         - name: maas-rack
-          image: harbor.kigawa.net/library/maas-rack:main-54b26e7a193893b1fc158ff80ad612f0a9df281d
+          image: harbor.kigawa.net/library/maas-rack:main-cbf6eb22e6a84cf5437043c2ecdbb9c44a083aa0
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
