@@ -198,6 +198,10 @@ spec:
             # 止める: この 3 つの KIVRA_MCP_GOAL_* を外すか false にして再デプロイする。
             - name: KIVRA_MCP_GOAL_SUBMIT_ENABLED
               value: "true"
+            # Goal とタスクの題名の読み取り(kivra_goal_get_titles。ADR 0019 の追記、運用者の指示)。運用者本人のみ。本文、タスクの指示文、対象パスは返さない。
+            # 題名は信頼できないデータ(untrusted: true)。止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_MCP_GOAL_TEXT_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "256Mi"
