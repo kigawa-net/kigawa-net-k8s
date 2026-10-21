@@ -168,7 +168,7 @@ spec:
             # 必要な image: kivra#279 を含む(main-d0619b3 以降)。古い image は、この env を読まない。
             - name: KIVRA_SELFDEV_PR_REBASE_ENABLED
               value: "true"
-            # MCP サーバー(ADR 0013 / kivra#181)。読み取りだけを有効にする(2026-10-19)。書き込み(KIVRA_MCP_WRITE_ENABLED)は、まだ有効にしない。
+            # MCP サーバー(ADR 0013 / kivra#181)。読み取りを 2026-10-19 に有効にした。書き込みと Goal のツールを 2026-10-21 に有効にする(運用者の承認済み)。
             # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。有効の間、kivra の JWT 検証(MCP 専用の audience、署名、iss、exp、ロール、スコープ)が唯一の認証になる。
             # 接続: `claude mcp add --transport http kivra https://kivra-dev.kigawa.net/mcp`(Keycloak の client kivra-mcp、PKCE。k8s-system#280)。
             # 止める(無効に戻す)ときは、KIVRA_MCP_ENABLED を外して再デプロイする(キルスイッチ。外すと /mcp は 404 に戻る)。
@@ -183,6 +183,21 @@ spec:
             # 主体ごとの毎分の上限(既定と同じ値を明示)。超過は 429。
             - name: KIVRA_MCP_RATE_PER_MINUTE
               value: "60"
+            # 書き込みツール(ADR 0013 §5)。有効にすると、既存の kivra_selfdev_start(Run を直接開始する)も出る。
+            # 止める: この env を外すか false にして再デプロイする(書き込みツールが全て tools/list から消える。読み取りは残る)。
+            # 書き込みは主体ごとに 1 分 5 件を共有する。AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)からの Goal の書き込みは拒否される。
+            - name: KIVRA_MCP_WRITE_ENABLED
+              value: "true"
+            # Goal のツール(ADR 0019)。読み取り(kivra_goal_list、kivra_goal_get)。題名と本文は返さない。
+            - name: KIVRA_MCP_GOAL_READ_ENABLED
+              value: "true"
+            # Goal の中止(kivra_goal_stop)。運用者本人のみ。投入済みの Run は止まらない(run_still_active で知らせる)。
+            - name: KIVRA_MCP_GOAL_STOP_ENABLED
+              value: "true"
+            # Goal の投入(kivra_goal_submit)。運用者本人のみ、冪等キー必須、1 日の上限は既定 10 件(UTC)。
+            # 止める: この 3 つの KIVRA_MCP_GOAL_* を外すか false にして再デプロイする。
+            - name: KIVRA_MCP_GOAL_SUBMIT_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "256Mi"
