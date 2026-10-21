@@ -47,6 +47,13 @@ spec:
             - name: cgroup
               mountPath: /sys/fs/cgroup
           env:
+            # MAAS は、`systemd-detect-virt -c` の終了コードで「コンテナ内か」を判定する(provisioningserver/utils/ps.py)。
+            # コンテナ内と判定されないと、Pod の eth0 が広告の対象から外れ、/rpc/ が 127.0.0.1 / ::1 だけを返す。
+            # すると、k8s の外(ホスト)の Rack が、自分の loopback に接続しようとして、Region に登録できない(kigawa-net/infra#207)。
+            # このコンテナは、systemd を PID 1 で動かす(/sbin/init)。PID 1 の環境変数 container=docker を、systemd が読み取り、
+            # /run/systemd/container に書いて、コンテナ内と判定されるようになる(手元の Docker で、広告が Pod の IP になることを確認済み)。
+            - name: container
+              value: docker
             - name: MAAS_POSTGRES_USER
               valueFrom:
                 secretKeyRef:
