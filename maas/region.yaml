@@ -13,6 +13,11 @@ spec:
       labels:
         app: maas-region
     spec:
+      # MAAS は region コントローラーを、/var/lib/maas/maas_id(Pod を作り直すと消える)か、無ければ hostname で識別する。
+      # hostname が Pod 名のままだと、再起動・更新のたびに新しいコントローラーが登録され、古い登録が残り続ける
+      # (2026-10-20 時点で 44 件。API の version も、最も多いバージョン=古い 3.5.10 を返していた)。
+      # hostname を固定すると、作り直した Pod が、同じコントローラーに紐づく(手元の Docker で確認済み。kigawa-net/infra#207)。
+      hostname: maas-region
       initContainers:
         # DBが起動するまで待機
         - name: wait-postgres
