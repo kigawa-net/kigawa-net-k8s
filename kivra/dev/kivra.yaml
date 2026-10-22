@@ -142,10 +142,12 @@ spec:
             # ロールバック: KIVRA_SELFDEV_AUTOPILOT_* の行を外して再デプロイする。コードの変更は要らない。DB の行は消さない。
             - name: KIVRA_SELFDEV_AUTOPILOT_ENABLED
               value: "true"
-            # 段階 1 = required(全タスクを運用者が承認する)。auto は docs・テスト・README の小さなタスクだけ自動、段階 2。
-            # 昇格は ADR 0011 §6 の条件を満たしてから、この値の変更で行う。
+            # 段階 2 = auto(2026-10-22 に昇格。運用者の判断)。docs・テスト・README の小さなタスク(見積り S、3 件以下、requires_approval=false)だけ、承認なしで投入する。
+            # それ以外(UI の本体、kivra-*/src/main など)と denylist のタスクは、段階 1 と同じく運用者の承認を待つ。実際の差分は、コミットの前に再検査される(範囲外は AUTO_SCOPE_EXCEEDED で止まる)。
+            # 昇格の根拠(ADR 0011 §6.3): 承認したタスクの COMPLETED が 10 件、POLICY_REJECTED と範囲外の変更がゼロ、予算の計上を運用者が実機で確認(#230)。
+            # 戻す: この値を required にして再デプロイする(段階 1)。実行中の Run は、そのまま進む。
             - name: KIVRA_SELFDEV_AUTOPILOT_APPROVAL
-              value: "required"
+              value: "auto"
             # マージ待ちの自己開発 PR の上限(既定値。1〜20)。
             - name: KIVRA_SELFDEV_AUTOPILOT_MAX_PENDING_PRS
               value: "3"
