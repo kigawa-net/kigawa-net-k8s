@@ -202,6 +202,12 @@ spec:
             # 題名は信頼できないデータ(untrusted: true)。止める: この env を外すか false にして再デプロイする。
             - name: KIVRA_MCP_GOAL_TEXT_ENABLED
               value: "true"
+            # 自動マージの影の判定(ADR 0014 S1。kivra#325、#326)。PULL_REQUEST の Run を 60 秒ごとに判定し、変化したときだけ監査(AUTO_MERGE_JUDGED)に残す。
+            # マージ、ラベル、コメント、ブランチ更新の書き込みは、一切しない(読み取りだけ)。GitHub App(kivra-gh)の checks:read が無いと、判定は常に REFUSE か HOLD になる。
+            # 必須チェックは既定の test,build,boot(KIVRA_SELFDEV_AUTOMERGE_REQUIRED_CHECKS で変更できる)。
+            # 止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_SELFDEV_AUTOMERGE_SHADOW_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "256Mi"
