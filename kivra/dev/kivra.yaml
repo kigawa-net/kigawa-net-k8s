@@ -210,6 +210,12 @@ spec:
             # 止める: この env を外すか false にして再デプロイする。
             - name: KIVRA_SELFDEV_AUTOMERGE_SHADOW_ENABLED
               value: "true"
+            # 自己開発の記憶(ADR 0016 P1: 保存のみ、影。P2 の閲覧と削除は kivra#323 で入った)。記録は書くだけで、Planner のプロンプトにも承認と投入の判断にも使わない。
+            # 保存するのは、固定コード、件数、パス集合の SHA-256、Goal の題名(200 字まで)だけ。Goal の本文、計画の文、PR の本文、モデルの出力は保存しない。
+            # 保持期間: 文章 180 日、事実 365 日。止める: この env を外すか false にして再デプロイする(書き込みと保持ジョブが止まる。記録は残る)。
+            # 閲覧と削除は /ui の「記憶」の欄(運用者のみ)。
+            - name: KIVRA_SELFDEV_MEMORY_ENABLED
+              value: "true"
           resources:
             requests:
               memory: "256Mi"
