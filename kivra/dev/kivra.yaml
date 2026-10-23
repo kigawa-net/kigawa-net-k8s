@@ -216,6 +216,19 @@ spec:
             # 閲覧と削除は /ui の「記憶」の欄(運用者のみ)。
             - name: KIVRA_SELFDEV_MEMORY_ENABLED
               value: "true"
+            # order(継続開発の指示。ADR 0015 段階 1)。ルートの order 1 件と、停止の要求・承認だけ。周は人が作る(自動の開始は無い)。
+            # 子の作成は不可(KIVRA_SELFDEV_ORDER_MAX_DEPTH 未設定 = 0)、自動停止(KIVRA_SELFDEV_ORDER_AUTO_STOP_ENABLED)と
+            # 費用の集計(KIVRA_SELFDEV_ORDER_SPEND_ENABLED)は未設定 = 無効。起動時に ACTIVE の order があれば全て PAUSED(STARTUP_HOLD)にする。
+            # 承認者の owner key は公開リポジトリに書かず、クラスタ内の Secret(kivra-order-approver)から読む。
+            # AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)は未設定(別途 Keycloak ユーザーを用意してから足す)。
+            # 止める: KIVRA_SELFDEV_ORDERS_ENABLED を外すか false にして再デプロイする(order は消えず、状態は変わらない)。
+            - name: KIVRA_SELFDEV_ORDERS_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_ROOT_APPROVER
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-order-approver
+                  key: owner-key
           resources:
             requests:
               memory: "256Mi"
