@@ -38,7 +38,7 @@ spec:
                   key: user
       containers:
         - name: maas-region
-          image: harbor.kigawa.net/library/maas-region:main-6cd62cc2ce26e21cbfc363cddaffb977c2c88cc1
+          image: harbor.kigawa.net/library/maas-region:main-d9d04bdfc1103a8dec308b64ac2738300b61ab90
           imagePullPolicy: IfNotPresent
           # systemd実行に必要
           securityContext:
