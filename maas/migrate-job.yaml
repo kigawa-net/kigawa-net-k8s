@@ -30,9 +30,9 @@ spec:
                   key: user
       containers:
         - name: migrate
-          # Region(region.yaml)と同じイメージ(MAAS 3.6)にする。タグは自動更新されない(maas-build は region.yaml だけを更新する)ので、
+          # Region(region.yaml)と同じイメージ(MAAS 3.7)にする。タグは自動更新されない(maas-build は region.yaml だけを更新する)ので、
           # Region のイメージを更新したら、この行も同じタグに手で揃える。揃っていないと DB の migration が、Region と違うバージョンで走る。
-          image: harbor.kigawa.net/library/maas-region:main-cbf6eb22e6a84cf5437043c2ecdbb9c44a083aa0
+          image: harbor.kigawa.net/library/maas-region:main-d9d04bdfc1103a8dec308b64ac2738300b61ab90
           command:
             - sh
             - -c
