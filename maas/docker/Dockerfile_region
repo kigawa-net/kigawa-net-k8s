@@ -1,9 +1,11 @@
-# MAAS 3.6 の PPA は Ubuntu 24.04 (noble) 用のみ。3.5 の PPA は 22.04 (jammy) 用のみで、24.04 には無い。
+# MAAS 3.6 / 3.7 の PPA は Ubuntu 24.04 (noble) 用。3.5 の PPA は 22.04 (jammy) 用のみで、24.04 には無い。
 # Rack(control-plane のホストに deb で直接入れる。Ubuntu 24.04)は Region より新しいバージョンにできないため、
-# Region を先に 3.6 に上げる(kigawa-net/infra#207)。
+# Region を先に上げる(kigawa-net/infra#207)。
+# 3.7 に上げた理由: 3.6.x は OS イメージの取り込みが完了しない(LP#2121474。aiohttp の不具合で、3.7 で httpx に置き換えて修正。
+# 3.6 には修正が入らない)。kigawa-net/infra#317。
 FROM ubuntu:24.04
 
-ARG MAAS_VERSION=3.6
+ARG MAAS_VERSION=3.7
 
 # Install systemd and clean up unnecessary units
 RUN apt-get update && \
