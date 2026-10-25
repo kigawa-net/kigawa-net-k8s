@@ -5,7 +5,9 @@
 # maas-agent が connection refused で、約 1 分ごとに、クラッシュと再起動を繰り返していた。
 # この Service の VIP(10.0.0.244)を、Rack の登録の URL(http://10.0.0.244:5240/MAAS)に使う。Pod が作り直されても、VIP は変わらない。
 #
-# 公開するのは、API(5240)と Temporal(5271)だけ。Temporal を、LAN 全体に、公開しないよう、loadBalancerSourceRanges で、2 台の Rack だけに絞る。
+# 公開するのは、API(5240)と Temporal(5271)と、内部 API(5242)だけ。Temporal を、LAN 全体に、公開しないよう、loadBalancerSourceRanges で、2 台の Rack だけに絞る。
+# 5242(HTTPS の内部 API。/MAAS/a/v3internal/...)は、MAAS 3.7 の maas-agent が、DHCP の設定(agents/<rack>/services/dhcp/config)などを取るために使う。
+# これが無いと、`apply-dhcp-config-via-file` が connection refused になり、DHCP が起動しない(kigawa-net/infra#317)。
 # RPC(5250〜5253)は、Rack が /rpc/ で得た Pod の IP に、Flannel 経由で、直接、接続する(container=docker で、Pod の IP が広告される)ので、公開しない。
 apiVersion: v1
 kind: Service
@@ -33,3 +35,6 @@ spec:
     - name: temporal
       port: 5271
       targetPort: 5271
+    - name: internal-api
+      port: 5242
+      targetPort: 5242
