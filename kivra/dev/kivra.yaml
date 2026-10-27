@@ -229,12 +229,14 @@ spec:
                 secretKeyRef:
                   name: kivra-order-approver
                   key: owner-key
-            # 担当(ロール)と権限管理(ADR 0020)。shadow: 判定は従来のまま(拒否しない)。「拒否したはず」を、固定コードだけでログに出す(同じ組は 60 秒に 1 回)。
+            # 担当(ロール)と権限管理(ADR 0020)。enforce: 担当のロール(DB)で判定し、権限のない操作は拒否する(DB が引けないときも拒否)。
             # 起動時に、承認者(上の root approver)を ADMIN の担当に、行がないときだけ作る。担当の管理 API(/api/selfdev/assignees)は、ADMIN の担当に紐付く人だけが使える。
             # AI の担当は、画面(API)で作り、kivra が発行する API トークンで、MCP(/mcp)にだけ入る。Keycloak は使わない。
-            # 止める: この env を外す(または off にする)。担当と紐付けは消えず、判定は従来どおりに戻る。enforce は、別の PR(承認が要る)で。
+            # enforce のときだけ、AI のトークンで、MCP の読み取りと停止要求が実際に通る(shadow では、トークンの主体は何も許可されない)。
+            # 戻す: この値を shadow(または off)に戻す。担当と紐付けは消えず、判定は従来どおりに戻る。
+            # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
             - name: KIVRA_SELFDEV_ROLES_MODE
-              value: "shadow"
+              value: "enforce"
           resources:
             requests:
               memory: "256Mi"
