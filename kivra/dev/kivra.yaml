@@ -237,6 +237,18 @@ spec:
             # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
             - name: KIVRA_SELFDEV_ROLES_MODE
               value: "enforce"
+            # 停止要求の LLM 判断(ADR 0021、L4)。shadow: LLM に判断させて、判断の記録(selfdev_llm_stop_decisions)に残すだけで、承認はしない。
+            # ROLES_MODE=enforce と、有効な AI_APPROVER の担当(/ui の「担当」)が前提。どちらかが欠けると、判断は SKIPPED になる。
+            # 認証は、コーディング用の既存の WIF(KIVRA_SELFDEV_ANTHROPIC_*)を流用する。API キーは、新しく持たない。
+            # 上限と単価は既定値(自動承認 1 時間に 3 件、LLM 呼び出し 1 時間に 20 回、入力 4000 / 出力 100 トークン、月間 500 円)。
+            # 止める: ENABLED を外す(または false にする)か、AI_APPROVER の担当を /ui で無効にする(次の判断から効く)。
+            # active(承認を有効化)は、L5 の実装のあとに、別の PR で行う。今は、active を指定しても shadow で動く。
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODE
+              value: "shadow"
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODEL
+              value: "claude-haiku-5-5"
           resources:
             requests:
               memory: "256Mi"
