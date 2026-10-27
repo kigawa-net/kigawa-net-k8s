@@ -118,7 +118,7 @@ spec:
             - name: KIVRA_FX_USD_JPY
               value: "164"
             - name: KIVRA_FX_AS_OF
-              value: "2026-10-22"
+              value: "2026-10-26"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
