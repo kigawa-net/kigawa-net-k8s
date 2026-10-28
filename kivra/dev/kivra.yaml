@@ -216,13 +216,18 @@ spec:
             # 閲覧と削除は /ui の「記憶」の欄(運用者のみ)。
             - name: KIVRA_SELFDEV_MEMORY_ENABLED
               value: "true"
-            # order(継続開発の指示。ADR 0015 段階 1)。ルートの order 1 件と、停止の要求・承認だけ。周は人が作る(自動の開始は無い)。
+            # order(継続開発の指示。ADR 0015 段階 1)。ルートの order 1 件と、停止の要求・承認だけ。
             # 子の作成は不可(KIVRA_SELFDEV_ORDER_MAX_DEPTH 未設定 = 0)、自動停止(KIVRA_SELFDEV_ORDER_AUTO_STOP_ENABLED)と
             # 費用の集計(KIVRA_SELFDEV_ORDER_SPEND_ENABLED)は未設定 = 無効。起動時に ACTIVE の order があれば全て PAUSED(STARTUP_HOLD)にする。
             # 承認者の owner key は公開リポジトリに書かず、クラスタ内の Secret(kivra-order-approver)から読む。
             # AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)は未設定(別途 Keycloak ユーザーを用意してから足す)。
             # 止める: KIVRA_SELFDEV_ORDERS_ENABLED を外すか false にして再デプロイする(order は消えず、状態は変わらない)。
             - name: KIVRA_SELFDEV_ORDERS_ENABLED
+              value: "true"
+            # 自動開始(ADR 0015 段階 2)。order が ACTIVE で条件を満たせば、OrderWatch(60 秒ごと)が次の周を自動で開始する。
+            # 条件: 祖先が ACTIVE、期限内、max_cycles 未満、連続失敗 2 未満、予算内、PR 上限内など。
+            # 止める: この env を外すか false にして再デプロイする(自動開始は止まり、手動の開始は残る)。
+            - name: KIVRA_SELFDEV_ORDER_AUTO_CYCLE_ENABLED
               value: "true"
             - name: KIVRA_SELFDEV_ROOT_APPROVER
               valueFrom:
@@ -237,16 +242,16 @@ spec:
             # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
             - name: KIVRA_SELFDEV_ROLES_MODE
               value: "enforce"
-            # 停止要求の LLM 判断(ADR 0021、L4)。shadow: LLM に判断させて、判断の記録(selfdev_llm_stop_decisions)に残すだけで、承認はしない。
+            # 停止要求の LLM 判断(ADR 0021、L5 active)。LLM に判断させて、承認を自動で実行する。
             # ROLES_MODE=enforce と、有効な AI_APPROVER の担当(/ui の「担当」)が前提。どちらかが欠けると、判断は SKIPPED になる。
             # 認証は、コーディング用の既存の WIF(KIVRA_SELFDEV_ANTHROPIC_*)を流用する。API キーは、新しく持たない。
             # 上限と単価は既定値(自動承認 1 時間に 3 件、LLM 呼び出し 1 時間に 20 回、入力 4000 / 出力 100 トークン、月間 500 円)。
             # 止める: ENABLED を外す(または false にする)か、AI_APPROVER の担当を /ui で無効にする(次の判断から効く)。
-            # active(承認を有効化)は、L5 の実装のあとに、別の PR で行う。今は、active を指定しても shadow で動く。
+            # shadow(記録だけ)に戻す: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODE を shadow にして再デプロイする。
             - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_ENABLED
               value: "true"
             - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODE
-              value: "shadow"
+              value: "active"
             - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODEL
               value: "claude-haiku-5-5"
           resources:
