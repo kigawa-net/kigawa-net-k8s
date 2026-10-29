@@ -15,7 +15,7 @@ spec:
         app: openbao
     spec:
       # *.kigawa.net は Pod から見ると ingress(10.0.0.240)に解決されるので、
-      # 他ノードの FQDN は、オーバーレイの IP に向ける(bao-02/03 の /etc/hosts と同じ。EasyTier のサイドカー経由で届く)
+      # 他ノードの FQDN は、オーバーレイの IP に向ける(bao-02/03 の /etc/hosts と同じ)
       hostAliases:
         - ip: 10.250.0.1
           hostnames: ["bao-02.kigawa.net"]
@@ -29,38 +29,6 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        # EasyTier のサイドカー。Pod のネットワーク(netns)に tun を作り、オーバーレイの固定 IP(10.250.0.30)を持つ。
-        # tun の作成に /dev/net/tun と NET_ADMIN が要る。コンテナのデバイス許可の既定に tun は無いので、このコンテナだけ privileged にする
-        - name: easytier
-          image: easytier/easytier:v2.6.4@sha256:91d6732ea5ff71542fdb99333d2ee7b168e973443114db84db061e452427d91e
-          args:
-            - --hostname=bao-01
-            - --ipv4=10.250.0.30/24
-            - --no-listener
-            - --peers
-            - tcp://207.231.111.196:11010
-            - tcp://74.208.55.86:11010
-          env:
-            - name: ET_NETWORK_NAME
-              value: kigawa-net
-            - name: ET_NETWORK_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: easytier
-                  key: network-secret
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
-          securityContext:
-            privileged: true
-            runAsNonRoot: false
-            runAsUser: 0
-          volumeMounts:
-            - name: tun
-              mountPath: /dev/net/tun
         - name: openbao
           image: quay.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
           command: ["bao"]
@@ -118,10 +86,6 @@ spec:
         - name: tls
           secret:
             secretName: bao01-tls
-        - name: tun
-          hostPath:
-            path: /dev/net/tun
-            type: CharDevice
         - name: logs
           emptyDir: {}
         - name: tmp
