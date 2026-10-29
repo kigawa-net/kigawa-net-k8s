@@ -15,3 +15,19 @@ spec:
   map:
     - bwSecretId: "592c8dfd-1622-47cb-abb9-b4f00103c2a3"
       secretKeyName: api-token
+---
+# EasyTier のネットワーク Secret(bao-02/03 と同じ。bws 698da56c-...)
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: easytier
+  namespace: kigawa-net-openbao
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: easytier
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "698da56c-a169-4837-93a1-b4f00107b513"
+      secretKeyName: network-secret

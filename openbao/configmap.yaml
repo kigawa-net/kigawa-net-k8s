@@ -9,9 +9,10 @@ data:
     ui         = false
     log_format = "json"
 
-    # api_addr は証明書の名前。cluster_addr は MetalLB の VIP(bao-02/03 から、WireGuard + BGP で届く)
+    # api_addr は証明書の名前。cluster_addr は、同じ Pod の EasyTier(サイドカー)が持つ、オーバーレイの固定 IP。
+    # bao-02/03 とは、オーバーレイ(10.250.0.0/24)で直接つながる(hub や Inuyama の経路に依存しない)
     api_addr     = "https://bao01.kigawa.net:8200"
-    cluster_addr = "https://10.0.0.245:8201"
+    cluster_addr = "https://10.250.0.30:8201"
 
     storage "raft" {
       path    = "/openbao/data"

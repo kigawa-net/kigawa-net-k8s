@@ -1,5 +1,5 @@
-# 8200(API)と 8201(Raft)を VIP 10.0.0.245(MetalLB の L2)で公開する。
-# 10.0.0.0/24 は Inuyama から BGP で広告済みなので、ionos 経由で bao-02/03 に届く。
+# API(8200)だけを VIP 10.0.0.245(MetalLB の L2)で公開する(Inuyama の LAN から、Unseal や運用に使う)。
+# Raft(8201)は、Pod の EasyTier(オーバーレイ 10.250.0.30)で行うので、公開しない。
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,9 +16,6 @@ spec:
     - name: api
       port: 8200
       targetPort: 8200
-    - name: cluster
-      port: 8201
-      targetPort: 8201
 ---
 # StatefulSet 用(Pod の安定した名前)
 apiVersion: v1
