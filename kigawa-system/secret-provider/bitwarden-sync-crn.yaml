@@ -40,6 +40,7 @@ spec:
                     kigawa-net-mc-ftb-mc
                     kigawa-net-llm
                     kigawa-net-llm-proxy
+                    kigawa-net-openbao
                     kigawa-net-llm-ui
                     keycloak
                     arc-runners
