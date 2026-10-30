@@ -105,18 +105,26 @@ jobs:
 
           overall_status=0
 
+          # The CI identity intentionally has no cluster-wide Namespace read/write
+          # permission. Namespaces introduced by this PR (and their first RoleBindings)
+          # cannot receive server-side dry-run until Argo CD creates the Namespace.
+          new_namespaces=$(while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            awk '$1 == "kind:" {is_namespace = ($2 == "Namespace")} is_namespace && $1 == "name:" {print $2; is_namespace = 0}' "$f"
+          done <<< "$files")
+
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             [ -f "$f" ] || { echo "- \`$f\`: 削除されたファイルのためスキップ" >> "$GITHUB_STEP_SUMMARY"; continue; }
 
             echo "### \`$f\`" >> "$GITHUB_STEP_SUMMARY"
 
-            # ClusterRole / ClusterRoleBinding を含むファイルは、サーバー側の dry-run ができない。
+            # ClusterRole / ClusterRoleBinding / Namespace を含むファイルは、サーバー側の dry-run ができない。
             # CI の ServiceAccount は、namespace の RoleBinding でしか権限を持たず、ClusterRole を get できない。
             # (更新も、RBAC の権限昇格の防止で、権限を持たない主体には拒否される。権限を足すと、昇格の経路になるため足さない。)
             # このため、構文と種類(kind)の確認だけを、クライアント側で行う。フィールドの誤りまでは、検出できない。
             # 適用は、マージ後に ArgoCD が行う。
-            if grep -qE '^kind: (ClusterRole|ClusterRoleBinding)\s*$' "$f"; then
+            if grep -qE '^kind: (ClusterRole|ClusterRoleBinding|Namespace)\s*$' "$f"; then
               if ! result=$(kubectl create --dry-run=client -f "$f" 2>&1); then
                 echo '```' >> "$GITHUB_STEP_SUMMARY"
                 echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
@@ -125,28 +133,33 @@ jobs:
                 overall_status=1
                 continue
               fi
-              echo "- ⚠️ ClusterRole / ClusterRoleBinding を含むため、サーバー側の dry-run を省略(構文・kind の確認のみ OK)" >> "$GITHUB_STEP_SUMMARY"
+              echo "- ⚠️ ClusterRole / ClusterRoleBinding / Namespace を含むため、サーバー側の dry-run を省略(クライアント側の検証のみ OK)" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            namespace=$(awk '/^metadata:/{in_metadata=1;next} in_metadata && /^  namespace:/{print $2; exit} in_metadata && /^[^ ]/{in_metadata=0}' "$f")
+            is_new_namespace=false
+            while IFS= read -r new_namespace; do
+              [ -n "$new_namespace" ] || continue
+              if [ "$namespace" = "$new_namespace" ] || grep -qE "^  namespace: ${new_namespace}$" "$f"; then
+                is_new_namespace=true
+                break
+              fi
+            done <<< "$new_namespaces"
+            if [ "$is_new_namespace" = true ]; then
+              if ! result=$(kubectl apply --dry-run=client -f "$f" 2>&1); then
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "- ❌ dry-run(client)失敗(新規 namespace のため server dry-run 不可)" >> "$GITHUB_STEP_SUMMARY"
+                overall_status=1
+                continue
+              fi
+              echo "- ⚠️ 新規 namespace `$namespace` のリソースは、NamespaceとRBACがArgo CDで作成されるまで client dry-run で確認。以降はserver dry-runが有効。" >> "$GITHUB_STEP_SUMMARY"
               continue
             fi
 
             if ! result=$(kubectl apply --dry-run=server -f "$f" 2>&1); then
-              # A newly added namespace cannot be persisted by server-side dry-run.
-              # Until Argo CD creates it after merge, namespaced resources targeting it
-              # fail with NotFound even when the manifests are otherwise valid. Fall back
-              # to client-side validation for this bootstrap case; later changes get the
-              # normal server-side validation once the namespace exists.
-              if grep -qE 'namespaces "[^"]+" not found' <<< "$result"; then
-                if ! client_result=$(kubectl apply --dry-run=client -f "$f" 2>&1); then
-                  echo '```' >> "$GITHUB_STEP_SUMMARY"
-                  echo "$client_result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
-                  echo '```' >> "$GITHUB_STEP_SUMMARY"
-                  echo "- ❌ dry-run(client)失敗(新規 namespace のため server dry-run 不可)" >> "$GITHUB_STEP_SUMMARY"
-                  overall_status=1
-                  continue
-                fi
-                echo "- ⚠️ 対象 namespace が未作成のため server dry-run を省略し client dry-run で確認。マージ後は Argo CD が namespace を作成し、以降は server dry-run が有効。" >> "$GITHUB_STEP_SUMMARY"
-                continue
-              fi
               echo '```' >> "$GITHUB_STEP_SUMMARY"
               echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> "$GITHUB_STEP_SUMMARY"
