@@ -130,6 +130,23 @@ jobs:
             fi
 
             if ! result=$(kubectl apply --dry-run=server -f "$f" 2>&1); then
+              # A newly added namespace cannot be persisted by server-side dry-run.
+              # Until Argo CD creates it after merge, namespaced resources targeting it
+              # fail with NotFound even when the manifests are otherwise valid. Fall back
+              # to client-side validation for this bootstrap case; later changes get the
+              # normal server-side validation once the namespace exists.
+              if grep -qE 'namespaces "[^"]+" not found' <<< "$result"; then
+                if ! client_result=$(kubectl apply --dry-run=client -f "$f" 2>&1); then
+                  echo '```' >> "$GITHUB_STEP_SUMMARY"
+                  echo "$client_result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+                  echo '```' >> "$GITHUB_STEP_SUMMARY"
+                  echo "- ❌ dry-run(client)失敗(新規 namespace のため server dry-run 不可)" >> "$GITHUB_STEP_SUMMARY"
+                  overall_status=1
+                  continue
+                fi
+                echo "- ⚠️ 対象 namespace が未作成のため server dry-run を省略し client dry-run で確認。マージ後は Argo CD が namespace を作成し、以降は server dry-run が有効。" >> "$GITHUB_STEP_SUMMARY"
+                continue
+              fi
               echo '```' >> "$GITHUB_STEP_SUMMARY"
               echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> "$GITHUB_STEP_SUMMARY"
