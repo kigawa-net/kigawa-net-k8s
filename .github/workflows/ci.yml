@@ -147,9 +147,10 @@ jobs:
                 break
               fi
             done <<< "$new_namespaces"
-            echo "CI dry-run target: file=$f namespace=${namespace:-<cluster-scoped>} new_namespaces=${new_namespaces//$'\n'/,} fallback=$is_new_namespace"
             if [ "$is_new_namespace" = true ]; then
-              if ! result=$(kubectl apply --dry-run=client -f "$f" 2>&1); then
+              # apply --dry-run=client still GETs existing objects and needs RBAC in the
+              # namespace. create --dry-run=client validates locally without API reads.
+              if ! result=$(kubectl create --dry-run=client -f "$f" 2>&1); then
                 echo "$result" >&2
                 echo '```' >> "$GITHUB_STEP_SUMMARY"
                 echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
