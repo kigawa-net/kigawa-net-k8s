@@ -147,6 +147,7 @@ jobs:
                 break
               fi
             done <<< "$new_namespaces"
+            echo "CI dry-run target: file=$f namespace=${namespace:-<cluster-scoped>} new_namespaces=${new_namespaces//$'\n'/,} fallback=$is_new_namespace"
             if [ "$is_new_namespace" = true ]; then
               if ! result=$(kubectl apply --dry-run=client -f "$f" 2>&1); then
                 echo "$result" >&2
