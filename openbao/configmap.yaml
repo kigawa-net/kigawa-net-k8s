@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-config
+  namespace: kigawa-net-openbao
+data:
+  openbao.hcl: |
+    # bao-01(K8s)。bao-02/03 は hardware/modules/openbao-node(systemd)で、設定の意図は同じ。
+    ui         = false
+    log_format = "json"
+
+    # api_addr は証明書の名前。cluster_addr は MetalLB の VIP(bao-02/03 から、WireGuard + BGP で届く)
+    api_addr     = "https://bao01.kigawa.net:8200"
+    cluster_addr = "https://10.0.0.245:8201"
+
+    storage "raft" {
+      path    = "/openbao/data"
+      node_id = "bao-01"
+
+      # ピアの証明書は公開 CA(Let's Encrypt)なので、OS の信頼ストアで検証する。
+      # bao-02/03 の FQDN は、Pod の hostAliases でオーバーレイの IP に向ける
+      retry_join {
+        leader_api_addr = "https://bao-02.kigawa.net:8200"
+      }
+      retry_join {
+        leader_api_addr = "https://bao-03.kigawa.net:8200"
+      }
+    }
+
+    listener "tcp" {
+      address         = "0.0.0.0:8200"
+      cluster_address = "0.0.0.0:8201"
+      tls_cert_file   = "/openbao/tls/tls.crt"
+      tls_key_file    = "/openbao/tls/tls.key"
+      tls_min_version = "tls13"
+    }
+
+    telemetry {
+      unauthenticated_metrics_access = false
+    }
+
+    # 監査デバイス(宣言的)。stdout はコンテナのログ(Loki へ)、file は Pod 内(再起動で消える)。
+    audit "file" "stdout" {
+      description = "監査ログ(コンテナの標準出力)"
+      options {
+        file_path = "stdout"
+      }
+    }
+    audit "file" "file" {
+      description = "監査ログ(/openbao/logs/audit.log。Pod 内)"
+      options {
+        file_path = "/openbao/logs/audit.log"
+        mode      = "0600"
+      }
+    }

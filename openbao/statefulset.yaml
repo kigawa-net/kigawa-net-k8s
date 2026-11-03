@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: openbao
+  namespace: kigawa-net-openbao
+spec:
+  serviceName: openbao-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openbao
+  template:
+    metadata:
+      labels:
+        app: openbao
+    spec:
+      # *.kigawa.net は Pod から見ると ingress(10.0.0.240)に解決されるので、
+      # 他ノードの FQDN は、オーバーレイの IP に向ける(bao-02/03 の /etc/hosts と同じ)
+      hostAliases:
+        - ip: 10.250.0.1
+          hostnames: ["bao-02.kigawa.net"]
+        - ip: 10.250.0.31
+          hostnames: ["bao-03.kigawa.net"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: openbao
+          image: quay.io/openbao/openbao:2.7.2@sha256:5046911075e137e154ce49ab051502f4ec7cf367d484ae4a4dce665d9b90561f
+          command: ["bao"]
+          args: ["server", "-config=/openbao/config/openbao.hcl"]
+          ports:
+            - name: api
+              containerPort: 8200
+            - name: cluster
+              containerPort: 8201
+          env:
+            - name: BAO_ADDR
+              value: https://127.0.0.1:8200
+            - name: BAO_TLS_SERVER_NAME
+              value: bao01.kigawa.net
+          # 封印中(sealed)・未初期化でも Ready にする。unseal は人が行い、Raft は 8201 で先に繋がる必要がある
+          readinessProbe:
+            httpGet:
+              path: /v1/sys/health?standbyok=true&sealedcode=204&uninitcode=204
+              port: api
+              scheme: HTTPS
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: api
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: data
+              mountPath: /openbao/data
+            - name: config
+              mountPath: /openbao/config
+              readOnly: true
+            - name: tls
+              mountPath: /openbao/tls
+              readOnly: true
+            - name: logs
+              mountPath: /openbao/logs
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: openbao-config
+        - name: tls
+          secret:
+            secretName: bao01-tls
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: rook-ceph-rbd
+        resources:
+          requests:
+            storage: 10Gi
