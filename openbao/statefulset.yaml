@@ -76,7 +76,9 @@ spec:
               mountPath: /openbao/tls
               readOnly: true
             - name: logs
-              mountPath: /openbao/logs
+              mountPath: /var/log/openbao
+            - name: dev-log
+              mountPath: /dev/log
             - name: tmp
               mountPath: /tmp
       volumes:
@@ -88,6 +90,10 @@ spec:
             secretName: bao01-tls
         - name: logs
           emptyDir: {}
+        - name: dev-log
+          hostPath:
+            path: /run/systemd/journal/dev-log
+            type: Socket
         - name: tmp
           emptyDir: {}
   volumeClaimTemplates:

@@ -39,17 +39,20 @@ data:
       unauthenticated_metrics_access = false
     }
 
-    # 監査デバイス(宣言的)。stdout はコンテナのログ(Loki へ)、file は Pod 内(再起動で消える)。
-    audit "file" "stdout" {
-      description = "監査ログ(コンテナの標準出力)"
+    # 監査デバイス(宣言的)。bao-02/03 と同じ定義にそろえる。
+    # 定義は Raft で複製され、standby は自分の環境で開こうとする。ノードごとに違うと、
+    # standby が「failed to setup audit table」で失敗する(2026-11)。
+    audit "file" "file" {
+      description = "監査ログ(/var/log/openbao/audit.log)"
       options {
-        file_path = "stdout"
+        file_path = "/var/log/openbao/audit.log"
+        mode      = "0600"
       }
     }
-    audit "file" "file" {
-      description = "監査ログ(/openbao/logs/audit.log。Pod 内)"
+    audit "syslog" "syslog" {
+      description = "監査ログ(syslog。ホストの journald へ)"
       options {
-        file_path = "/openbao/logs/audit.log"
-        mode      = "0600"
+        tag      = "openbao-audit"
+        facility = "AUTH"
       }
     }
