@@ -210,6 +210,13 @@ spec:
             # 止める: この env を外すか false にして再デプロイする。
             - name: KIVRA_SELFDEV_AUTOMERGE_SHADOW_ENABLED
               value: "true"
+            # 自己開発 PR の AI レビュー(kivra#436)。PR にコメントを 1 件投稿するだけで、承認・マージはしない。自動マージ判定にはまだ接続していない。
+            # モデルは registry の claude-haiku-5-5。上限は既定(1 時間 5 件、PR あたり 2 回、差分 60000 バイト)。
+            # 止める: この env を外すか false にして再デプロイする(投稿済みのコメントは消えない)。
+            - name: KIVRA_SELFDEV_PR_REVIEW_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_PR_REVIEW_MODEL
+              value: "claude-haiku-5-5"
             # 自己開発の記憶(ADR 0016 P1: 保存のみ、影。P2 の閲覧と削除は kivra#323 で入った)。記録は書くだけで、Planner のプロンプトにも承認と投入の判断にも使わない。
             # 保存するのは、固定コード、件数、パス集合の SHA-256、Goal の題名(200 字まで)だけ。Goal の本文、計画の文、PR の本文、モデルの出力は保存しない。
             # 保持期間: 文章 180 日、事実 365 日。止める: この env を外すか false にして再デプロイする(書き込みと保持ジョブが止まる。記録は残る)。
