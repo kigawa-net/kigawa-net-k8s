@@ -25,7 +25,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: kivra
-          image: harbor.kigawa.net/library/kivra:main-d07fff0b9325ffa66b5177496ea950e69de82646
+          image: harbor.kigawa.net/library/kivra:main-2d1447e2b783a4a8777c5e88fabca0ebecd0b065
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
