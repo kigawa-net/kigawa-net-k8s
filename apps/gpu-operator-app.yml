@@ -19,11 +19,18 @@ spec:
         # toolkit を有効化して CDI スペックを /etc/cdi/ に自動生成させる
         toolkit:
           enabled: true
-        # GTX 650 (Kepler, compute capability 3.0) は DCGM 非対応 (要 cc 3.5+)
+        # DCGM / dcgm-exporter は、worker5(RTX 3060 / Ampere)のために有効にする。
+        # worker3 の GTX 650 (Kepler, compute capability 3.0) は DCGM 非対応 (要 cc 3.5+) なので、
+        # worker3 のノードラベルで無効にしておく(これが無いと worker3 で CrashLoop する):
+        #   kubectl label node k8s-worker3 \
+        #     nvidia.com/gpu.deploy.dcgm=false \
+        #     nvidia.com/gpu.deploy.dcgm-exporter=false \
+        #     nvidia.com/gpu.deploy.gpu-feature-discovery=false --overwrite
+        # (gpu-feature-discovery も Kepler では起動できず CrashLoop していたため、あわせて無効にする)
         dcgm:
-          enabled: false
+          enabled: true
         dcgmExporter:
-          enabled: false
+          enabled: true
         # validator は CUDA テストを実行するため Kepler では動作しない可能性がある
         validator:
           enabled: false
