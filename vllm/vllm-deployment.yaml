@@ -6,7 +6,7 @@ metadata:
   labels:
     app: vllm
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: vllm
@@ -24,16 +24,15 @@ spec:
           args:
             - |
               exec python3 -m vllm.entrypoints.openai.api_server \
-                --model Qwen/Qwen3-4B-AWQ \
+                --model Qwen/Qwen3-8B-AWQ \
                 --served-model-name production-llm \
                 --quantization awq_marlin \
                 --tensor-parallel-size 1 \
-                --max-model-len 1024 \
-                --gpu-memory-utilization 0.85 \
+                --max-model-len 16384 \
+                --gpu-memory-utilization 0.90 \
                 --dtype float16 \
                 --trust-remote-code \
-                --enforce-eager \
-                --max-num-seqs 32 \
+                --max-num-seqs 16 \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
@@ -49,18 +48,16 @@ spec:
               value: /vllm-tmp
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: expandable_segments:True
-            - name: VLLM_ATTENTION_BACKEND
-              value: TRITON_ATTN
           resources:
             requests:
               nvidia.com/gpu: "1"
               cpu: "1"
-              memory: "4Gi"
+              memory: "6Gi"
               ephemeral-storage: "1Gi"
             limits:
               nvidia.com/gpu: "1"
               cpu: "4"
-              memory: "16Gi"
+              memory: "12Gi"
               ephemeral-storage: "10Gi"
           volumeMounts:
             - mountPath: /root/.cache/huggingface
@@ -102,7 +99,7 @@ spec:
               - matchExpressions:
                   - key: kubernetes.io/hostname
                     operator: In
-                    values: ["k8s-worker3"]
+                    values: ["k8s-worker5"]
       volumes:
         - name: hf-cache
           persistentVolumeClaim:
