@@ -31,7 +31,7 @@ spec:
                 --language-model-only \
                 --reasoning-parser qwen3 \
                 --default-chat-template-kwargs '{"enable_thinking": false}' \
-                --max-model-len 40960 \
+                --max-model-len 27648 \
                 --kv-cache-dtype fp8 \
                 --max-num-batched-tokens 4096 \
                 --gpu-memory-utilization 0.93 \
