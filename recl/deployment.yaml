@@ -22,7 +22,7 @@ spec:
           emptyDir: {}
       containers:
         - name: recl
-          image: harbor.kigawa.net/library/recl:35e729db9f605886e136df44e32dd97642ab8511
+          image: harbor.kigawa.net/library/recl:956efc67705e9dfe79a7870081af8ff977d4ec42
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
