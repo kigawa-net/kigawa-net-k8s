@@ -261,6 +261,11 @@ spec:
             # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
             - name: KIVRA_SELFDEV_ROLES_MODE
               value: "enforce"
+            # プロジェクト単位の認可(kivra ADR 0022)。shadow: 現行のロール判定の結果は変えず、プロジェクトのメンバー判定との差分だけを、固定 code(PROJECT_NOT_MEMBER など)のログに出す。
+            # 前提: ROLES_MODE が off 以外。enforce へ進む前に、/ui のプロジェクトで「全担当を取り込む」を実行し、ログで PROJECT_NOT_MEMBER が 0 件になるのを確認する(docs/runbook-selfdev.md §4.17)。
+            # 戻す: この env を外す(または off にする)。
+            - name: KIVRA_SELFDEV_PROJECT_MODE
+              value: "shadow"
             # 停止要求の LLM 判断(ADR 0021、L5 active)。LLM に判断させて、承認を自動で実行する。
             # ROLES_MODE=enforce と、有効な AI_APPROVER の担当(/ui の「担当」)が前提。どちらかが欠けると、判断は SKIPPED になる。
             # 認証は、コーディング用の既存の WIF(KIVRA_SELFDEV_ANTHROPIC_*)を流用する。API キーは、新しく持たない。
