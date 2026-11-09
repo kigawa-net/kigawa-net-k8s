@@ -4,11 +4,32 @@ metadata:
   name: litellm-oauth2-proxy-config
   namespace: kigawa-net-llm-proxy
 data:
-  # JWT 検証後、上流へ渡す Authorization を LiteLLM 仮想キーに差し替える。
-  # LITELLM_AUTH_HEADER は Deployment 側で "Bearer <仮想キー>" として組み立てる。
+  # alpha config を使うと --provider / --upstream などの従来フラグは使えず、
+  # プロバイダ・上流・ヘッダ注入はすべてここに書く(フラグは skip-jwt-bearer-tokens 等のコア項目のみ)。
   alpha.yaml: |
+    server:
+      bindAddress: 0.0.0.0:4180
+    upstreamConfig:
+      upstreams:
+        - id: litellm
+          path: /
+          uri: http://litellm-service.kigawa-net-llm-proxy.svc.cluster.local:80
+    providers:
+      - id: keycloak-develop
+        provider: oidc
+        # Bearer 専用モードでは使われない。起動要件を満たすためのダミー値(秘匿情報ではない)
+        clientID: litellm-api
+        clientSecret: unused
+        oidcConfig:
+          issuerURL: https://user.kigawa.net/realms/develop
+          # クライアント(client_credentials)のトークンの aud は litellm
+          audienceClaims: [aud]
+          extraAudiences: [litellm]
+          # サービスアカウントのトークンには email が無いため sub を使う
+          emailClaim: sub
+    # JWT 検証後、上流へ渡す Authorization を LiteLLM 仮想キーに差し替える。
+    # LITELLM_AUTH_HEADER は Deployment 側で "Bearer <仮想キー>" として組み立てる。
     injectRequestHeaders:
       - name: Authorization
         values:
-          - secretSource:
-              fromEnv: LITELLM_AUTH_HEADER
+          - fromEnv: LITELLM_AUTH_HEADER
