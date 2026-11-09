@@ -33,6 +33,7 @@ spec:
                 --default-chat-template-kwargs '{"enable_thinking": false}' \
                 --max-model-len 57344 \
                 --kv-cache-dtype fp8 \
+                --enable-prefix-caching \
                 --max-num-batched-tokens 2048 \
                 --gpu-memory-utilization 0.96 \
                 --dtype bfloat16 \
