@@ -31,10 +31,10 @@ spec:
                 --language-model-only \
                 --reasoning-parser qwen3 \
                 --default-chat-template-kwargs '{"enable_thinking": false}' \
-                --max-model-len 32768 \
+                --max-model-len 57344 \
                 --kv-cache-dtype fp8 \
-                --max-num-batched-tokens 4096 \
-                --gpu-memory-utilization 0.95 \
+                --max-num-batched-tokens 2048 \
+                --gpu-memory-utilization 0.96 \
                 --dtype bfloat16 \
                 --trust-remote-code \
                 --max-num-seqs 4 \
@@ -59,6 +59,10 @@ spec:
             # P2P を使おうとして止まらないよう無効化する(通信はホストメモリ経由)
             - name: NCCL_P2P_DISABLE
               value: "1"
+            # FlashInfer の作業用メモリ(既定 394MiB)を減らし、その分を KV キャッシュに回す。
+            # max-num-batched-tokens を 2048 に絞っているので、128MiB で足りる見込み
+            - name: VLLM_FLASHINFER_WORKSPACE_BUFFER_SIZE
+              value: "134217728"
           resources:
             requests:
               nvidia.com/gpu: "2"
