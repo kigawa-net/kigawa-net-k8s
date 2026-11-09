@@ -29,4 +29,20 @@ data:
 
     litellm_settings:
       drop_params: true
-      request_timeout: 300
+      # 上流(llama.cpp)は、全スロットがふさがっていると要求を順番待ちにする。長い履歴の処理を含め、
+      # 300 秒では足りないことがあるため 600 秒にする
+      request_timeout: 600
+
+    router_settings:
+      # 上流の Pod を入れ替えた直後は、旧 Pod への接続を保持していて、最初の 1〜2 リクエストが
+      # Connection error(InternalServerError)で失敗する。接続エラーだけを再試行する。
+      # タイムアウトを再試行すると、順番待ちの負荷が倍になるため 0 にする
+      num_retries: 2
+      retry_after: 3
+      retry_policy:
+        TimeoutErrorRetries: 0
+        InternalServerErrorRetries: 2
+        RateLimitErrorRetries: 0
+        BadRequestErrorRetries: 0
+        AuthenticationErrorRetries: 0
+        ContentPolicyViolationErrorRetries: 0
