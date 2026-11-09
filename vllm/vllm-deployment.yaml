@@ -24,17 +24,18 @@ spec:
           args:
             - |
               exec python3 -m vllm.entrypoints.openai.api_server \
-                --model Qwen/Qwen3-8B-AWQ \
+                --model QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ \
                 --served-model-name production-llm \
                 --quantization awq_marlin \
-                --tensor-parallel-size 1 \
-                --max-model-len 16384 \
-                --gpu-memory-utilization 0.90 \
+                --tensor-parallel-size 2 \
+                --disable-custom-all-reduce \
+                --max-model-len 32768 \
+                --gpu-memory-utilization 0.92 \
                 --dtype float16 \
                 --trust-remote-code \
-                --max-num-seqs 16 \
+                --max-num-seqs 8 \
                 --enable-auto-tool-choice \
-                --tool-call-parser hermes \
+                --tool-call-parser qwen3_coder \
                 --port 8000 \
                 --host 0.0.0.0
           ports:
@@ -50,27 +51,34 @@ spec:
               value: /vllm-tmp
             - name: PYTORCH_CUDA_ALLOC_CONF
               value: expandable_segments:True
+            # 2 枚目の 3060 は PCIe x4(チップセット経由)で、GeForce は P2P 非対応。
+            # P2P を使おうとして止まらないよう無効化する(通信はホストメモリ経由)
+            - name: NCCL_P2P_DISABLE
+              value: "1"
           resources:
             requests:
-              nvidia.com/gpu: "1"
-              cpu: "1"
-              memory: "6Gi"
+              nvidia.com/gpu: "2"
+              cpu: "2"
+              memory: "10Gi"
               ephemeral-storage: "1Gi"
             limits:
-              nvidia.com/gpu: "1"
-              cpu: "4"
-              memory: "12Gi"
+              nvidia.com/gpu: "2"
+              cpu: "6"
+              memory: "18Gi"
               ephemeral-storage: "10Gi"
           volumeMounts:
             - mountPath: /root/.cache/huggingface
               name: hf-cache
             - mountPath: /vllm-tmp
               name: vllm-tmp
+            # tensor parallel のワーカー間通信(NCCL / 共有メモリ)用
+            - mountPath: /dev/shm
+              name: dshm
           startupProbe:
             httpGet:
               path: /health
               port: 8000
-            failureThreshold: 60
+            failureThreshold: 120
             periodSeconds: 30
             timeoutSeconds: 10
           livenessProbe:
@@ -109,3 +117,7 @@ spec:
         - name: vllm-tmp
           emptyDir:
             sizeLimit: 10Gi
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
