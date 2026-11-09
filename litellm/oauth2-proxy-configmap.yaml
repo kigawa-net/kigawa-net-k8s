@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-oauth2-proxy-config
+  namespace: kigawa-net-llm-proxy
+data:
+  # JWT 検証後、上流へ渡す Authorization を LiteLLM 仮想キーに差し替える。
+  # LITELLM_AUTH_HEADER は Deployment 側で "Bearer <仮想キー>" として組み立てる。
+  alpha.yaml: |
+    injectRequestHeaders:
+      - name: Authorization
+        values:
+          - secretSource:
+              fromEnv: LITELLM_AUTH_HEADER
