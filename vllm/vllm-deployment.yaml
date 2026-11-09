@@ -30,9 +30,9 @@ spec:
                 --disable-custom-all-reduce \
                 --language-model-only \
                 --reasoning-parser qwen3 \
-                --max-model-len 32768 \
+                --max-model-len 24576 \
                 --max-num-batched-tokens 4096 \
-                --gpu-memory-utilization 0.92 \
+                --gpu-memory-utilization 0.93 \
                 --dtype bfloat16 \
                 --trust-remote-code \
                 --max-num-seqs 4 \
