@@ -19,51 +19,61 @@ spec:
     spec:
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.23.0
-          command: ["/bin/sh", "-c"]
+          # vLLM から llama.cpp(CUDA)に載せ替えた。Deployment / Service / ラベルの名前は、
+          # LiteLLM・Ingress が参照しているため vllm のまま変えない
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b12199
           args:
-            - |
-              exec python3 -m vllm.entrypoints.openai.api_server \
-                --model Lorbus/Qwen3.6-27B-int4-AutoRound \
-                --served-model-name production-llm \
-                --tensor-parallel-size 2 \
-                --disable-custom-all-reduce \
-                --language-model-only \
-                --reasoning-parser qwen3 \
-                --default-chat-template-kwargs '{"enable_thinking": false}' \
-                --max-model-len 57344 \
-                --kv-cache-dtype fp8 \
-                --enable-prefix-caching \
-                --max-num-batched-tokens 2048 \
-                --gpu-memory-utilization 0.96 \
-                --dtype bfloat16 \
-                --trust-remote-code \
-                --max-num-seqs 1 \
-                --enable-auto-tool-choice \
-                --tool-call-parser qwen3_coder \
-                --port 8000 \
-                --host 0.0.0.0
+            # Qwen3.6-35B-A3B(MoE、有効 3B)。UD-IQ4_NL_XL は 18.2GiB で、RTX 3060 x2(計 24GB)に載る。
+            # vLLM の 4bit 版は 22.7GiB 以上で載らない。初回はここからダウンロードして PVC にキャッシュする
+            - -hf
+            - unsloth/Qwen3.6-35B-A3B-GGUF:UD-IQ4_NL_XL
+            - --no-mmproj
+            # LiteLLM が参照するモデル名
+            - --alias
+            - production-llm
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            # 全層を GPU に載せ、2 枚へ層ごとに均等分割(2 枚目は PCIe x4 のため、層分割にする)
+            - -ngl
+            - "99"
+            - --split-mode
+            - layer
+            - --tensor-split
+            - "1,1"
+            - -fa
+            - "on"
+            # 128k トークンの KV を 4 スロットで共有(--kv-unified)。KV は 1 トークンあたり約 11KB(q8_0)
+            - -c
+            - "131072"
+            - -np
+            - "4"
+            - --kv-unified
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            - --jinja
+            # 思考は既定で無効(--chat-template-kwargs での指定は非推奨のため --reasoning を使う)
+            - --reasoning
+            - "off"
+            - --cache-reuse
+            - "256"
+            - --no-webui
+            - --metrics
           ports:
             - containerPort: 8000
               name: http
           env:
-            - name: VLLM_API_KEY
+            # API キーは vLLM と同じ Secret(LiteLLM が同じ値で呼ぶ)
+            - name: LLAMA_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: TMPDIR
-              value: /vllm-tmp
-            - name: PYTORCH_CUDA_ALLOC_CONF
-              value: expandable_segments:True
-            # 2 枚目の 3060 は PCIe x4(チップセット経由)で、GeForce は P2P 非対応。
-            # P2P を使おうとして止まらないよう無効化する(通信はホストメモリ経由)
-            - name: NCCL_P2P_DISABLE
-              value: "1"
-            # FlashInfer の作業用メモリ(既定 394MiB)を減らし、その分を KV キャッシュに回す。
-            # max-num-batched-tokens を 2048 に絞っているので、128MiB で足りる見込み
-            - name: VLLM_FLASHINFER_WORKSPACE_BUFFER_SIZE
-              value: "134217728"
+            - name: LLAMA_CACHE
+              value: /root/.cache/huggingface/llama.cpp
           resources:
             requests:
               nvidia.com/gpu: "2"
@@ -78,11 +88,6 @@ spec:
           volumeMounts:
             - mountPath: /root/.cache/huggingface
               name: hf-cache
-            - mountPath: /vllm-tmp
-              name: vllm-tmp
-            # tensor parallel のワーカー間通信(NCCL / 共有メモリ)用
-            - mountPath: /dev/shm
-              name: dshm
           startupProbe:
             httpGet:
               path: /health
@@ -123,10 +128,3 @@ spec:
         - name: hf-cache
           persistentVolumeClaim:
             claimName: hf-cache-pvc
-        - name: vllm-tmp
-          emptyDir:
-            sizeLimit: 10Gi
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: 4Gi
