@@ -38,7 +38,7 @@ spec:
                 --gpu-memory-utilization 0.96 \
                 --dtype bfloat16 \
                 --trust-remote-code \
-                --max-num-seqs 4 \
+                --max-num-seqs 1 \
                 --enable-auto-tool-choice \
                 --tool-call-parser qwen3_coder \
                 --port 8000 \
