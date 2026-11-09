@@ -24,16 +24,18 @@ spec:
           args:
             - |
               exec python3 -m vllm.entrypoints.openai.api_server \
-                --model QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ \
+                --model Lorbus/Qwen3.6-27B-int4-AutoRound \
                 --served-model-name production-llm \
-                --quantization awq_marlin \
                 --tensor-parallel-size 2 \
                 --disable-custom-all-reduce \
+                --language-model-only \
+                --reasoning-parser qwen3 \
                 --max-model-len 32768 \
+                --max-num-batched-tokens 4096 \
                 --gpu-memory-utilization 0.92 \
-                --dtype float16 \
+                --dtype bfloat16 \
                 --trust-remote-code \
-                --max-num-seqs 8 \
+                --max-num-seqs 4 \
                 --enable-auto-tool-choice \
                 --tool-call-parser qwen3_coder \
                 --port 8000 \
