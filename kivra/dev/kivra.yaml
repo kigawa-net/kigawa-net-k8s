@@ -250,6 +250,11 @@ spec:
             # 止める: この env を外すか false にして再デプロイする(自動開始は止まり、手動の開始は残る)。
             - name: KIVRA_SELFDEV_ORDER_AUTO_CYCLE_ENABLED
               value: "true"
+            # 起動時の保留の無効化(ADR 0015 U-14 追補 2026-11-10、kivra#488)。true のとき、再起動しても ACTIVE の order を PAUSED(STARTUP_HOLD)にしない。
+            # 予算、max_cycles、期限、ブレーカーは変わらない。必要な image: kivra#488 を含む(main-1f466ba 以降)。古い image は、この env を読まない。
+            # 止める: この env を外すか false にして再デプロイする(再起動時の保留に戻る)。
+            - name: KIVRA_SELFDEV_ORDER_AUTO_RESUME_ON_STARTUP
+              value: "true"
             - name: KIVRA_SELFDEV_ROOT_APPROVER
               valueFrom:
                 secretKeyRef:
