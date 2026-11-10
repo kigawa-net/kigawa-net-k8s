@@ -262,7 +262,7 @@ spec:
             # ルートの order に指定できる maxCycles の上限(既定 1、最大 10)。自動開始が 1 order で回す周の数の上限でもある。
             # 変えても既存の order の max_cycles は変わらない(作成時に決まる)。戻すには外すか 1 にして再デプロイする。
             - name: KIVRA_SELFDEV_ORDER_MAX_CYCLES_CAP
-              value: "3"
+              value: "10"
             - name: KIVRA_SELFDEV_ROOT_APPROVER
               valueFrom:
                 secretKeyRef:
