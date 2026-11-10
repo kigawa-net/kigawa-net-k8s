@@ -145,9 +145,11 @@ spec:
             # 段階 2 = auto(2026-10-22 に昇格。運用者の判断)。docs・テスト・README の小さなタスク(見積り S、3 件以下、requires_approval=false)だけ、承認なしで投入する。
             # それ以外(UI の本体、kivra-*/src/main など)と denylist のタスクは、段階 1 と同じく運用者の承認を待つ。実際の差分は、コミットの前に再検査される(範囲外は AUTO_SCOPE_EXCEEDED で止まる)。
             # 昇格の根拠(ADR 0011 §6.3): 承認したタスクの COMPLETED が 10 件、POLICY_REJECTED と範囲外の変更がゼロ、予算の計上を運用者が実機で確認(#230)。
-            # 戻す: この値を required にして再デプロイする(段階 1)。実行中の Run は、そのまま進む。
+            # 段階 3 = full(2026-11-10 に昇格。運用者の判断。kivra#485、image は main-c0bc493 以降が必要。古い image は full を読めず起動に失敗する)。
+            #   denylist と requires_approval のタスク、パス 4 件以上のタスクは運用者の承認を待つ。差分の再検査(パス 3 件以下・200 行以下)と PatchPolicy は残る。マージは人。
+            # 戻す: この値を auto(段階 2)または required(段階 1)にして再デプロイする。実行中の Run は、そのまま進む。
             - name: KIVRA_SELFDEV_AUTOPILOT_APPROVAL
-              value: "auto"
+              value: "full"
             # マージ待ちの自己開発 PR の上限(既定値。1〜20)。
             - name: KIVRA_SELFDEV_AUTOPILOT_MAX_PENDING_PRS
               value: "3"
