@@ -217,6 +217,10 @@ spec:
             # 拒否・応答不明は再試行せず、拒否が 2 件続くと自動で一時停止する。止める: この env を外すか false にして再デプロイする。
             - name: KIVRA_SELFDEV_AUTOMERGE_ACTIVE_ENABLED
               value: "true"
+            # 必須チェックは test,build の 2 つ(既定の boot を外す)。boot はパスフィルタ付きの PR 限定で、docs だけの PR では動かず CHECK_MISSING になるため。
+            # main のブランチ保護の必須チェック(test, build)と同じ集合。戻すには、この env を外して再デプロイする(既定の test,build,boot に戻る)。
+            - name: KIVRA_SELFDEV_AUTOMERGE_REQUIRED_CHECKS
+              value: "test,build"
             # 自己開発 PR の AI レビュー(kivra#436)。PR にコメントを 1 件投稿するだけで、承認・マージはしない。自動マージ判定にはまだ接続していない。
             # モデルは registry の claude-haiku-5-5。上限は既定(1 時間 5 件、PR あたり 2 回、差分 60000 バイト)。
             # 止める: この env を外すか false にして再デプロイする(投稿済みのコメントは消えない)。
