@@ -68,6 +68,7 @@ spec:
                     kigawa-net-ai-scheduler-dev
                     kigawa-net-ai-scheduler-stg
                     kigawa-net-kivra-dev
+                    kigawa-net-kivra-dev-agent
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$

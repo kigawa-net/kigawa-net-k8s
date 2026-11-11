@@ -1,0 +1,12 @@
+# Job の Pod が使う ServiceAccount(namespace の default)。Job のマニフェストは imagePullSecrets を持てない(kivra-agent の
+# K8sJobGuard が許可しない項目)ため、Harbor の private イメージの pull 資格情報は、この ServiceAccount 経由で渡す。
+# harbor-registry は kigawa-system/secret-provider/harbor-sync-crn.yaml が、この namespace に同期する。
+# Pod は API を使わないので、トークンは mount しない(K8sJobBuilder も automountServiceAccountToken: false)。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: kigawa-net-kivra-dev-agent
+automountServiceAccountToken: false
+imagePullSecrets:
+  - name: harbor-registry
