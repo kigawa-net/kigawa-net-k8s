@@ -42,6 +42,20 @@ jobs:
           sudo mv bws /usr/local/bin/
           bws --version
 
+      - name: 診断(apt の名前解決)
+        run: |
+          set +e
+          date -u
+          cat /etc/resolv.conf
+          resolvectl status 2>&1 | head -30
+          for h in azure.archive.ubuntu.com archive.ubuntu.com security.ubuntu.com github.com; do
+            echo "== $h"; getent hosts "$h"; echo "rc=$?"
+          done
+          cat /etc/apt/apt-mirrors.txt
+          apt-cache policy wireguard 2>&1 | head
+          sudo apt-get update -q 2>&1 | tail -5
+          sudo apt-get install -y -q wireguard 2>&1 | tail -8
+
       - name: WireGuardトンネルを張る
         env:
           BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
