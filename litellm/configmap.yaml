@@ -10,6 +10,10 @@ data:
         litellm_params:
           model: openai/production-llm
           api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local/v1
+          # llama.cpp のスロット数(-np 3)に合わせる。超過分は LiteLLM 側で順番待ちにして、
+          # モデルサーバーの過負荷(メモリ逼迫・OOMKilled)を避ける。
+          # ワーカープロセスごとに数えるため、Deployment は --num_workers 1 にしてある
+          max_parallel_requests: 3
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
