@@ -28,6 +28,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: ランナーの DNS を公開リゾルバにする
+        # 2026-11-11 08:26Z 以降、ランナー既定の DNS(Azure 168.63.129.16)で azure.archive.ubuntu.com などの Ubuntu のミラーが
+        # 名前解決できず、apt が失敗した(github.com は引けた)。apt の前に公開リゾルバへ切り替える。
+        run: sudo resolvectl dns eth0 1.1.1.1 8.8.8.8
+
       - name: Install bws CLI
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
