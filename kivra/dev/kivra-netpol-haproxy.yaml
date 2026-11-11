@@ -1,0 +1,27 @@
+# haproxy ingress から kivra への直接の経路を許可する(Calico などで NetworkPolicy を強制する前の準備)。
+# kivra-netpol は oauth2-proxy だけを許可しているが、次の 3 つのパスは oauth2-proxy を通らず、haproxy から kivra-svc:8080 に直接届く:
+#   /api/agent/(kivra-agent-ingress)、/mcp と /.well-known/oauth-protected-resource(kivra-mcp-ingress)。
+# NetworkPolicy は加算(許可の和)なので、kivra-netpol は変更しない。現状(CNI が Flannel で強制されない)では何も変わらない。
+# 許可するのは haproxy ingress の Pod(system namespace)の 8080 だけ。この 3 つのパス以外は、ingress の定義にないため haproxy から届かない。
+# 戻すには、このファイルを削除する。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kivra-netpol-haproxy
+spec:
+  podSelector:
+    matchLabels:
+      app: kivra
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: kubernetes-ingress
+      ports:
+        - protocol: TCP
+          port: 8080
