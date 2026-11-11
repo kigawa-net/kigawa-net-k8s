@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: harbor.kigawa.net/library/codingcraft-frontend:dev
+          image: harbor.kigawa.net/library/codingcraft-frontend:dev-50levels
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
