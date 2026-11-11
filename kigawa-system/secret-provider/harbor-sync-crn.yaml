@@ -54,6 +54,7 @@ spec:
                     kigawa-net-ai-scheduler-dev
                     kigawa-net-ai-scheduler-stg
                     kigawa-net-kivra-dev
+                    kigawa-net-kivra-dev-agent
                     mcp-discord
                     mcp-growi
                 - name: DYNAMIC_NAMESPACE_PATTERNS
