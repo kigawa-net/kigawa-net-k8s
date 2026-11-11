@@ -6,4 +6,4 @@ metadata:
 data:
   # ログインを許可するユーザー(Keycloak develop レルムの email)。kigawa のみ。
   emails.txt: |
-    kigawa@mail.onemc.world
+    account@kigawa.net
