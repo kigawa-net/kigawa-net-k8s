@@ -1,5 +1,5 @@
 # kivra-agent 本体の Keycloak client secret(kivra の /api/agent/ を呼ぶための client credentials)。kivra 本体と同じ namespace に置く。
-# 値は git に置かない。bws に client のシークレットを作り、その ID を下の bwSecretId に書く(0 の UUID はプレースホルダ)。
+# 値は git に置かない。bws の kivra-agent-keycloak-client-secret を参照する(bwSecretId は設定済み)。
 # 本体とプロキシで Keycloak の client を分けるかは ADR 0010 追補 7 §6 の未決の点。分けるなら別の client の secret にする。
 # bitwarden-sec は kigawa-net-kivra-dev に既にある。
 apiVersion: k8s.bitwarden.com/v1
@@ -14,5 +14,5 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "00000000-0000-0000-0000-000000000000" # TODO: プレースホルダ。実際の bws の ID に置き換える
+    - bwSecretId: "0868300a-fc81-42f3-bfcc-b4e5011d0ab4" # bws の kivra-agent-keycloak-client-secret(Keycloak の client kivra-agent。agent 本体と proxy で共用)
       secretKeyName: client-secret

@@ -1,7 +1,7 @@
 # egress プロキシの Keycloak client secret(長期の秘密。ADR 0010 追補 7 §2)を、Bitwarden Secrets Manager から Secret へ同期する。
 # 値は git に置かない。同期の前提(運用者の作業。docs/README.md の有効化の手順 2):
-#  1. bws(プロジェクト infra)に、client secret を持つシークレットを作る(キー例: kivra-agent-proxy-keycloak-client-secret)。
-#  2. その ID を下の bwSecretId に書く(今の 0 の UUID はプレースホルダで、同期は失敗する)。
+#  1. bws の kivra-agent-keycloak-client-secret(Keycloak の client kivra-agent の secret)を使う。agent 本体と同じ client を共用している(分けるかは ADR §6 の未決)。
+#  2. その ID を下の bwSecretId に書いた(設定済み)。
 #  3. kigawa-system/secret-provider/bitwarden-sync-crn.yaml の TARGET_NAMESPACES に、この namespace(kigawa-net-kivra-dev-agent)を足す
 #     (authToken の Secret bitwarden-sec を、この namespace に配るため)。
 # マウント先は /run/secrets/keycloak_client_secret(config.go の既定)。Job の Pod には、この Secret を渡さない。
@@ -17,5 +17,5 @@ spec:
     secretName: bitwarden-sec
     secretKey: token
   map:
-    - bwSecretId: "00000000-0000-0000-0000-000000000000" # TODO: プレースホルダ。実際の bws の ID に置き換える
+    - bwSecretId: "0868300a-fc81-42f3-bfcc-b4e5011d0ab4" # bws の kivra-agent-keycloak-client-secret(Keycloak の client kivra-agent。agent 本体と proxy で共用)
       secretKeyName: keycloak_client_secret
