@@ -46,7 +46,9 @@ data:
       retry_policy:
         TimeoutErrorRetries: 0
         InternalServerErrorRetries: 2
-        RateLimitErrorRetries: 0
+        # max_parallel_requests(production-llm は 3)を超えた要求は 429 で拒否されるため、
+        # 再試行して順番待ちにする(retry_after の間隔で、最大 40 回)
+        RateLimitErrorRetries: 40
         BadRequestErrorRetries: 0
         AuthenticationErrorRetries: 0
         ContentPolicyViolationErrorRetries: 0
