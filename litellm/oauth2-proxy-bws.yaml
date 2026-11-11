@@ -1,0 +1,15 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: litellm-opencode-dev-key
+  namespace: kigawa-net-llm-proxy
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: litellm-opencode-dev-key
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    # LiteLLM 仮想キー opencode-dev(production-llm のみ許可、rpm 60、並列 4)
+    - bwSecretId: "dd4fb558-4483-4f86-a7c1-b4fd0004a49f"
+      secretKeyName: virtual-key

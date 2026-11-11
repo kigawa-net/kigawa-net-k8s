@@ -10,6 +10,10 @@ data:
         litellm_params:
           model: openai/production-llm
           api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local/v1
+          # llama.cpp のスロット数(-np 3)に合わせる。超過分は LiteLLM 側で順番待ちにして、
+          # モデルサーバーの過負荷(メモリ逼迫・OOMKilled)を避ける。
+          # ワーカープロセスごとに数えるため、Deployment は --num_workers 1 にしてある
+          max_parallel_requests: 3
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
@@ -29,4 +33,24 @@ data:
 
     litellm_settings:
       drop_params: true
-      request_timeout: 300
+      # 上流(llama.cpp)は、全スロットがふさがっていると要求を順番待ちにする。長い履歴の処理を含め、
+      # 300 秒では足りないことがあるため 600 秒にする
+      request_timeout: 600
+
+    router_settings:
+      # 上流の Pod を入れ替えた直後は、旧 Pod への接続を保持していて、最初の 1〜2 リクエストが
+      # Connection error(InternalServerError)で失敗する。接続エラーだけを再試行する。
+      # タイムアウトを再試行すると、順番待ちの負荷が倍になるため 0 にする
+      num_retries: 2
+      retry_after: 3
+      retry_policy:
+        TimeoutErrorRetries: 0
+        InternalServerErrorRetries: 2
+        # max_parallel_requests(production-llm は 3)を超えた要求は 429 で拒否されるため、
+        # 再試行して順番待ちにする(約 7.5 秒間隔で、最大 70 回 = 約 9 分)。
+        # 待ち時間は ingress(litellm-api-ingress)の timeout-server 600s と、
+        # OpenCode の headerTimeout 600 秒を超えないようにしてある
+        RateLimitErrorRetries: 70
+        BadRequestErrorRetries: 0
+        AuthenticationErrorRetries: 0
+        ContentPolicyViolationErrorRetries: 0

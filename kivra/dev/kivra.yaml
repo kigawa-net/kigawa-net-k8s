@@ -25,7 +25,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: kivra
-          image: harbor.kigawa.net/library/kivra:main-042fdd4e7333ee6245776d95919c25cc5bd4d686
+          image: harbor.kigawa.net/library/kivra:main-6bd43cd85fa0885acfcc87cb4375395705288337
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -118,7 +118,7 @@ spec:
             - name: KIVRA_FX_USD_JPY
               value: "164"
             - name: KIVRA_FX_AS_OF
-              value: "2026-10-29"
+              value: "2026-11-09"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
@@ -145,9 +145,11 @@ spec:
             # 段階 2 = auto(2026-10-22 に昇格。運用者の判断)。docs・テスト・README の小さなタスク(見積り S、3 件以下、requires_approval=false)だけ、承認なしで投入する。
             # それ以外(UI の本体、kivra-*/src/main など)と denylist のタスクは、段階 1 と同じく運用者の承認を待つ。実際の差分は、コミットの前に再検査される(範囲外は AUTO_SCOPE_EXCEEDED で止まる)。
             # 昇格の根拠(ADR 0011 §6.3): 承認したタスクの COMPLETED が 10 件、POLICY_REJECTED と範囲外の変更がゼロ、予算の計上を運用者が実機で確認(#230)。
-            # 戻す: この値を required にして再デプロイする(段階 1)。実行中の Run は、そのまま進む。
+            # 段階 3 = full(2026-11-10 に昇格。運用者の判断。kivra#485、image は main-c0bc493 以降が必要。古い image は full を読めず起動に失敗する)。
+            #   denylist と requires_approval のタスク、パス 4 件以上のタスクは運用者の承認を待つ。差分の再検査(パス 3 件以下・200 行以下)と PatchPolicy は残る。マージは人。
+            # 戻す: この値を auto(段階 2)または required(段階 1)にして再デプロイする。実行中の Run は、そのまま進む。
             - name: KIVRA_SELFDEV_AUTOPILOT_APPROVAL
-              value: "auto"
+              value: "full"
             # マージ待ちの自己開発 PR の上限(既定値。1〜20)。
             - name: KIVRA_SELFDEV_AUTOPILOT_MAX_PENDING_PRS
               value: "3"
@@ -210,6 +212,29 @@ spec:
             # 止める: この env を外すか false にして再デプロイする。
             - name: KIVRA_SELFDEV_AUTOMERGE_SHADOW_ENABLED
               value: "true"
+            # 自動マージの本番化(kivra#439、ADR 0014 追補 2026-11-08)。低リスク条件を全て満たす PR だけを squash マージする(head SHA 指定、既定の上限は同時 1 件・1 時間 1 件・1 日 3 件)。
+            # 条件: kivra が作った PR、自動承認の Task、1〜3 ファイル・200 行以下、PR AI レビューが PASS、必須チェック(test, build, boot)が成功、Draft でない、kivra:hold なし。incident 修正の Draft PR は対象外。
+            # 拒否・応答不明は再試行せず、拒否が 2 件続くと自動で一時停止する。止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_SELFDEV_AUTOMERGE_ACTIVE_ENABLED
+              value: "true"
+            # 必須チェックは test,build の 2 つ(既定の boot を外す)。boot はパスフィルタ付きの PR 限定で、docs だけの PR では動かず CHECK_MISSING になるため。
+            # main のブランチ保護の必須チェック(test, build)と同じ集合。戻すには、この env を外して再デプロイする(既定の test,build,boot に戻る)。
+            - name: KIVRA_SELFDEV_AUTOMERGE_REQUIRED_CHECKS
+              value: "test,build"
+            # 自己開発 PR の AI レビュー(kivra#436)。PR にコメントを 1 件投稿するだけで、承認・マージはしない。自動マージ判定にはまだ接続していない。
+            # モデルは registry の claude-haiku-5-5。上限は既定(1 時間 5 件、PR あたり 2 回、差分 60000 バイト)。
+            # 止める: この env を外すか false にして再デプロイする(投稿済みのコメントは消えない)。
+            - name: KIVRA_SELFDEV_PR_REVIEW_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_PR_REVIEW_MODEL
+              value: "claude-haiku-5-5"
+            # 自己修復(kivra#437, #438)。第 1 段: 自己開発の失敗(Run の FAILED の理由コード、ブレーカー開放)を検知し、GitHub Issue を 1 件だけ起票する(1 時間 2 件まで)。
+            # 第 2 段: 起票した Issue だけを Task として投入し、Draft PR まで進める(マージ・承認はしない)。同時 1 件。既存の承認設定・予算・ブレーカー・日次上限を通る。
+            # 止める: この 2 つの env を外すか false にして再デプロイする(起票済みの Issue と Draft PR は消えない)。
+            - name: KIVRA_SELFDEV_AUTO_ISSUE_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_AUTO_FIX_ENABLED
+              value: "true"
             # 自己開発の記憶(ADR 0016 P1: 保存のみ、影。P2 の閲覧と削除は kivra#323 で入った)。記録は書くだけで、Planner のプロンプトにも承認と投入の判断にも使わない。
             # 保存するのは、固定コード、件数、パス集合の SHA-256、Goal の題名(200 字まで)だけ。Goal の本文、計画の文、PR の本文、モデルの出力は保存しない。
             # 保持期間: 文章 180 日、事実 365 日。止める: この env を外すか false にして再デプロイする(書き込みと保持ジョブが止まる。記録は残る)。
@@ -229,6 +254,15 @@ spec:
             # 止める: この env を外すか false にして再デプロイする(自動開始は止まり、手動の開始は残る)。
             - name: KIVRA_SELFDEV_ORDER_AUTO_CYCLE_ENABLED
               value: "true"
+            # 起動時の保留の無効化(ADR 0015 U-14 追補 2026-11-10、kivra#488)。true のとき、再起動しても ACTIVE の order を PAUSED(STARTUP_HOLD)にしない。
+            # 予算、max_cycles、期限、ブレーカーは変わらない。必要な image: kivra#488 を含む(main-1f466ba 以降)。古い image は、この env を読まない。
+            # 止める: この env を外すか false にして再デプロイする(再起動時の保留に戻る)。
+            - name: KIVRA_SELFDEV_ORDER_AUTO_RESUME_ON_STARTUP
+              value: "true"
+            # ルートの order に指定できる maxCycles の上限(既定 1、最大 10)。自動開始が 1 order で回す周の数の上限でもある。
+            # 変えても既存の order の max_cycles は変わらない(作成時に決まる)。戻すには外すか 1 にして再デプロイする。
+            - name: KIVRA_SELFDEV_ORDER_MAX_CYCLES_CAP
+              value: "10"
             - name: KIVRA_SELFDEV_ROOT_APPROVER
               valueFrom:
                 secretKeyRef:
@@ -241,6 +275,11 @@ spec:
             # 戻す: この値を shadow(または off)に戻す。担当と紐付けは消えず、判定は従来どおりに戻る。
             # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
             - name: KIVRA_SELFDEV_ROLES_MODE
+              value: "enforce"
+            # プロジェクト単位の認可(kivra ADR 0022)。enforce: プロジェクトのメンバーでない人は、そのプロジェクトのデータを操作できない(グローバル ADMIN は常に通る)。
+            # 前提: ROLES_MODE が off 以外。shadow のログで PROJECT_NOT_MEMBER が 0 件なのを確認済みであること(docs/runbook-selfdev.md §4.17)。
+            # 戻す: value を "shadow" に戻す(差分のログだけ出す)。または env を外す。
+            - name: KIVRA_SELFDEV_PROJECT_MODE
               value: "enforce"
             # 停止要求の LLM 判断(ADR 0021、L5 active)。LLM に判断させて、承認を自動で実行する。
             # ROLES_MODE=enforce と、有効な AI_APPROVER の担当(/ui の「担当」)が前提。どちらかが欠けると、判断は SKIPPED になる。

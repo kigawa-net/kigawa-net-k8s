@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recl
+  namespace: kigawa-net-recl
+  labels:
+    app: recl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recl
+  template:
+    metadata:
+      labels:
+        app: recl
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: recl
+          image: harbor.kigawa.net/library/recl:ae928e2cd1a0c6f88783bc10bff077215e38fbe9
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          env:
+            - name: PORT
+              value: "8080"
+            - name: RECL_MCP_ENABLED
+              value: "1"
+            - name: RECL_MCP_AUTH
+              value: "oidc"
+            - name: RECL_OIDC_ISSUER
+              value: "https://user.kigawa.net/realms/kigawa-net"
+            - name: RECL_MCP_TENANT_ID
+              value: "kigawa-net"
+            - name: RECL_PUBLIC_URL
+              value: "https://recl.kigawa.net"
+            - name: RECL_MCP_ALLOW_EPHEMERAL
+              value: "1"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: [ALL]
