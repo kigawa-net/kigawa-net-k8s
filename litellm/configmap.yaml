@@ -47,8 +47,10 @@ data:
         TimeoutErrorRetries: 0
         InternalServerErrorRetries: 2
         # max_parallel_requests(production-llm は 3)を超えた要求は 429 で拒否されるため、
-        # 再試行して順番待ちにする(retry_after の間隔で、最大 40 回)
-        RateLimitErrorRetries: 40
+        # 再試行して順番待ちにする(約 7.5 秒間隔で、最大 70 回 = 約 9 分)。
+        # 待ち時間は ingress(litellm-api-ingress)の timeout-server 600s と、
+        # OpenCode の headerTimeout 600 秒を超えないようにしてある
+        RateLimitErrorRetries: 70
         BadRequestErrorRetries: 0
         AuthenticationErrorRetries: 0
         ContentPolicyViolationErrorRetries: 0
