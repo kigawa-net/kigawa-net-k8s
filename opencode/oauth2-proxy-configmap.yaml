@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opencode-oauth2-proxy-config
+  namespace: kigawa-net-opencode
+data:
+  # ログインを許可するユーザー(Keycloak develop レルムの email)。kigawa のみ。
+  emails.txt: |
+    kigawa@mail.onemc.world

@@ -1,0 +1,15 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: opencode-oauth2-proxy-secret
+  namespace: kigawa-net-opencode
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: opencode-oauth2-proxy-secret
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    # oauth2-proxy の Cookie 暗号化キー(32 文字)
+    - bwSecretId: "REPLACE_WITH_COOKIE_SECRET_BWS_ID"
+      secretKeyName: cookie-secret
