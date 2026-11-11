@@ -1,0 +1,18 @@
+# PR CI の dry-run(.github/workflows/ci.yml)の ServiceAccount に、この namespace の読み書き(dry-run 用)を許す。
+# 他の namespace は argocd-config/kigawa-net-k8s-ci-wireguard-rbac.yml に RoleBinding を集めているが、そこへ書くと、
+# namespace がまだ無い間は argocd-config の同期が失敗する(argocd-config は CreateNamespace を持たない)。
+# そのため、この RoleBinding は namespace と一緒に作られるよう、ここ(kivra/dev-agent)に置く。
+# 初回(この namespace を作る PR)の dry-run だけは、namespace が無いので Forbidden になる。以降の PR は通る。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kigawa-net-k8s-ci-wireguard-dryrun
+  namespace: kigawa-net-kivra-dev-agent
+subjects:
+  - kind: ServiceAccount
+    name: ci-wireguard-dryrun
+    namespace: arc-runners
+roleRef:
+  kind: ClusterRole
+  name: kigawa-net-k8s-ci-dryrun
+  apiGroup: rbac.authorization.k8s.io

@@ -22,6 +22,7 @@ kivra の自己開発エージェントが、Run(attempt)ごとの k8s Job で�
 | `kivra-agent-proxy-svc.yaml` / `-cm.yaml` / `-sa.yaml` | job | Service、非秘密の設定(WIF の ID は空)、ServiceAccount(権限なし) |
 | `kivra-agent-proxy-bws.yaml` | job | Keycloak client secret(BitwardenSecret。**bws の ID はプレースホルダ**) |
 | `kivra-agent-role.yaml` / `kivra-agent-rb.yaml` | job | agent の Role と RoleBinding(下記の最小権限) |
+| `kivra-agent-ci-dryrun-rb.yaml` | job | PR CI の dry-run の ServiceAccount(`ci-wireguard-dryrun`)に、この namespace の権限を与える RoleBinding。argocd-config ではなくここに置くのは、namespace が無い間に argocd-config の同期を失敗させないため(初回の dry-run だけは Forbidden になる) |
 | `kivra-agent-sa.yaml` | kivra-dev | agent 本体の ServiceAccount |
 | `kivra-agent.yaml` | kivra-dev | agent 本体の Deployment(**replicas: 0**、backend 未設定=docker、executor=stub) |
 | `kivra-agent-bws.yaml` | kivra-dev | agent 本体の Keycloak client secret(BitwardenSecret。**bws の ID はプレースホルダ**) |
