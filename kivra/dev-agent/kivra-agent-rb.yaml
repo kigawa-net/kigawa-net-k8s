@@ -1,0 +1,16 @@
+# kivra-agent の ServiceAccount(kivra 本体の namespace)に、Job の namespace の Role だけを与える。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kivra-agent-rb
+  namespace: kigawa-net-kivra-dev-agent
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kivra-agent-role
+subjects:
+  - kind: ServiceAccount
+    name: kivra-agent
+    namespace: kigawa-net-kivra-dev

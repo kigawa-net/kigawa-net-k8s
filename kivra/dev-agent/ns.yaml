@@ -1,0 +1,20 @@
+# kivra-agent の k8s バックエンドが Run ごとの Job(と egress プロキシ)を置く専用 namespace(ADR 0010 追補 7)。
+# kivra 本体の namespace(kigawa-net-kivra-dev)とは分ける。理由:
+#  - PodSecurity `restricted` を enforce できる(本体の namespace には他のワークロードがあり、enforce すると壊れうる)。
+#  - default-deny の NetworkPolicy を namespace 全体に掛けられる(本体の namespace には掛けられない)。
+#  - agent の RBAC(Job の作成・削除)を、この namespace だけに閉じられる。
+# kivra-agent 側の K8sSettings.namespace(Job を作ってよい唯一の namespace)は、この名前にする。
+# このディレクトリ(kivra/dev-agent)は、ArgoCD の Application が無い間は何も適用されない。docs/README.md を参照。
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kigawa-net-kivra-dev-agent
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
