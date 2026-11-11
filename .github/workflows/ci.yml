@@ -46,6 +46,8 @@ jobs:
         run: |
           set +e
           date -u
+          sudo resolvectl dns eth0 1.1.1.1 8.8.8.8
+          resolvectl status eth0 | head -8
           cat /etc/resolv.conf
           resolvectl status 2>&1 | head -30
           for h in azure.archive.ubuntu.com archive.ubuntu.com security.ubuntu.com github.com; do
