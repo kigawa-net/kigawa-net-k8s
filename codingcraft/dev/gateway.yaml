@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: gateway
-          image: harbor.kigawa.net/library/codingcraft-minestom:dev
+          image: harbor.kigawa.net/library/codingcraft-minestom:dev-50levels
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 25565
