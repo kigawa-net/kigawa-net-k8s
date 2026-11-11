@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: codingcraft-ingress
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: codingcraft-dev.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

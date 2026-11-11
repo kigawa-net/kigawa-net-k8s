@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: codingcraft-config
+data:
+  config.json: |
+    {
+        "server": {
+            "host": "0.0.0.0",
+            "port": 25565,
+            "onlineMode": false,
+            "worldPath": "data/worlds/codingcraft",
+            "playerSpawnLocation": {
+                "x": 0.5,
+                "y": 0,
+                "z": 10.5,
+                "yaw": 180.0,
+                "pitch": -15.0
+            },
+            "mapBounds": {
+                "minX": -45.0,
+                "maxX": 45.0,
+                "minY": 0.0,
+                "maxY": 30.0,
+                "minZ": -50.0,
+                "maxZ": 44.0
+            },
+            "courses": [
+                {"id": "1", "worldPath": "data/worlds/codingcraft"},
+                {"id": "2", "worldPath": "data/worlds/codingcraft"},
+                {"id": "3", "worldPath": "data/worlds/codingcraft"},
+                {"id": "4", "worldPath": "data/worlds/codingcraft"},
+                {"id": "5", "worldPath": "data/worlds/codingcraft"},
+                {"id": "6", "worldPath": "data/worlds/codingcraft"},
+                {"id": "7", "worldPath": "data/worlds/codingcraft"},
+                {"id": "8", "worldPath": "data/worlds/codingcraft"},
+                {"id": "9", "worldPath": "data/worlds/codingcraft"},
+                {"id": "10", "worldPath": "data/worlds/codingcraft"},
+                {"id": "11", "worldPath": "data/worlds/codingcraft"},
+                {"id": "12", "worldPath": "data/worlds/codingcraft"},
+                {"id": "13", "worldPath": "data/worlds/codingcraft"},
+                {"id": "14", "worldPath": "data/worlds/codingcraft"},
+                {"id": "15", "worldPath": "data/worlds/codingcraft"},
+                {"id": "16", "worldPath": "data/worlds/codingcraft"},
+                {"id": "17", "worldPath": "data/worlds/codingcraft"},
+                {"id": "18", "worldPath": "data/worlds/codingcraft"},
+                {"id": "19", "worldPath": "data/worlds/codingcraft"},
+                {"id": "20", "worldPath": "data/worlds/codingcraft"},
+                {"id": "21", "worldPath": "data/worlds/codingcraft"},
+                {"id": "22", "worldPath": "data/worlds/codingcraft"},
+                {"id": "23", "worldPath": "data/worlds/codingcraft"},
+                {"id": "24", "worldPath": "data/worlds/codingcraft"},
+                {"id": "25", "worldPath": "data/worlds/codingcraft"},
+                {"id": "26", "worldPath": "data/worlds/codingcraft"},
+                {"id": "27", "worldPath": "data/worlds/codingcraft"},
+                {"id": "28", "worldPath": "data/worlds/codingcraft"},
+                {"id": "29", "worldPath": "data/worlds/codingcraft"},
+                {"id": "30", "worldPath": "data/worlds/codingcraft"},
+                {"id": "31", "worldPath": "data/worlds/codingcraft"},
+                {"id": "32", "worldPath": "data/worlds/codingcraft"},
+                {"id": "33", "worldPath": "data/worlds/codingcraft"},
+                {"id": "34", "worldPath": "data/worlds/codingcraft"},
+                {"id": "35", "worldPath": "data/worlds/codingcraft"},
+                {"id": "36", "worldPath": "data/worlds/codingcraft"},
+                {"id": "37", "worldPath": "data/worlds/codingcraft"},
+                {"id": "38", "worldPath": "data/worlds/codingcraft"},
+                {"id": "39", "worldPath": "data/worlds/codingcraft"},
+                {"id": "40", "worldPath": "data/worlds/codingcraft"},
+                {"id": "41", "worldPath": "data/worlds/codingcraft"},
+                {"id": "42", "worldPath": "data/worlds/codingcraft"},
+                {"id": "43", "worldPath": "data/worlds/codingcraft"},
+                {"id": "44", "worldPath": "data/worlds/codingcraft"},
+                {"id": "45", "worldPath": "data/worlds/codingcraft"},
+                {"id": "46", "worldPath": "data/worlds/codingcraft"},
+                {"id": "47", "worldPath": "data/worlds/codingcraft"},
+                {"id": "48", "worldPath": "data/worlds/codingcraft"},
+                {"id": "49", "worldPath": "data/worlds/codingcraft"},
+                {"id": "50", "worldPath": "data/worlds/codingcraft"}
+            ],
+            "freeWorlds": [
+                {"id": "free-1", "worldPath": "data/worlds/codingcraft"},
+                {"id": "free-2", "worldPath": "data/worlds/codingcraft-button"}
+            ]
+        },
+        "api": {
+            "url": "http://backend.pixelsia.net",
+            "key": "test"
+        },
+        "gateway": {
+            "port": 8080,
+            "authKey": "test"
+        },
+        "database": {
+            "provider": "SQLITE",
+            "jdbcUrl": "jdbc:sqlite:/tmp/world-state.db",
+            "user": null,
+            "password": null
+        }
+    }

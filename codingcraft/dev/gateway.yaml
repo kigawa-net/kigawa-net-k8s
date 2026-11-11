@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      name: gateway
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: harbor.kigawa.net/library/codingcraft-minestom:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 25565
+              protocol: TCP
+            - containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: codingcraft-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+spec:
+  selector:
+    app: gateway
+  ports:
+    - name: minecraft
+      port: 25565
+      targetPort: 25565
+      protocol: TCP
+    - name: api
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP
