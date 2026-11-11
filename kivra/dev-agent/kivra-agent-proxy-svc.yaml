@@ -1,0 +1,15 @@
+# Job の Pod が HTTPS_PROXY / ANTHROPIC_BASE_URL に使う宛先:
+#   http://kivra-agent-proxy-svc.kigawa-net-kivra-dev-agent.svc:8080(Anthropic は /anthropic)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kivra-agent-proxy-svc
+  namespace: kigawa-net-kivra-dev-agent
+spec:
+  selector:
+    app: kivra-agent-proxy
+  ports:
+    - name: proxy
+      port: 8080
+      targetPort: proxy
+      protocol: TCP

@@ -1,0 +1,55 @@
+# egress プロキシの通信。
+# ingress: Job の Pod(label kivra-agent=1)の 8080 だけ。kivra-agent 本体は(k8s バックエンドでは)プロキシを使わないので許可しない。
+#   kubelet の probe(tcpSocket)は、Calico が既定で node からの通信を許可するので、ここに書かない。
+# egress: DNS(kube-dns)と、公開 IP の TCP 443。
+#   NetworkPolicy は FQDN を指定できない。許可するホスト(api.anthropic.com、user.kigawa.net、github.com、services.gradle.org、
+#   plugins.gradle.org、repo.maven.apache.org)は IP が変わりうる(CDN)ので、IP では固定できず、「公開 IP の 443」までしか絞れない。
+#   ホストの制限は、プロキシの許可リスト(CONNECT は許可したホストの 443 だけ)と、プロキシの rejectNonPublic(私的な宛先を拒否)が担う。
+#   ここでは、プロキシが万一乗っ取られても、クラスタ内・LAN(RFC 1918)・link-local(169.254.0.0/16。メタデータ等)・443 以外に届かないようにする。
+#   user.kigawa.net は 2026-11 時点で Cloudflare の公開 IP。内部 IP に変わった場合は、ここへ宛先を足す必要がある。
+#   IPv6 の rule は書かない(cluster は IPv4 のみの前提。dual-stack にするなら ::/0 の except を足す)。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kivra-agent-netpol-proxy
+  namespace: kigawa-net-kivra-dev-agent
+spec:
+  podSelector:
+    matchLabels:
+      app: kivra-agent-proxy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              kivra-agent: "1"
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+              - 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
