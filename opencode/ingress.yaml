@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opencode-ingress
+  namespace: kigawa-net-opencode
+  annotations:
+    haproxy.org/timeout-connect: "10s"
+    # SSE / WebSocket の長時間接続のため
+    haproxy.org/timeout-server: "3600s"
+    haproxy.org/timeout-tunnel: "3600s"
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: opencode.kigawa.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: opencode-oauth2-proxy
+                port:
+                  number: 80
