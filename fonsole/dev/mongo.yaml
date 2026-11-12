@@ -30,6 +30,17 @@ spec:
       labels:
         app: fomage-mongo
     spec:
+      # mongo 5.0 以降は AVX 命令が必須。AVX の無いノード
+      # (k8s-worker1 / k8s1 / k8s4)に載ると CrashLoopBackOff する
+      # (2026-11-12 の worker4 drain で発生)。NFD の AVX2 ラベルで限定する。
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: feature.node.kubernetes.io/cpu-cpuid.AVX2
+                    operator: In
+                    values: ["true"]
       containers:
         - name: mongo
           image: mongo:7.0
