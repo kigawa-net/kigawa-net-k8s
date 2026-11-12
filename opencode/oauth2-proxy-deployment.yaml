@@ -24,7 +24,9 @@ spec:
             - --client-secret=unused
             - --code-challenge-method=S256
             - --redirect-url=https://opencode.kigawa.net/oauth2/callback
-            - --upstream=http://opencode-main.kigawa-net-opencode.svc.cluster.local:80
+            # main(自宅ホスト)の OpenCode 認証プロキシ。ArgoCD は Endpoints を同期しないため、Service を介さず直接指定する。
+            # 認証プロキシはパスワードを自動付与するので、必ず oauth2-proxy を経由させること(ufw で prod ノードのみ許可済み)。
+            - --upstream=http://192.168.1.242:4096
             - --http-address=0.0.0.0:4180
             - --authenticated-emails-file=/etc/oauth2-proxy/emails.txt
             - --email-domain=*
