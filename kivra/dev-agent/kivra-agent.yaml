@@ -35,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kivra-agent
-          image: harbor.kigawa.net/library/kivra-agent:main-dfc6ae8bd0c77881fb0502ae9da9828461a9b2d9 # TODO: Harbor に push 済みのタグか確認して固定する
+          image: harbor.kigawa.net/library/kivra-agent:main-9ec183b42f7393abf59670727abd1ca04273f4a5 # TODO: Harbor に push 済みのタグか確認して固定する
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
