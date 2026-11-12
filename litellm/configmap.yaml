@@ -13,7 +13,7 @@ data:
           # llama.cpp のスロット数(-np 3)に合わせる。超過分は LiteLLM 側で順番待ちにして、
           # モデルサーバーの過負荷(メモリ逼迫・OOMKilled)を避ける。
           # ワーカープロセスごとに数えるため、Deployment は --num_workers 1 にしてある
-          max_parallel_requests: 2
+          max_parallel_requests: 3
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
@@ -46,7 +46,7 @@ data:
       retry_policy:
         TimeoutErrorRetries: 0
         InternalServerErrorRetries: 2
-        # max_parallel_requests(production-llm は 2)を超えた要求は 429 で拒否されるため、
+        # max_parallel_requests(production-llm は 3)を超えた要求は 429 で拒否されるため、
         # 再試行して順番待ちにする(約 7.5 秒間隔で、最大 70 回 = 約 9 分)。
         # 待ち時間は ingress(litellm-api-ingress)の timeout-server 600s と、
         # OpenCode の headerTimeout 600 秒を超えないようにしてある
