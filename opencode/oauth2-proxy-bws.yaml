@@ -11,5 +11,5 @@ spec:
     secretKey: token
   map:
     # oauth2-proxy の Cookie 暗号化キー(32 文字)
-    - bwSecretId: "REPLACE_WITH_COOKIE_SECRET_BWS_ID"
+    - bwSecretId: "ee468754-7234-455b-8aff-b5000032cb22"
       secretKeyName: cookie-secret
