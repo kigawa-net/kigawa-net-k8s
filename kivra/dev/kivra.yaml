@@ -106,6 +106,9 @@ spec:
             # 自己開発を有効にする(ADR 0008)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。
             - name: KIVRA_SELFDEV_ENABLED
               value: "true"
+            # 自己開発 PR 作成後の自動テスト実行(GitHub Actions CI チェック判定)。有効にすると PR open 後に CI を監視し、success なら AWAITING_HUMAN_REVIEW、failure なら CI_FAILED になる。
+            - name: KIVRA_SELFDEV_AUTOTEST_ENABLED
+              value: "true"
             # 自己開発のコーディング実行方式。api(既定)= 1 回のモデル呼び出し、cli = ローカル PC の kivra-agent が rootless docker 内で Claude Code CLI を実行する(ADR 0010、Issue kigawa-net/kivra#187)。
             # cli は KIVRA_AGENT_API_ENABLED=true が必要(起動時に検査される)。止める(api に戻す)ときはこの行を外して再デプロイする。
             # cli の間にローカルエージェントが止まっていると、attempt は claim されず lease 切れで ORPHANED → Run は UNKNOWN になる(運用者が解放する)。
