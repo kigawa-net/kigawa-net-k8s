@@ -50,7 +50,7 @@ spec:
       volumes:
         - name: d1-data
           persistentVolumeClaim:
-            claimName: codingcraft-d1-db
+            claimName: backend-d1-data
 ---
 apiVersion: v1
 kind: Service
@@ -66,15 +66,3 @@ spec:
       targetPort: 8787
       protocol: TCP
   type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: codingcraft-d1-db
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: rook-ceph-rbd
-  resources:
-    requests:
-      storage: 1Gi
