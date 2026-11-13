@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      name: backend
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: init-d1
+          image: harbor.kigawa.net/library/codingcraft-backend:dev-chapter1
+          command: ["sh", "-c", "mkdir -p /app/.wrangler/state/v3/d1/miniflare-D1DatabaseObject"]
+          volumeMounts:
+            - name: d1-data
+              mountPath: /app/.wrangler/state/v3/d1
+      containers:
+        - name: backend
+          image: harbor.kigawa.net/library/codingcraft-backend:dev-chapter1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8787
+              protocol: TCP
+          env:
+            - name: SERVICE_HTTP_URL
+              value: http://backend.kigawa-net-codingcraft-dev.svc.cluster.local:8787
+            - name: PLUGIN_API_KEY
+              value: "test"
+            - name: RELAY_SERVER_URL
+              value: http://gateway.kigawa-net-codingcraft-dev.svc.cluster.local:8080
+            - name: WEBSOCKET_BACKEND_KEY
+              value: "test"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8787
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: d1-data
+              mountPath: /app/.wrangler/state/v3/d1
+      volumes:
+        - name: d1-data
+          persistentVolumeClaim:
+            claimName: backend-d1-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8787
+      targetPort: 8787
+      protocol: TCP
+  type: ClusterIP
