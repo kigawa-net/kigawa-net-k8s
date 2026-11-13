@@ -1,0 +1,16 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: codingcraft-gateway
+  namespace: kigawa-net-codingcraft-dev
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - hosts:
+        - codingcraft-dev.kigawa.net
+        - codingcraft.kigawa.net
+      port:
+        name: http
+        number: 80
+        protocol: HTTP

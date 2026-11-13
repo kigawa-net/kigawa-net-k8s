@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: codingcraft-vs
+  namespace: kigawa-net-codingcraft-dev
+spec:
+  gateways:
+    - codingcraft-gateway
+  hosts:
+    - codingcraft-dev.kigawa.net
+    - codingcraft.kigawa.net
+  http:
+    - match:
+        - uri:
+            prefix: /api/
+      route:
+        - destination:
+            host: backend
+            port:
+              number: 8787
+    - route:
+        - destination:
+            host: frontend
+            port:
+              number: 80
