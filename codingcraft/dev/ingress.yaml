@@ -10,6 +10,13 @@ spec:
     - host: codingcraft-dev.kigawa.net
       http:
         paths:
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8787
           - path: /
             pathType: Prefix
             backend:
