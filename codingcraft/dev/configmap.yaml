@@ -83,7 +83,7 @@ data:
             ]
         },
         "api": {
-            "url": "http://backend.pixelsia.net",
+            "url": "http://backend:8787",
             "key": "test"
         },
         "gateway": {
