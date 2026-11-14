@@ -133,11 +133,12 @@ spec:
               value: "kivra-agent"
             - name: KIVRA_AGENT_REQUIRED_ROLE
               value: "kivra-agent:agent"
-            # 同時に進める自己開発 Run の上限。UNKNOWN の Run は運用者の解放(未実装)まで active として数えられるので、
-            # 診断の再現のため暫定で 2 にする(解放の機能が入ったら 1 に戻す)。
-            # MAX_PENDING_PRS=3 より小さいので、PR の上限は同時 Run の上限で先に制限される(開いている PR も同時 Run に数えられるため)。意図どおりなら、このまま。
+            # 同時に進める自己開発 Run の上限。運用者の判断(2026-11-14)で、実質無制限にする(この変数は 1 以上の整数が必須で「無制限」の値は無いので、大きい値)。
+            # マージ済みなのに PULL_REQUEST のまま残った Run や、開いたままの PR が、枠を塞いで新しい Run を作れなくなったため。
+            # Run の実行は agent が 1 件ずつ(キューに積む)。費用は月次予算(KIVRA_BUDGET_MONTHLY_LIMIT_JPY)と、オートパイロットの MAX_PENDING_PRS・MAX_RUNS_PER_DAY が制限する。
+            # 戻すときは 1 にして再デプロイする。
             - name: KIVRA_SELFDEV_MAX_ACTIVE_RUNS
-              value: "2"
+              value: "1000"
             # 自律運転(オートパイロット、ADR 0011、Issue kigawa-net/kivra#233)。Goal を計画し、承認された Plan のタスクを自己開発に投入する。
             # 止め方: この env(KIVRA_SELFDEV_AUTOPILOT_ENABLED)を外すか false にして再デプロイする。計画と投入が止まり、/api/selfdev/goals* は 503 になる。
             #   進行中の Run は既存のワーカーが進める。一時停止だけなら、ダッシュボードの「自律運転を一時停止」(POST /api/selfdev/autopilot/pause)。
