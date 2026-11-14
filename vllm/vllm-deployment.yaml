@@ -19,77 +19,68 @@ spec:
     spec:
       containers:
         - name: vllm
-          # vLLM から llama.cpp(CUDA)に載せ替えた。Deployment / Service / ラベルの名前は、
-          # LiteLLM・Ingress が参照しているため vllm のまま変えない
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b12199
+          image: vllm/vllm-openai:v0.33.0
           args:
-            # Qwen3.6-35B-A3B(MoE、有効 3B)。UD-IQ4_NL_XL は 18.2GiB で、RTX 3060 x2(計 24GB)に載る。
-            # vLLM の 4bit 版は 22.7GiB 以上で載らない。初回はここからダウンロードして PVC にキャッシュする
-            - -hf
-            - unsloth/Qwen3.6-35B-A3B-GGUF:UD-IQ4_NL_XL
-            - --no-mmproj
-            # LiteLLM が参照するモデル名
-            - --alias
-            - production-llm
+            - --model
+            - TelperionAI/Qwen3.8-27B-INT4-AWQ-GPTQ
             - --host
             - 0.0.0.0
             - --port
             - "8000"
-            # 全層を GPU に載せ、2 枚へ層ごとに均等分割(2 枚目は PCIe x4 のため、層分割にする)
-            - -ngl
-            - "99"
-            - --split-mode
-            - layer
-            - --tensor-split
-            - "1,1"
-            - -fa
-            - "on"
-            # 192k トークンの KV を 3 スロットで共有(--kv-unified)。KV は 1 トークンあたり約 11KB(q8_0)。
-            # スロットは前回のプロンプトを保持するため、スロット数 x 1 件の最大長(OpenCode の上限 57,344)
-            # 以上のプールが要る。131072 x 4 スロットでは足りず、Context size has been exceeded になった
-            - -c
-            - "196608"
-            - -np
+            - --tensor-parallel-size
             - "2"
-            - --kv-unified
-            - -ctk
-            - q8_0
-            - -ctv
-            - q8_0
-            - --jinja
-            # 思考は既定で無効(--chat-template-kwargs での指定は非推奨のため --reasoning を使う)
-            - --reasoning
-            - "off"
-            - --cache-reuse
-            - "256"
-            - --no-webui
-            - --metrics
+            - --max-model-len
+            - "60000"
+            - --max-num-batched-tokens
+            - "8192"
+            - --gpu-memory-utilization
+            - "0.92"
+            - --max-num-seqs
+            - "1"
+            - --kv-cache-dtype
+            - fp8
+            - --served-model-name
+            - production-llm
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - qwen3_coder
+            - --trust-remote-code
+            - --enable-prefix-caching
+            - --disable-custom-all-reduce
+            - --reasoning-parser
+            - qwen3
           ports:
             - containerPort: 8000
               name: http
           env:
-            # API キーは vLLM と同じ Secret(LiteLLM が同じ値で呼ぶ)
-            - name: LLAMA_API_KEY
+            # API キーは LiteLLM と共有する Secret から取得する
+            - name: VLLM_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: LLAMA_CACHE
-              value: /root/.cache/huggingface/llama.cpp
+            - name: NCCL_P2P_DISABLE
+              value: "1"
+            - name: NCCL_IB_DISABLE
+              value: "1"
+            - name: HF_HOME
+              value: /root/.cache/huggingface
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /root/.cache/huggingface
+            - name: dshm
+              mountPath: /dev/shm
           resources:
             requests:
               nvidia.com/gpu: "2"
               cpu: "2"
-              memory: "6Gi"
+              memory: "8Gi"
               ephemeral-storage: "1Gi"
             limits:
               nvidia.com/gpu: "2"
               cpu: "6"
-              memory: "18Gi"
+              memory: "20Gi"
               ephemeral-storage: "10Gi"
-          volumeMounts:
-            - mountPath: /root/.cache/huggingface
-              name: hf-cache
           startupProbe:
             httpGet:
               path: /health
@@ -114,6 +105,14 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
       runtimeClassName: nvidia
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache-pvc
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
@@ -126,7 +125,3 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values: ["k8s-worker5"]
-      volumes:
-        - name: hf-cache
-          persistentVolumeClaim:
-            claimName: hf-cache-pvc

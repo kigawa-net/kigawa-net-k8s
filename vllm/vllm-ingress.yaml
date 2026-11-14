@@ -5,7 +5,7 @@ metadata:
   namespace: kigawa-net-llm
   annotations:
     haproxy.org/backend-check-via: "health"
-    haproxy.org/health-check-uri: "/v1/health"
+    haproxy.org/health-check-uri: "/health"
     haproxy.org/health-check-interval: "10s"
     haproxy.org/timeout-connect: "10s"
     haproxy.org/timeout-server: "300s"
