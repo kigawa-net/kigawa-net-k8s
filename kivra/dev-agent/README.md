@@ -3,12 +3,12 @@
 kivra の自己開発エージェントが、Run(attempt)ごとの k8s Job でコーディング CLI を動かすための manifest。
 正本の設計は kigawa-net/kivra の `docs/adr/0010-...md` 追補 7 と `docs/runbook-selfdev.md` §6.6b・§6.6c。
 
-## 現状: ArgoCD に拾われない(何も適用されない)
+## 現状: ArgoCD の Application あり(Deployment は replicas 0)
 
-このディレクトリ(`kivra/dev-agent/`)を指す ArgoCD の Application は **まだ無い**。既存の `apps/kivra-dev-app.yml` は
-`path: kivra/dev` を指し、`kivra/dev-agent` は含まない(兄弟ディレクトリ)。ルートの `apps/apps-app.yml` が再帰するのは `apps/` だけで、
-この README の Application の雛形は `apps/` に置いていない。よって **マージしても、namespace・NetworkPolicy・RBAC・Deployment のどれも作られない**。
-有効化は、下の手順 1 で Application を足す PR で行う(それが、これらが cluster に現れる瞬間)。
+このディレクトリ(`kivra/dev-agent/`)は、`apps/kivra-dev-agent-app.yml`(Application `kigawa-net-kivra-dev-agent-app`)で同期される。
+既存の `apps/kivra-dev-app.yml` の `path: kivra/dev` は `kivra/dev-agent` を含まない(兄弟ディレクトリ)。
+マージすると、namespace・NetworkPolicy・RBAC・ServiceAccount・Service・ConfigMap が作られ、Deployment は **replicas 0** で作られる(Pod は起動しない)。
+有効化の手順 1 の Application は、この PR で足した。以降の有効化は下の手順 2 以降で行う。
 
 ## 構成
 
@@ -20,12 +20,12 @@ kivra の自己開発エージェントが、Run(attempt)ごとの k8s Job で�
 | `kivra-agent-netpol-proxy.yaml` | job | プロキシの ingress は Job の Pod の 8080 だけ。egress は DNS と、公開 IP の TCP 443 |
 | `kivra-agent-proxy.yaml` | job | egress プロキシの Deployment(**replicas: 0**。非 root、read-only rootfs、drop ALL、seccomp、canal ノードに限定) |
 | `kivra-agent-proxy-svc.yaml` / `-cm.yaml` / `-sa.yaml` | job | Service、非秘密の設定(WIF の ID は空)、ServiceAccount(権限なし) |
-| `kivra-agent-proxy-bws.yaml` | job | Keycloak client secret(BitwardenSecret。**bws の ID はプレースホルダ**) |
+| `kivra-agent-proxy-bws.yaml` | job | Keycloak client secret(BitwardenSecret。bws の ID は設定済み) |
 | `kivra-agent-role.yaml` / `kivra-agent-rb.yaml` | job | agent の Role と RoleBinding(下記の最小権限) |
 | `kivra-agent-ci-dryrun-rb.yaml` | job | PR CI の dry-run の ServiceAccount(`ci-wireguard-dryrun`)に、この namespace の権限を与える RoleBinding。argocd-config ではなくここに置くのは、namespace が無い間に argocd-config の同期を失敗させないため(初回の dry-run だけは Forbidden になる) |
 | `kivra-agent-sa.yaml` | kivra-dev | agent 本体の ServiceAccount |
 | `kivra-agent.yaml` | kivra-dev | agent 本体の Deployment(**replicas: 0**、backend 未設定=docker、executor=stub) |
-| `kivra-agent-bws.yaml` | kivra-dev | agent 本体の Keycloak client secret(BitwardenSecret。**bws の ID はプレースホルダ**) |
+| `kivra-agent-bws.yaml` | kivra-dev | agent 本体の Keycloak client secret(BitwardenSecret。bws の ID は設定済み) |
 
 ### 設計の選択
 
@@ -50,11 +50,11 @@ kivra の自己開発エージェントが、Run(attempt)ごとの k8s Job で�
 
 前提: prod の CNI の切替が終わっている(k8s1・k8s2 も canal)、または Job・プロキシが canal ノードにだけ載る(上記)。
 
-1. **Application を足す PR**: `apps/kivra-dev-agent-app.yml` を作る。`kivra-dev-app.yml` と同じ形で `path: kivra/dev-agent`、`recurse: true`、
-   `destination.namespace: kigawa-net-kivra-dev-agent`、`syncOptions: [CreateNamespace=true, ApplyOutOfSyncOnly=true]`。prune は有効でよい。
+1. **Application を足す PR**(済み): `apps/kivra-dev-agent-app.yml` を作る。`kivra-dev-app.yml` と同じ形で `path: kivra/dev-agent`、`recurse: true`、
+   `destination.namespace: kigawa-net-kivra-dev-agent`、`syncOptions: [CreateNamespace=true, ApplyOutOfSyncOnly=true]`。prune は有効。
    このマージで namespace・NetworkPolicy・RBAC・ServiceAccount・ConfigMap・Service が作られ、Deployment は replicas 0 で作られる。
-   BitwardenSecret は、bws の ID が 0 のままだと同期に失敗する(Secret ができないだけで、Pod は 0 なので影響はない)。
-2. **Secret の準備(運用者)**: bws に client secret を作り、2 つの `*-bws.yaml` の `bwSecretId` を実際の ID にする(PR)。
+   BitwardenSecret は、bws の Secret の値が同期できるまで Secret が作られないだけで、Pod は 0 なので影響はない。
+2. **Secret の準備(運用者)**: bws の client secret の ID は `*-bws.yaml` に設定済み。
    `kigawa-system/secret-provider/bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` に `kigawa-net-kivra-dev-agent` を足す(`bitwarden-sec` の配布)。
    Job の namespace に `harbor-registry`(イメージの pull 用)の Secret が必要(kivra-dev と同じ方法で用意する)。
 3. **値の記入**: `kivra-agent-proxy-cm.yaml` の WIF の 4 つの ID(Anthropic Console の WIF 設定)、`kivra-agent.yaml` の `KIVRA_AGENT_CLIENT_ID`、イメージのタグ。
@@ -84,8 +84,8 @@ kivra の自己開発エージェントが、Run(attempt)ごとの k8s Job で�
 
 ## まだ行っていないこと
 
-- ArgoCD の Application(手順 1)。cluster には何も作られていない。
-- bws のシークレット、`bwSecretId`、`TARGET_NAMESPACES` への追加、`harbor-registry` の配布、WIF の ID、Keycloak client ID。
+- (手順 1 の Application はこの PR で追加済み。マージ後に cluster へ同期される)
+- bws のシークレットの値の作成、`TARGET_NAMESPACES` への追加、`harbor-registry` の配布、WIF の ID、Keycloak client ID。
 - イメージのタグが Harbor にあることの確認。
 - Job の Pod の `nodeSelector` / プロキシ env の配線、`KIVRA_AGENT_BACKEND=k8s` の有効化(コード側が拒否したまま。PR 5c)。
 - 上の検証の全て。NetworkPolicy の強制は、使い捨ての Pod での実測が済むまで確かめていない。
