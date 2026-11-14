@@ -52,7 +52,7 @@ spec:
               value: "harbor.kigawa.net/library/kivra-agent-runtime:main-e03d28b4e023a30ed8b22cab1b51ef80f1b1724b"
             # Job の Pod の外向きの唯一の出口(egress プロキシ)。
             - name: KIVRA_AGENT_K8S_PROXY_URL
-              value: "http://kivra-agent-proxy-svc.kigawa-net-kivra-dev-agent.svc:8080"
+              value: "http://kivra-agent-proxy-svc:8080" # Job の Pod は proxy と同じ namespace なので短い名前で引ける(agent の検査は単一ラベルのホストだけを受け付ける)
             # Pod が公開 GitHub から取得するリポジトリ(owner/repo)。
             - name: KIVRA_AGENT_REPO
               value: "kigawa-net/kivra"
