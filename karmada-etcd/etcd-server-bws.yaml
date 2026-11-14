@@ -1,0 +1,20 @@
+# etcd #1 のサーバー/ピア証明書(Bitwarden の karmada-etcd-server-* / karmada-etcd-ca-crt)。
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: karmada-etcd-server-bws
+  namespace: karmada-etcd
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: karmada-etcd-server
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  onlyMappedSecrets: true
+  map:
+    - bwSecretId: "bf286ace-5015-496e-9972-b4d900632c1a"
+      secretKeyName: tls.crt
+    - bwSecretId: "329d554d-2a6c-464f-b988-b4d900632cdf"
+      secretKeyName: tls.key
+    - bwSecretId: "df7ddb87-7e4e-4c1d-bf60-b4d900631a6c"
+      secretKeyName: ca.crt

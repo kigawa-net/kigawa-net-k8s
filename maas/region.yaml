@@ -13,6 +13,11 @@ spec:
       labels:
         app: maas-region
     spec:
+      # MAAS は region コントローラーを、/var/lib/maas/maas_id(Pod を作り直すと消える)か、無ければ hostname で識別する。
+      # hostname が Pod 名のままだと、再起動・更新のたびに新しいコントローラーが登録され、古い登録が残り続ける
+      # (2026-10-20 時点で 44 件。API の version も、最も多いバージョン=古い 3.5.10 を返していた)。
+      # hostname を固定すると、作り直した Pod が、同じコントローラーに紐づく(手元の Docker で確認済み。kigawa-net/infra#207)。
+      hostname: maas-region
       initContainers:
         # DBが起動するまで待機
         - name: wait-postgres
@@ -33,7 +38,7 @@ spec:
                   key: user
       containers:
         - name: maas-region
-          image: harbor.kigawa.net/library/maas-region:main-54b26e7a193893b1fc158ff80ad612f0a9df281d
+          image: harbor.kigawa.net/library/maas-region:main-d9d04bdfc1103a8dec308b64ac2738300b61ab90
           imagePullPolicy: IfNotPresent
           # systemd実行に必要
           securityContext:
@@ -42,6 +47,13 @@ spec:
             - name: cgroup
               mountPath: /sys/fs/cgroup
           env:
+            # MAAS は、`systemd-detect-virt -c` の終了コードで「コンテナ内か」を判定する(provisioningserver/utils/ps.py)。
+            # コンテナ内と判定されないと、Pod の eth0 が広告の対象から外れ、/rpc/ が 127.0.0.1 / ::1 だけを返す。
+            # すると、k8s の外(ホスト)の Rack が、自分の loopback に接続しようとして、Region に登録できない(kigawa-net/infra#207)。
+            # このコンテナは、systemd を PID 1 で動かす(/sbin/init)。PID 1 の環境変数 container=docker を、systemd が読み取り、
+            # /run/systemd/container に書いて、コンテナ内と判定されるようになる(手元の Docker で、広告が Pod の IP になることを確認済み)。
+            - name: container
+              value: docker
             - name: MAAS_POSTGRES_USER
               valueFrom:
                 secretKeyRef:

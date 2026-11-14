@@ -1,0 +1,8 @@
+# kivra 本体専用の ServiceAccount。Anthropic の Workload Identity Federation のフェデレーションルールが
+# subject(system:serviceaccount:kigawa-net-kivra-dev:kivra)で厳密に指すため、default は使わない。
+# Kubernetes API への権限は一切付けない(RoleBinding なし)。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kivra
+automountServiceAccountToken: false

@@ -15,6 +15,9 @@ spec:
     helm:
       releaseName: nextcloud
       valuesObject:
+        image:
+          tag: 33.0.6-apache
+
         nextcloud:
           host: nextcloud.kigawa.net
           existingSecret:
@@ -37,6 +40,36 @@ spec:
                 'sentry.dsn' => getenv('SENTRY_DSN'),
                 'sentry.minimum.log.level' => 2,
               ];
+            performance.config.php: |-
+              <?php
+              $CONFIG = [
+                'memcache.local' => '\OC\Memcache\APCu',
+                'memcache.distributed' => '\OC\Memcache\Redis',
+                'memcache.locking' => '\OC\Memcache\Redis',
+                'redis' => [
+                  'host' => 'nextcloud-redis-master',
+                  'port' => 6379,
+                  'timeout' => 3.0,
+                  'read_timeout' => 3.0,
+                  'dbindex' => 0,
+                ],
+                'default_phone_region' => 'JP',
+                'maintenance_window_start' => 1,
+                'enable_previews' => true,
+                'enabledPreviewProviders' => [
+                  'OC\Preview\Movie',
+                  'OC\Preview\PNG',
+                  'OC\Preview\JPEG',
+                  'OC\Preview\GIF',
+                  'OC\Preview\BMP',
+                  'OC\Preview\XBitmap',
+                  'OC\Preview\MP3',
+                  'OC\Preview\MP4',
+                  'OC\Preview\TXT',
+                  'OC\Preview\MarkDown',
+                  'OC\Preview\PDF',
+                ],
+              ];
 
           extraEnv:
             - name: SENTRY_DSN
@@ -45,33 +78,103 @@ spec:
                   name: nextcloud-sentry-sec
                   key: dsn
 
+          extraVolumes:
+            - name: cephfs-user
+              persistentVolumeClaim:
+                claimName: rook-cephfs-user
+
+          extraVolumeMounts:
+            - name: cephfs-user
+              mountPath: /mnt/cephfs
+
+          extraInitContainers:
+            - name: fix-config-permissions
+              image: busybox
+              command:
+                - sh
+                - -c
+                - chown www-data:www-data /var/www/html/config
+              securityContext:
+                runAsUser: 0
+              volumeMounts:
+                - name: nextcloud-main
+                  mountPath: /var/www/html
+
+          phpConfigs:
+            opcache.ini: |-
+              opcache.enable=1
+              opcache.enable_cli=1
+              opcache.interned_strings_buffer=24
+              opcache.max_accelerated_files=10000
+              opcache.memory_consumption=192
+              opcache.save_comments=1
+              opcache.revalidate_freq=60
+            perf.ini: |-
+              apc.enable_cli=1
+              apc.shm_size=128M
+              realpath_cache_size=8M
+              realpath_cache_ttl=600
+            www.conf: |-
+              [www]
+              pm = dynamic
+              pm.max_children = 16
+              pm.start_servers = 4
+              pm.min_spare_servers = 4
+              pm.max_spare_servers = 8
+              pm.max_requests = 500
+            uploadlimit.ini: |-
+              upload_max_filesize = 100G
+              post_max_size = 100G
+
+          podSecurityContext:
+            fsGroup: 33
+            fsGroupChangePolicy: "OnRootMismatch"
+
+        replicaCount: 2
+
+        podDisruptionBudget:
+          enabled: true
+          minAvailable: 1
+
+        strategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxSurge: 1
+            maxUnavailable: 0
+
         resources:
           requests:
             memory: 512Mi
+            cpu: 250m
           limits:
-            memory: 1Gi
+            memory: 3Gi
+            cpu: 2000m
 
         livenessProbe:
           enabled: true
-          initialDelaySeconds: 300
+          initialDelaySeconds: 60
           periodSeconds: 15
-          failureThreshold: 10
+          failureThreshold: 40
+          timeoutSeconds: 10
 
         readinessProbe:
           enabled: true
           initialDelaySeconds: 30
           periodSeconds: 15
           failureThreshold: 128
+          timeoutSeconds: 10
 
         startupProbe:
           enabled: true
           initialDelaySeconds: 30
           periodSeconds: 10
-          failureThreshold: 128
+          failureThreshold: 600
 
         ingress:
           enabled: true
           className: haproxy
+          annotations:
+            haproxy.org/response-set-header: ""
           hosts:
             - host: nextcloud.kigawa.net
               paths:
@@ -95,6 +198,29 @@ spec:
               enabled: true
               storageClass: rook-cephfs
               size: 8Gi
+            extraFlags: >-
+              --innodb-buffer-pool-size=768M
+              --innodb-buffer-pool-instances=1
+              --innodb-log-file-size=128M
+              --innodb-flush-log-at-trx-commit=2
+              --innodb-io-capacity=200
+              --innodb-io-capacity-max=400
+              --innodb-read-io-threads=8
+              --innodb-write-io-threads=4
+              --table-open-cache=2000
+              --table-definition-cache=1000
+              --max-connections=150
+              --tmp-table-size=64M
+              --max-heap-table-size=64M
+              --join-buffer-size=4M
+              --sort-buffer-size=4M
+            resources:
+              requests:
+                memory: 768Mi
+                cpu: 300m
+              limits:
+                memory: 1536Mi
+                cpu: 1500m
             startupProbe:
               enabled: true
               initialDelaySeconds: 120
@@ -114,6 +240,41 @@ spec:
             secretName: nextcloud-mariadb-sec
             usernameKey: username
             passwordKey: mariadb-password
+
+        redis:
+          enabled: true
+          architecture: standalone
+          auth:
+            enabled: false
+          master:
+            persistence:
+              enabled: false
+            resources:
+              requests:
+                memory: 64Mi
+                cpu: 50m
+              limits:
+                memory: 256Mi
+                cpu: 500m
+
+        cronjob:
+          enabled: true
+          type: cronjob
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+          cronjob:
+            schedule: "*/5 * * * *"
+            successfulJobsHistoryLimit: 3
+            failedJobsHistoryLimit: 5
+            backoffLimit: 3
+            securityContext:
+              runAsUser: 33
+              runAsGroup: 33
 
 
   destination:

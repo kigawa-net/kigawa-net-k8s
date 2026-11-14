@@ -20,6 +20,18 @@ spec:
           # セルフホストの場合は以下を設定
           # bwApiUrlOverride: "https://your-bitwarden.example.com/api"
           # bwIdentityUrlOverride: "https://your-bitwarden.example.com/identity"
+        # chart 既定の memory limit 128Mi では BitwardenSecret 約 100 件の同期で
+        # OOMKilled を繰り返し（再起動 566 回を確認）、Secret が空のまま残る
+        # （mariadb-exkes-stg の pass 欠落など）ため引き上げる。
+        containers:
+          manager:
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 10m
+                memory: 256Mi
 
   destination:
     server: https://kubernetes.default.svc

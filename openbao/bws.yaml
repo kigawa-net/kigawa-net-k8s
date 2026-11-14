@@ -1,0 +1,17 @@
+# bao-01 の証明書(DNS-01)用の Cloudflare token。OpenBao には依存させない(起動の循環を避ける)。
+# token は kigawa.net の DNS 編集のみ。bao-02/03 と同じ token(bws 592c8dfd-...)を使う場合は、
+# Cloudflare 側の IP 制限に Inuyama の送信元 IP を足す必要がある。
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: cloudflare-token
+  namespace: kigawa-net-openbao
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: cloudflare-token
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "592c8dfd-1622-47cb-abb9-b4f00103c2a3"
+      secretKeyName: api-token

@@ -1,0 +1,113 @@
+# Karmada の外部 etcd(karmada-etcd-0)の、定期的なスナップショット。
+#
+# - 毎日 03:00(JST)に、etcdctl snapshot save → etcdutl snapshot status で検証 → PVC に保存。
+# - 保存先は PVC(karmada-etcd-backup、Ceph RBD)。直近 14 世代を残し、古いものを消す。
+# - etcd のイメージにはシェルが無いので、スナップショットと検証は etcd のイメージの initContainer、
+#   日時付きの名前への変更と世代管理は busybox の本体コンテナで行う。
+# - etcd #1 の再作成・3 member 化の前に、手動で取るスナップショット(README の手順)の代わりにはならない。
+# - 注意: PVC は、同じクラスタ(Ceph)の中にある。クラスタ全体の障害には備えられない。
+#   別の場所(オブジェクトストレージなど)へのコピーは、認証情報が要るため、別途対応する。
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: karmada-etcd-backup
+  namespace: karmada-etcd
+  labels:
+    app: karmada-etcd-backup
+spec:
+  schedule: "0 3 * * *"
+  timeZone: Asia/Tokyo
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app: karmada-etcd-backup
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: snapshot
+              image: registry.k8s.io/etcd:3.6.8-0
+              command:
+                - etcdctl
+              args:
+                - --endpoints=https://karmada-etcd-0.karmada-etcd.karmada-etcd.svc:2379
+                - --cacert=/etc/etcd/pki/ca.crt
+                - --cert=/etc/etcd/pki/tls.crt
+                - --key=/etc/etcd/pki/tls.key
+                - --command-timeout=120s
+                - snapshot
+                - save
+                - /work/snapshot.db
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: pki
+                  mountPath: /etc/etcd/pki
+                  readOnly: true
+            - name: verify
+              image: registry.k8s.io/etcd:3.6.8-0
+              command:
+                - etcdutl
+              args:
+                - snapshot
+                - status
+                - /work/snapshot.db
+                - -w
+                - table
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+          containers:
+            - name: store
+              image: busybox:1.37.0
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  ts=$(date -u +%Y%m%dT%H%M%SZ)
+                  # 空のファイルは、失敗として扱う(検証の済んだものだけが、ここに来る)
+                  test -s /work/snapshot.db
+                  mv /work/snapshot.db "/backup/etcd-${ts}.db"
+                  # 直近 14 世代を残す
+                  ls -1t /backup/etcd-*.db | tail -n +15 | xargs -r rm -f
+                  echo "保存した: /backup/etcd-${ts}.db"
+                  ls -la /backup
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  memory: 64Mi
+              volumeMounts:
+                - name: work
+                  mountPath: /work
+                - name: backup
+                  mountPath: /backup
+          volumes:
+            - name: work
+              emptyDir: {}
+            - name: pki
+              secret:
+                secretName: karmada-etcd-server
+            - name: backup
+              persistentVolumeClaim:
+                claimName: karmada-etcd-backup

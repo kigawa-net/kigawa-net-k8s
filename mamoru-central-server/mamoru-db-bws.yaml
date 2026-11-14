@@ -1,0 +1,16 @@
+apiVersion: k8s.bitwarden.com/v1
+kind: BitwardenSecret
+metadata:
+  name: mamoru-db-bws
+  namespace: kigawa-net-mamoru-main
+spec:
+  organizationId: "a2b57f3d-6e2b-4467-b499-b31e00bfd804"
+  secretName: mamoru-db-secret
+  authToken:
+    secretName: bitwarden-sec
+    secretKey: token
+  map:
+    - bwSecretId: "2012a609-876c-41e5-ab65-b468010d5359"
+      secretKeyName: pass
+    - bwSecretId: "310266d2-1475-4a9a-897e-b468010d2d61"
+      secretKeyName: user

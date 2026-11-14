@@ -1,0 +1,7 @@
+# egress プロキシの ServiceAccount。Kubernetes API への権限は一切付けない(RoleBinding なし、token も載せない)。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kivra-agent-proxy
+  namespace: kigawa-net-kivra-dev-agent
+automountServiceAccountToken: false

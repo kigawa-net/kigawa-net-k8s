@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ceph-exporter-log-truncate-worker5
+spec:
+  # Rookのlog-collector(logCollector.enabled)がceph-exporterのログだけ
+  # ローテーション対象に含めない既知バグ(rook/rook#14434, 未解決)への回避策。
+  # 上流で修正されるまで、定期的にサイズ超過分をtruncateして肥大化を防ぐ。
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          nodeSelector:
+            kubernetes.io/hostname: k8s-worker5
+          restartPolicy: Never
+          containers:
+            - name: truncate
+              image: busybox:1.36
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  f=/var/log/ceph-client.ceph-exporter.log
+                  if [ -f "$f" ]; then
+                    size=$(stat -c%s "$f")
+                    max=$((200*1024*1024))
+                    if [ "$size" -gt "$max" ]; then
+                      echo "truncating $f (size=$size bytes > $max bytes)"
+                      : > "$f"
+                    else
+                      echo "$f size=$size bytes, under threshold, skipping"
+                    fi
+                  else
+                    echo "$f not found, skipping"
+                  fi
+              volumeMounts:
+                - name: rook-ceph-log
+                  mountPath: /var/log
+          volumes:
+            - name: rook-ceph-log
+              hostPath:
+                path: /var/lib/rook/kigawa-system-rook-ceph/log
+                type: Directory

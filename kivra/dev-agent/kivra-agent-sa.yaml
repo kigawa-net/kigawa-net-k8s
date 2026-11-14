@@ -1,0 +1,11 @@
+# kivra-agent 本体(k8s で Job を作る側)の ServiceAccount。kivra 本体と同じ namespace に置く(Job の namespace ではない)。
+# 権限は kivra-agent-role / kivra-agent-rb(Job の namespace の中だけ)。cluster 全体の権限は付けない。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kivra-agent
+  namespace: kigawa-net-kivra-dev
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+# 本体の Pod だけが Kubernetes API を呼ぶので、token の自動マウントは Pod 側(kivra-agent.yaml)で明示的に有効にする。
+automountServiceAccountToken: false

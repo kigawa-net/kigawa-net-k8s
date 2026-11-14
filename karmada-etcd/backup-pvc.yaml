@@ -1,0 +1,15 @@
+# etcd のスナップショットの保存先(backup-cronjob.yaml)。14 世代 × 数十 MB 程度(etcd の上限は 4GiB)。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: karmada-etcd-backup
+  namespace: karmada-etcd
+  labels:
+    app: karmada-etcd-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      storage: 10Gi

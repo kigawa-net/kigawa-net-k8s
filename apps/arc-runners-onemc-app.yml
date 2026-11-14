@@ -24,26 +24,30 @@ spec:
         maxRunners: 5
         template:
           spec:
+            # kigawa-net/infra#165: ノードのリソース逼迫時にCeph/Karmada等の
+            # 重要コンポーネントより先にEvict/Preemptされるよう低優先度化
+            priorityClassName: workload-low
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: NotIn
+                          values:
+                            - k8s-worker3
             containers:
               - name: runner
-                image: ghcr.io/actions/actions-runner:2.334.0
+                image: ghcr.io/actions/actions-runner:2.336.0
+                imagePullPolicy: IfNotPresent
+                command: ["/home/runner/run.sh"]
                 resources:
                   requests:
-                    memory: "2Gi"
-                    cpu: "1"
-                    ephemeral-storage: "20Gi"
+                    memory: "512Mi"
+                    cpu: "500m"
                   limits:
                     memory: "8Gi"
                     cpu: "4"
-                    ephemeral-storage: "40Gi"
-              - name: dind
-                resources:
-                  requests:
-                    memory: "1Gi"
-                    cpu: "500m"
-                  limits:
-                    memory: "6Gi"
-                    cpu: "2"
 
   destination:
     server: https://kubernetes.default.svc

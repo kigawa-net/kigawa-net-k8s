@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ktcl-k8s
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: ktcl-k8s

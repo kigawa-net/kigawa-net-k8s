@@ -1,0 +1,202 @@
+name: ci
+
+on:
+  pull_request:
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+
+jobs:
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install yamllint
+        run: pip install --break-system-packages yamllint
+
+      - name: yamllint
+        run: yamllint -c .yamllint.yml .
+
+  dry-run:
+    # arc-runner-set(自己ホスト)が詰まる問題の回避のため、GitHub-hosted runnerから
+    # ionosの専用WireGuardピア(172.31.254.22)経由でk8s API(10.0.0.100:6443)へ接続する。
+    # 権限は専用ServiceAccount ci-wireguard-dryrun(argocd-config/kigawa-net-k8s-ci-wireguard-rbac.yml)。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: ランナーの DNS を公開リゾルバにする
+        # 2026-11-11 08:26Z 以降、ランナー既定の DNS(Azure 168.63.129.16)で azure.archive.ubuntu.com などの Ubuntu のミラーが
+        # 名前解決できず、apt が失敗した(github.com は引けた)。apt の前に公開リゾルバへ切り替える。
+        run: sudo resolvectl dns eth0 1.1.1.1 8.8.8.8
+
+      - name: Install bws CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q jq unzip curl
+          BWS_VERSION=$(curl -s -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/bitwarden/sdk-sm/releases?per_page=30" \
+            | jq -r '[.[] | select(.tag_name | startswith("bws-v"))][0].tag_name')
+          BWS_TAG=${BWS_VERSION#bws-v}
+          curl -Lo bws.zip "https://github.com/bitwarden/sdk-sm/releases/download/${BWS_VERSION}/bws-x86_64-unknown-linux-gnu-${BWS_TAG}.zip"
+          unzip bws.zip bws
+          sudo mv bws /usr/local/bin/
+          bws --version
+
+      - name: WireGuardトンネルを張る
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          sudo apt-get install -y -q wireguard
+          PRIVATE_KEY=$(bws -c no secret get 80c81732-ff0b-4859-b6bb-b4d4009fa5ef | jq -r '.value')
+          sudo install -d -m 700 /etc/wireguard
+          sudo tee /etc/wireguard/wg0.conf > /dev/null <<WG_EOF
+          [Interface]
+          Address = 172.31.254.22/24
+          PrivateKey = ${PRIVATE_KEY}
+
+          [Peer]
+          PublicKey = OH5QiXaMfpmH8nHVU1Onnfom4BZcq4zx5Ux6R6R4LR0=
+          AllowedIPs = 172.31.254.0/24, 10.0.0.0/24
+          Endpoint = 74.208.55.86:51820
+          PersistentKeepalive = 25
+          WG_EOF
+          sudo chmod 600 /etc/wireguard/wg0.conf
+          sudo wg-quick up wg0
+          for i in $(seq 1 10); do
+            if ping -c 1 -W 2 10.0.0.100; then
+              echo "10.0.0.100 reachable"
+              break
+            fi
+            echo "retry $i..."
+            sleep 2
+          done
+          sudo wg show
+
+      - name: kubeconfigを作成
+        env:
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
+        run: |
+          TOKEN=$(bws -c no secret get 88ae86c2-3556-4bf1-89b1-b4d400d4aa59 | jq -r '.value')
+          echo "::add-mask::$TOKEN"
+          kubectl config set-cluster kigawa-net --server=https://10.0.0.100:6443 --insecure-skip-tls-verify=true
+          kubectl config set-credentials ci-wireguard-dryrun --token="$TOKEN"
+          kubectl config set-context ci --cluster=kigawa-net --user=ci-wireguard-dryrun
+          kubectl config use-context ci
+          kubectl get ns argocd
+
+      - name: Determine changed YAML files
+        id: changed
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          files=$(git diff --name-only --diff-filter=d "origin/${{ github.base_ref }}" -- '*.yml' '*.yaml' | grep -v '^\.github/' || true)
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: kubectl apply --dry-run=server + ArgoCD Application status
+        run: |
+          echo "## CI dry-run 結果" >> "$GITHUB_STEP_SUMMARY"
+
+          files="${{ steps.changed.outputs.files }}"
+          if [ -z "$files" ]; then
+            echo "変更されたYAMLファイルはありません。" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          overall_status=0
+
+          # The CI identity intentionally has no cluster-wide Namespace read/write
+          # permission. Namespaces introduced by this PR (and their first RoleBindings)
+          # cannot receive server-side dry-run until Argo CD creates the Namespace.
+          new_namespaces=$(while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            awk '$1 == "kind:" {is_namespace = ($2 == "Namespace")} is_namespace && $1 == "name:" {print $2; is_namespace = 0}' "$f"
+          done <<< "$files")
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] || { echo "- \`$f\`: 削除されたファイルのためスキップ" >> "$GITHUB_STEP_SUMMARY"; continue; }
+
+            echo "### \`$f\`" >> "$GITHUB_STEP_SUMMARY"
+
+            # ClusterRole / ClusterRoleBinding / Namespace を含むファイルは、サーバー側の dry-run ができない。
+            # CI の ServiceAccount は、namespace の RoleBinding でしか権限を持たず、ClusterRole を get できない。
+            # (更新も、RBAC の権限昇格の防止で、権限を持たない主体には拒否される。権限を足すと、昇格の経路になるため足さない。)
+            # このため、構文と種類(kind)の確認だけを、クライアント側で行う。フィールドの誤りまでは、検出できない。
+            # 適用は、マージ後に ArgoCD が行う。
+            if grep -qE '^kind: (ClusterRole|ClusterRoleBinding|Namespace)\s*$' "$f"; then
+              if ! result=$(kubectl create --dry-run=client -f "$f" 2>&1); then
+                echo "$result" >&2
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "- ❌ dry-run(client)失敗" >> "$GITHUB_STEP_SUMMARY"
+                overall_status=1
+                continue
+              fi
+              echo "- ⚠️ ClusterRole / ClusterRoleBinding / Namespace を含むため、サーバー側の dry-run を省略(クライアント側の検証のみ OK)" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            namespace=$(awk '/^metadata:/{in_metadata=1;next} in_metadata && /^  namespace:/{print $2; exit} in_metadata && /^[^ ]/{in_metadata=0}' "$f")
+            is_new_namespace=false
+            while IFS= read -r new_namespace; do
+              [ -n "$new_namespace" ] || continue
+              if [ "$namespace" = "$new_namespace" ] || grep -qE "^  namespace: ${new_namespace}$" "$f"; then
+                is_new_namespace=true
+                break
+              fi
+            done <<< "$new_namespaces"
+            if [ "$is_new_namespace" = true ]; then
+              # apply --dry-run=client still GETs existing objects and needs RBAC in the
+              # namespace. create --dry-run=client validates locally without API reads.
+              if ! result=$(kubectl create --dry-run=client -f "$f" 2>&1); then
+                echo "$result" >&2
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+                echo '```' >> "$GITHUB_STEP_SUMMARY"
+                echo "- ❌ dry-run(client)失敗(新規 namespace のため server dry-run 不可)" >> "$GITHUB_STEP_SUMMARY"
+                overall_status=1
+                continue
+              fi
+              echo "- ⚠️ 新規 namespace `$namespace` のリソースは、NamespaceとRBACがArgo CDで作成されるまで client dry-run で確認。以降はserver dry-runが有効。" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            if ! result=$(kubectl apply --dry-run=server -f "$f" 2>&1); then
+              echo "$result" >&2
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "$result" | tail -20 >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "- ❌ dry-run(server)失敗" >> "$GITHUB_STEP_SUMMARY"
+              overall_status=1
+              continue
+            fi
+            echo "- ✅ dry-run(server) OK" >> "$GITHUB_STEP_SUMMARY"
+
+            # apps/*.yml は1ファイル1Applicationという規約(README/CLAUDE.md)を前提に、
+            # 素朴にmetadata.nameを取り出す(多ドキュメントYAMLはこの規約の対象外なので触らない)
+            case "$f" in
+              apps/*.yml|apps/*.yaml)
+                name=$(awk '/^metadata:/{f=1;next} f && /^  name:/{print $2; exit}' "$f")
+                if [ -n "$name" ]; then
+                  if status=$(kubectl get application "$name" -n argocd -o jsonpath='{.status.sync.status} / {.status.health.status}' 2>&1); then
+                    echo "- ArgoCD Application \`$name\`: ${status}" >> "$GITHUB_STEP_SUMMARY"
+                  else
+                    echo "- ArgoCD Application \`$name\`: 現在クラスタに存在しません(新規追加の場合は正常)" >> "$GITHUB_STEP_SUMMARY"
+                  fi
+                fi
+                ;;
+            esac
+          done <<< "$files"
+
+          exit "$overall_status"
+
+      - name: WireGuardを切断
+        if: always()
+        run: sudo wg-quick down wg0 || true

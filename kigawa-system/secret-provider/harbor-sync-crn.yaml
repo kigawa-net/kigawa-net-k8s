@@ -4,11 +4,20 @@ metadata:
   name: harbor-sync-crn
 spec:
   schedule: "*/5 * * * *"  # Run every 5 minutes
+  # worker5のcontainerd詰まりでkigawa-net-secret-provider
+  # namespaceにContainerCreatingのPodが42個蓄積した事故を受けた再発防止策。
+  # concurrencyPolicy未設定(デフォルトAllow)だと、前回実行がPendingの
+  # まま詰まっていても5分毎に新しい実行が無制限に積み重なってしまう。
+  # Forbidにして前回実行の完了を待つようにし、activeDeadlineSecondsで
+  # 詰まったPodを強制的にタイムアウト・失敗させることで無限蓄積を防ぐ。
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 180
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
       ttlSecondsAfterFinished: 300
+      activeDeadlineSeconds: 120
       template:
         spec:
           serviceAccountName: sec-sync-sa
@@ -16,14 +25,42 @@ spec:
           containers:
             - name: create-secret
               env:
+                # exkes 用 namespace（#250 参照）
                 - name: TARGET_NAMESPACES
                   value: |
                     kigawa-net-keruta-dev
                     kigawa-net-keruta-main
+                    kigawa-net-keruta-stg
                     kigawa-net-lp-main
-                    develop
                     prometheus
                     kigawa-net-mamoru-main
+                    onemc-rpgcore
+                    onemc-rpgcore-stg
+                    onemc-rpgcore-dev
+                    onemc-build
+                    kigawa-net-el4s-realtime
+                    platform-lipl-stg
+                    platform-lipl-main
+                    platform-exkes-stg
+                    platform-exkes-main
+                    platform-exkes-stg-sandbox
+                    platform-exkes-main-sandbox
+                    kaft-stg
+                    kaft-main
+                    fusha-task-dev
+                    fusha-task-stg
+                    shifutomo-dev
+                    shifutomo-stg
+                    kigawa-net-ai-scheduler-dev
+                    kigawa-net-ai-scheduler-stg
+                    kigawa-net-kivra-dev
+                    kigawa-net-kivra-dev-agent
+                    mcp-discord
+                    mcp-growi
+                - name: DYNAMIC_NAMESPACE_PATTERNS
+                  value: |
+                    ^platform-lipl-dev-pr-[0-9]+$
+                    ^kaft-dev-pr-[0-9]+$
               image: bitnami/kubectl:latest
               command:
                 - /bin/bash
@@ -34,16 +71,35 @@ spec:
                   # Read username and password from source secret
                   USERNAME=$(kubectl get secret harbor-sec -o jsonpath='{.data.user}' | base64 -d)
                   PASSWORD=$(kubectl get secret harbor-sec -o jsonpath='{.data.pass}' | base64 -d)
-                  
-                  echo "$TARGET_NAMESPACES" | while read -r namespace; do
-                    if [[ -z "$namespace" ]]; then continue; fi
+
+                  sync_namespace() {
+                    local namespace="$1"
                     # Create or update the harbor-registry secret with correct type
-                    kubectl create secret docker-registry harbor-registry \
+                    if ! kubectl create secret docker-registry harbor-registry \
                       --docker-server=harbor.kigawa.net \
                       --docker-username="$USERNAME" \
                       --docker-password="$PASSWORD" \
-                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -
-  
+                      --dry-run=client -o yaml -n "$namespace" | kubectl apply -f -; then
+                      echo "WARN: failed to sync harbor-registry to $namespace, skipping" >&2
+                      return 0
+                    fi
+
                     echo "Secret harbor-registry synced successfully at $(date) to $namespace"
+                  }
+
+                  echo "$TARGET_NAMESPACES" | while read -r namespace; do
+                    if [[ -z "$namespace" ]]; then continue; fi
+                    sync_namespace "$namespace"
                   done
-  
+
+                  # PRごとに動的生成されるnamespace（platform-lipl-dev-pr-<N> 等）を
+                  # 実在するnamespace一覧から正規表現でマッチさせて同期する
+                  all_namespaces=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}')
+                  echo "$DYNAMIC_NAMESPACE_PATTERNS" | while read -r pattern; do
+                    if [[ -z "$pattern" ]]; then continue; fi
+                    for namespace in $all_namespaces; do
+                      if [[ "$namespace" =~ $pattern ]]; then
+                        sync_namespace "$namespace"
+                      fi
+                    done
+                  done

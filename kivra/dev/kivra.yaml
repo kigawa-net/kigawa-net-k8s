@@ -1,0 +1,366 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kivra
+  labels:
+    app: kivra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kivra
+  template:
+    metadata:
+      name: kivra
+      labels:
+        app: kivra
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      serviceAccountName: kivra
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: kivra
+          image: harbor.kigawa.net/library/kivra:main-91b993e44b295e13812c5e2f3b84dcf3f2ed68d3
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+          env:
+            - name: KIVRA_DB_JDBC_URL
+              value: "jdbc:mariadb://kivra-db:3306/kivra?sessionVariables=time_zone='+00:00'"
+            - name: KIVRA_DB_USER
+              value: "kivra"
+            - name: KIVRA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db
+                  key: pass
+            # Flyway の migration 専用ユーザー(kivra-migrator、kivra.* の ALL PRIVILEGES)。
+            # 読めるのは kivra 側の対応 PR(feat/db-migration-credentials)がマージされたイメージのみ。それ以前のイメージは未知の env を無視する。
+            - name: KIVRA_DB_MIGRATION_USER
+              value: "kivra-migrator"
+            - name: KIVRA_DB_MIGRATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-db-migrator
+                  key: pass
+            - name: KIVRA_RUNTIME_ENV
+              value: "server"
+            - name: KIVRA_DEV_DEMO_ENABLED
+              value: "false"
+            - name: KIVRA_FUSHA_STATUS_WRITE_ENABLED
+              value: "false"
+            - name: KIVRA_METRICS_ENABLED
+              value: "false"
+            # Task API(/api/tasks、/api/runs)を、Keycloak のアクセストークン(JWT)を kivra 自身が検証して有効にする(kivra#116)。
+            # このクラスタの CNI は Flannel で NetworkPolicy を実行しないため、oauth2-proxy のヘッダーを信頼する方式は使えない。
+            # 署名・iss・aud・exp・ロールを検証するので、偽装されたトークンは、クラスタ内の Pod からでも拒否される。
+            - name: KIVRA_AUTH_MODE
+              value: "oidc-jwt"
+            - name: KIVRA_OIDC_ISSUER
+              value: "https://user.kigawa.net/realms/kigawa-net"
+            # Keycloak の kivra-dev クライアントの audience mapper(k8s-system#275)が aud に入れる値
+            - name: KIVRA_OIDC_AUDIENCE
+              value: "kivra-dev"
+            # admin-panel クライアントの admin ロール(resource_access.admin-panel.roles)のみ
+            - name: KIVRA_OIDC_REQUIRED_ROLE
+              value: "admin-panel:admin"
+            - name: KIVRA_FUSHA_ENV
+              value: "dev"
+            # 自己開発(KIVRA_SELFDEV_ENABLED は未設定=無効)が GitHub App(kivra-gh)として認証するための設定。
+            # 無効の間は読まれない。App ID / インストール ID は秘密ではない。秘密鍵はマウントしたファイルのパスで渡す。
+            - name: KIVRA_SELFDEV_GITHUB_APP_ID
+              value: "5339566"
+            - name: KIVRA_SELFDEV_GITHUB_APP_INSTALLATION_ID
+              value: "171932237"
+            - name: KIVRA_SELFDEV_GITHUB_APP_PRIVATE_KEY
+              value: "/var/run/kivra/github-app/private-key.pem"
+            # マージ検証(PR の作者照合)に使う、GitHub App(kivra-gh)の bot の user id。秘密ではない。
+            # 調べ方: gh api /users/kivra-gh%5Bbot%5D --jq .id
+            - name: KIVRA_SELFDEV_GITHUB_APP_BOT_USER_ID
+              value: "343288952"
+            # 自己開発が Anthropic API に認証するための Workload Identity Federation(静的 API キーは使わない)。
+            # 以下の ID は秘密ではない。JWT は projected ServiceAccount トークン(下の anthropic-token)を毎回読み直す。
+            - name: KIVRA_SELFDEV_ANTHROPIC_FEDERATION_RULE_ID
+              value: "fdrl_01WihqEEcLc4oG7oufUtSqHm"
+            - name: KIVRA_SELFDEV_ANTHROPIC_ORGANIZATION_ID
+              value: "e1c1d300-e0a4-440c-badb-98548fdf42dc"
+            - name: KIVRA_SELFDEV_ANTHROPIC_SERVICE_ACCOUNT_ID
+              value: "svac_01A9uD3ntRek4ZWKFBq3FFJM"
+            - name: KIVRA_SELFDEV_ANTHROPIC_WORKSPACE_ID
+              value: "wrkspc_01E6uq7ZNqUrt7p9oyiJgPVL"
+            - name: KIVRA_SELFDEV_ANTHROPIC_IDENTITY_TOKEN_FILE
+              value: "/var/run/secrets/anthropic.com/token"
+            # 自己開発を有効にする(ADR 0008)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。
+            - name: KIVRA_SELFDEV_ENABLED
+              value: "true"
+            # 自己開発 PR 作成後の自動テスト実行(GitHub Actions CI チェック判定)。有効にすると PR open 後に CI を監視し、success なら AWAITING_HUMAN_REVIEW、failure なら CI_FAILED になる。
+            - name: KIVRA_SELFDEV_AUTOTEST_ENABLED
+              value: "true"
+            # 自己開発のコーディング実行方式。api(既定)= 1 回のモデル呼び出し、cli = ローカル PC の kivra-agent が rootless docker 内で Claude Code CLI を実行する(ADR 0010、Issue kigawa-net/kivra#187)。
+            # cli は KIVRA_AGENT_API_ENABLED=true が必要(起動時に検査される)。止める(api に戻す)ときはこの行を外して再デプロイする。
+            # cli の間にローカルエージェントが止まっていると、attempt は claim されず lease 切れで ORPHANED → Run は UNKNOWN になる(運用者が解放する)。
+            - name: KIVRA_SELFDEV_RUNTIME
+              value: "cli"
+            - name: KIVRA_SELFDEV_MODEL_REGISTRY_PATH
+              value: "/var/run/kivra/model-registry/model-registry.yaml"
+            # 為替(USD→JPY)。基準日から 7 日を過ぎると USD の呼び出しは UNKNOWN_COST で止まるので、週次の更新が要る。
+            # 165 は 52 週最高値(約 164 円)を上回る、費用を多めに見積もる値(kivra がさらに余裕 10% と税 10% を上乗せ)。
+            - name: KIVRA_FX_USD_JPY
+              value: "164"
+            - name: KIVRA_FX_AS_OF
+              value: "2026-11-12"
+            - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
+              value: "10000"
+            # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
+            # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
+            - name: KIVRA_AGENT_API_ENABLED
+              value: "true"
+            # 値は Keycloak の client kivra-agent(k8s-system#278)と一致させる。
+            - name: KIVRA_AGENT_AZP
+              value: "kivra-agent"
+            - name: KIVRA_AGENT_REQUIRED_ROLE
+              value: "kivra-agent:agent"
+            # 同時に進める自己開発 Run の上限。UNKNOWN の Run は運用者の解放(未実装)まで active として数えられるので、
+            # 診断の再現のため暫定で 2 にする(解放の機能が入ったら 1 に戻す)。
+            # MAX_PENDING_PRS=3 より小さいので、PR の上限は同時 Run の上限で先に制限される(開いている PR も同時 Run に数えられるため)。意図どおりなら、このまま。
+            - name: KIVRA_SELFDEV_MAX_ACTIVE_RUNS
+              value: "2"
+            # 自律運転(オートパイロット、ADR 0011、Issue kigawa-net/kivra#233)。Goal を計画し、承認された Plan のタスクを自己開発に投入する。
+            # 止め方: この env(KIVRA_SELFDEV_AUTOPILOT_ENABLED)を外すか false にして再デプロイする。計画と投入が止まり、/api/selfdev/goals* は 503 になる。
+            #   進行中の Run は既存のワーカーが進める。一時停止だけなら、ダッシュボードの「自律運転を一時停止」(POST /api/selfdev/autopilot/pause)。
+            # キルスイッチ: この env を false にして再デプロイする(同じ操作。自己開発全体を止めるなら KIVRA_SELFDEV_ENABLED=false)。
+            # ロールバック: KIVRA_SELFDEV_AUTOPILOT_* の行を外して再デプロイする。コードの変更は要らない。DB の行は消さない。
+            - name: KIVRA_SELFDEV_AUTOPILOT_ENABLED
+              value: "true"
+            # 段階 2 = auto(2026-10-22 に昇格。運用者の判断)。docs・テスト・README の小さなタスク(見積り S、3 件以下、requires_approval=false)だけ、承認なしで投入する。
+            # それ以外(UI の本体、kivra-*/src/main など)と denylist のタスクは、段階 1 と同じく運用者の承認を待つ。実際の差分は、コミットの前に再検査される(範囲外は AUTO_SCOPE_EXCEEDED で止まる)。
+            # 昇格の根拠(ADR 0011 §6.3): 承認したタスクの COMPLETED が 10 件、POLICY_REJECTED と範囲外の変更がゼロ、予算の計上を運用者が実機で確認(#230)。
+            # 段階 3 = full(2026-11-10 に昇格。運用者の判断。kivra#485、image は main-c0bc493 以降が必要。古い image は full を読めず起動に失敗する)。
+            #   denylist と requires_approval のタスク、パス 4 件以上のタスクは運用者の承認を待つ。差分の再検査(パス 3 件以下・200 行以下)と PatchPolicy は残る。マージは人。
+            # 戻す: この値を auto(段階 2)または required(段階 1)にして再デプロイする。実行中の Run は、そのまま進む。
+            - name: KIVRA_SELFDEV_AUTOPILOT_APPROVAL
+              value: "full"
+            # マージ待ちの自己開発 PR の上限(既定値。1〜20)。
+            - name: KIVRA_SELFDEV_AUTOPILOT_MAX_PENDING_PRS
+              value: "3"
+            # 連続失敗でサーキットブレーカーを開く数(既定値。1〜20)。
+            - name: KIVRA_SELFDEV_AUTOPILOT_MAX_CONSECUTIVE_FAILURES
+              value: "3"
+            # 1 日(UTC)に投入する Run の数(既定値。1〜100)。
+            - name: KIVRA_SELFDEV_AUTOPILOT_MAX_RUNS_PER_DAY
+              value: "5"
+            # 月次予算のうち、オートパイロットに割り当てる割合(%、既定値。1〜100)。費用はこの割当てで制限される。
+            - name: KIVRA_SELFDEV_AUTOPILOT_BUDGET_SHARE_PERCENT
+              value: "50"
+            # Planner が計画待ちの Goal を探す間隔(秒、既定値。5〜3600)。
+            - name: KIVRA_SELFDEV_AUTOPILOT_PLAN_INTERVAL_SECONDS
+              value: "30"
+            # 自己開発 PR の基点の追従(kivra#276、kivra#279)。レビュー待ちの PR が main に対して behind のとき、kivra-gh が update-branch で追従する。
+            # 追従の後の新しい head は、親が「旧 head と main 先頭」の 2 つ、PR 自身の差分が前後で同一、のときだけ記録し直す(満たさなければ、人に残す)。
+            # 1 PR あたり、1 時間に 1 回、合計 3 回まで。監査は PR_REBASE_* の固定コードだけ。
+            # 止め方: この env を外すか false にして再デプロイする(外すと追従は止まり、既存の PR はそのまま残る)。
+            # 必要な image: kivra#279 を含む(main-d0619b3 以降)。古い image は、この env を読まない。
+            - name: KIVRA_SELFDEV_PR_REBASE_ENABLED
+              value: "true"
+            # MCP サーバー(ADR 0013 / kivra#181)。読み取りを 2026-10-19 に有効にした。書き込みと Goal のツールを 2026-10-21 に有効にする(運用者の承認済み)。
+            # /mcp の ingress は kivra-mcp-ingress.yaml(oauth2-proxy を通さない)。有効の間、kivra の JWT 検証(MCP 専用の audience、署名、iss、exp、ロール、スコープ)が唯一の認証になる。
+            # 接続: `claude mcp add --transport http kivra https://kivra-dev.kigawa.net/mcp`(Keycloak の client kivra-mcp、PKCE。k8s-system#280)。
+            # 止める(無効に戻す)ときは、KIVRA_MCP_ENABLED を外して再デプロイする(キルスイッチ。外すと /mcp は 404 に戻る)。
+            - name: KIVRA_MCP_ENABLED
+              value: "true"
+            # MCP のアクセストークンが持つべき aud。Keycloak の client kivra-mcp の audience mapper と一致させる。
+            - name: KIVRA_MCP_AUDIENCE
+              value: "https://kivra-dev.kigawa.net/mcp"
+            # 許可する Host(DNS リバインディング対策)。Origin は、ブラウザ以外のクライアントを想定して許可リストを置かない(Origin ヘッダーがある要求は拒否される)。
+            - name: KIVRA_MCP_ALLOWED_HOSTS
+              value: "kivra-dev.kigawa.net"
+            # 主体ごとの毎分の上限(既定と同じ値を明示)。超過は 429。
+            - name: KIVRA_MCP_RATE_PER_MINUTE
+              value: "60"
+            # 書き込みツール(ADR 0013 §5)。有効にすると、既存の kivra_selfdev_start(Run を直接開始する)も出る。
+            # 止める: この env を外すか false にして再デプロイする(書き込みツールが全て tools/list から消える。読み取りは残る)。
+            # 書き込みは主体ごとに 1 分 5 件を共有する。AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)からの Goal の書き込みは拒否される。
+            - name: KIVRA_MCP_WRITE_ENABLED
+              value: "true"
+            # Goal のツール(ADR 0019)。読み取り(kivra_goal_list、kivra_goal_get)。題名と本文は返さない。
+            - name: KIVRA_MCP_GOAL_READ_ENABLED
+              value: "true"
+            # Goal の中止(kivra_goal_stop)。運用者本人のみ。投入済みの Run は止まらない(run_still_active で知らせる)。
+            - name: KIVRA_MCP_GOAL_STOP_ENABLED
+              value: "true"
+            # Goal の投入(kivra_goal_submit)。運用者本人のみ、冪等キー必須、1 日の上限は既定 10 件(UTC)。
+            # 止める: この 3 つの KIVRA_MCP_GOAL_* を外すか false にして再デプロイする。
+            - name: KIVRA_MCP_GOAL_SUBMIT_ENABLED
+              value: "true"
+            # Goal とタスクの題名の読み取り(kivra_goal_get_titles。ADR 0019 の追記、運用者の指示)。運用者本人のみ。本文、タスクの指示文、対象パスは返さない。
+            # 題名は信頼できないデータ(untrusted: true)。止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_MCP_GOAL_TEXT_ENABLED
+              value: "true"
+            # 自動マージの影の判定(ADR 0014 S1。kivra#325、#326)。PULL_REQUEST の Run を 60 秒ごとに判定し、変化したときだけ監査(AUTO_MERGE_JUDGED)に残す。
+            # マージ、ラベル、コメント、ブランチ更新の書き込みは、一切しない(読み取りだけ)。GitHub App(kivra-gh)の checks:read が無いと、判定は常に REFUSE か HOLD になる。
+            # 必須チェックは既定の test,build,boot(KIVRA_SELFDEV_AUTOMERGE_REQUIRED_CHECKS で変更できる)。
+            # 止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_SELFDEV_AUTOMERGE_SHADOW_ENABLED
+              value: "true"
+            # 自動マージの本番化(kivra#439、ADR 0014 追補 2026-11-08)。低リスク条件を全て満たす PR だけを squash マージする(head SHA 指定、既定の上限は同時 1 件・1 時間 1 件・1 日 3 件)。
+            # 条件: kivra が作った PR、自動承認の Task、1〜3 ファイル・200 行以下、PR AI レビューが PASS、必須チェック(test, build, boot)が成功、Draft でない、kivra:hold なし。incident 修正の Draft PR は対象外。
+            # 拒否・応答不明は再試行せず、拒否が 2 件続くと自動で一時停止する。止める: この env を外すか false にして再デプロイする。
+            - name: KIVRA_SELFDEV_AUTOMERGE_ACTIVE_ENABLED
+              value: "true"
+            # 必須チェックは test,build の 2 つ(既定の boot を外す)。boot はパスフィルタ付きの PR 限定で、docs だけの PR では動かず CHECK_MISSING になるため。
+            # main のブランチ保護の必須チェック(test, build)と同じ集合。戻すには、この env を外して再デプロイする(既定の test,build,boot に戻る)。
+            - name: KIVRA_SELFDEV_AUTOMERGE_REQUIRED_CHECKS
+              value: "test,build"
+            # 自己開発 PR の AI レビュー(kivra#436)。PR にコメントを 1 件投稿するだけで、承認・マージはしない。自動マージ判定にはまだ接続していない。
+            # モデルは registry の claude-haiku-5-5。上限は既定(1 時間 5 件、PR あたり 2 回、差分 60000 バイト)。
+            # 止める: この env を外すか false にして再デプロイする(投稿済みのコメントは消えない)。
+            - name: KIVRA_SELFDEV_PR_REVIEW_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_PR_REVIEW_MODEL
+              value: "claude-haiku-5-5"
+            # 自己修復(kivra#437, #438)。第 1 段: 自己開発の失敗(Run の FAILED の理由コード、ブレーカー開放)を検知し、GitHub Issue を 1 件だけ起票する(1 時間 2 件まで)。
+            # 第 2 段: 起票した Issue だけを Task として投入し、Draft PR まで進める(マージ・承認はしない)。同時 1 件。既存の承認設定・予算・ブレーカー・日次上限を通る。
+            # 止める: この 2 つの env を外すか false にして再デプロイする(起票済みの Issue と Draft PR は消えない)。
+            - name: KIVRA_SELFDEV_AUTO_ISSUE_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_AUTO_FIX_ENABLED
+              value: "true"
+            # 自己開発の記憶(ADR 0016 P1: 保存のみ、影。P2 の閲覧と削除は kivra#323 で入った)。記録は書くだけで、Planner のプロンプトにも承認と投入の判断にも使わない。
+            # 保存するのは、固定コード、件数、パス集合の SHA-256、Goal の題名(200 字まで)だけ。Goal の本文、計画の文、PR の本文、モデルの出力は保存しない。
+            # 保持期間: 文章 180 日、事実 365 日。止める: この env を外すか false にして再デプロイする(書き込みと保持ジョブが止まる。記録は残る)。
+            # 閲覧と削除は /ui の「記憶」の欄(運用者のみ)。
+            - name: KIVRA_SELFDEV_MEMORY_ENABLED
+              value: "true"
+            # order(継続開発の指示。ADR 0015 段階 1)。ルートの order 1 件と、停止の要求・承認だけ。
+            # 子の作成は不可(KIVRA_SELFDEV_ORDER_MAX_DEPTH 未設定 = 0)、自動停止(KIVRA_SELFDEV_ORDER_AUTO_STOP_ENABLED)と
+            # 費用の集計(KIVRA_SELFDEV_ORDER_SPEND_ENABLED)は未設定 = 無効。起動時に ACTIVE の order があれば全て PAUSED(STARTUP_HOLD)にする。
+            # 承認者の owner key は公開リポジトリに書かず、クラスタ内の Secret(kivra-order-approver)から読む。
+            # AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)は未設定(別途 Keycloak ユーザーを用意してから足す)。
+            # 止める: KIVRA_SELFDEV_ORDERS_ENABLED を外すか false にして再デプロイする(order は消えず、状態は変わらない)。
+            - name: KIVRA_SELFDEV_ORDERS_ENABLED
+              value: "true"
+            # 自動開始(ADR 0015 段階 2)。order が ACTIVE で条件を満たせば、OrderWatch(60 秒ごと)が次の周を自動で開始する。
+            # 条件: 祖先が ACTIVE、期限内、max_cycles 未満、連続失敗 2 未満、予算内、PR 上限内など。
+            # 止める: この env を外すか false にして再デプロイする(自動開始は止まり、手動の開始は残る)。
+            - name: KIVRA_SELFDEV_ORDER_AUTO_CYCLE_ENABLED
+              value: "true"
+            # 起動時の保留の無効化(ADR 0015 U-14 追補 2026-11-10、kivra#488)。true のとき、再起動しても ACTIVE の order を PAUSED(STARTUP_HOLD)にしない。
+            # 予算、max_cycles、期限、ブレーカーは変わらない。必要な image: kivra#488 を含む(main-1f466ba 以降)。古い image は、この env を読まない。
+            # 止める: この env を外すか false にして再デプロイする(再起動時の保留に戻る)。
+            - name: KIVRA_SELFDEV_ORDER_AUTO_RESUME_ON_STARTUP
+              value: "true"
+            # ルートの order に指定できる maxCycles の上限(既定 1、最大 10)。自動開始が 1 order で回す周の数の上限でもある。
+            # 変えても既存の order の max_cycles は変わらない(作成時に決まる)。戻すには外すか 1 にして再デプロイする。
+            - name: KIVRA_SELFDEV_ORDER_MAX_CYCLES_CAP
+              value: "10"
+            - name: KIVRA_SELFDEV_ROOT_APPROVER
+              valueFrom:
+                secretKeyRef:
+                  name: kivra-order-approver
+                  key: owner-key
+            # 担当(ロール)と権限管理(ADR 0020)。enforce: 担当のロール(DB)で判定し、権限のない操作は拒否する(DB が引けないときも拒否)。
+            # 起動時に、承認者(上の root approver)を ADMIN の担当に、行がないときだけ作る。担当の管理 API(/api/selfdev/assignees)は、ADMIN の担当に紐付く人だけが使える。
+            # AI の担当は、画面(API)で作り、kivra が発行する API トークンで、MCP(/mcp)にだけ入る。Keycloak は使わない。
+            # enforce のときだけ、AI のトークンで、MCP の読み取りと停止要求が実際に通る(shadow では、トークンの主体は何も許可されない)。
+            # 戻す: この値を shadow(または off)に戻す。担当と紐付けは消えず、判定は従来どおりに戻る。
+            # ADMIN を失って管理画面に入れなくなったときは、KIVRA_SELFDEV_ROLES_RECOVER_ADMIN で復旧する(docs/runbook-selfdev.md)。
+            - name: KIVRA_SELFDEV_ROLES_MODE
+              value: "enforce"
+            # プロジェクト単位の認可(kivra ADR 0022)。enforce: プロジェクトのメンバーでない人は、そのプロジェクトのデータを操作できない(グローバル ADMIN は常に通る)。
+            # 前提: ROLES_MODE が off 以外。shadow のログで PROJECT_NOT_MEMBER が 0 件なのを確認済みであること(docs/runbook-selfdev.md §4.17)。
+            # 戻す: value を "shadow" に戻す(差分のログだけ出す)。または env を外す。
+            - name: KIVRA_SELFDEV_PROJECT_MODE
+              value: "enforce"
+            # 停止要求の LLM 判断(ADR 0021、L5 active)。LLM に判断させて、承認を自動で実行する。
+            # ROLES_MODE=enforce と、有効な AI_APPROVER の担当(/ui の「担当」)が前提。どちらかが欠けると、判断は SKIPPED になる。
+            # 認証は、コーディング用の既存の WIF(KIVRA_SELFDEV_ANTHROPIC_*)を流用する。API キーは、新しく持たない。
+            # 上限と単価は既定値(自動承認 1 時間に 3 件、LLM 呼び出し 1 時間に 20 回、入力 4000 / 出力 100 トークン、月間 500 円)。
+            # 止める: ENABLED を外す(または false にする)か、AI_APPROVER の担当を /ui で無効にする(次の判断から効く)。
+            # shadow(記録だけ)に戻す: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODE を shadow にして再デプロイする。
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_ENABLED
+              value: "true"
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODE
+              value: "active"
+            - name: KIVRA_SELFDEV_LLM_STOP_APPROVAL_MODEL
+              value: "claude-haiku-5-5"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: github-app
+              mountPath: /var/run/kivra/github-app
+              readOnly: true
+            - name: anthropic-token
+              mountPath: /var/run/secrets/anthropic.com
+              readOnly: true
+            - name: model-registry
+              mountPath: /var/run/kivra/model-registry
+              readOnly: true
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            # Flyway の migration は、遅いディスクで数十分かかりうる。強制終了されると migration が中途半端な状態で残る。
+            failureThreshold: 360
+          # readiness は /ready を見る (DB 疎通を確認する)。DB が落ちたら Ready を外してトラフィックを止める。
+          # startup と liveness は /health のまま。liveness が DB に依存すると、DB 障害で再起動が繰り返され、migration の途中で強制終了されるおそれがあるため。
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        # BitwardenSecret(kivra-github-app-bws.yaml)が作る Secret。同期前でも pod が起動できるよう optional にする
+        - name: github-app
+          secret:
+            secretName: kivra-github-app
+            optional: true
+            defaultMode: 0440
+        # Anthropic Workload Identity Federation 用の projected ServiceAccount トークン(kubelet が期限前にローテーションする)。
+        # audience はフェデレーションルールの audience と一致させる。automountServiceAccountToken: false でも、この projection は有効。
+        - name: model-registry
+          configMap:
+            name: kivra-model-registry-cm
+            items:
+              - key: model-registry.yaml
+                path: model-registry.yaml
+        - name: anthropic-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: https://api.anthropic.com
+                  expirationSeconds: 3600
+                  path: token
+      restartPolicy: Always

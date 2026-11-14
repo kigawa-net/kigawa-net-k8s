@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: admin-panel-issuer
+  namespace: kigawa-net-admin-panel
+  labels:
+    app.kubernetes.io/instance: admin-panel
+spec:
+  acme:
+    email: letsencrypt@kigawa.net
+    privateKeySecretRef:
+      name: admin-panel-issuer
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+    - dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            key: api-token
+            name: cloudflare-token

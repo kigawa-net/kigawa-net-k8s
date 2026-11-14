@@ -1,0 +1,26 @@
+# kivra-agent が Job の namespace の中で行う操作の全て。KubeApi.kt の KDoc(ADR 0010 追補 7 §4・§6)と同じで、これ以上は足さない:
+#   batch/jobs: create, get, list, delete          (deletecollection は使わない。孤児の掃除は list して 1 つずつ delete)
+#   pods: get, list
+#   pods/log: get
+#   pods/exec: create, get                         (exec は WebSocket の upgrade で get も要る。結果ファイルの読み取りと入力の送信)
+# 無いもの: secrets、configmaps、pods の create/delete/patch、deletecollection、ClusterRole。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kivra-agent-role
+  namespace: kigawa-net-kivra-dev-agent
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create", "get"]

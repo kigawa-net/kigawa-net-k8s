@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: gateway
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+      name: gateway
+    spec:
+      containers:
+      - image: harbor.kigawa.net/library/codingcraft-minestom:dev-50levels
+        imagePullPolicy: IfNotPresent
+        name: gateway
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 25565
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /app/config.json
+          subPath: config.json
+      volumes:
+      - name: config
+        configMap:
+          name: codingcraft-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    mc-router.itzg.me/externalServerName: codingcraft-dev.kigawa.net
+  labels:
+    app: gateway
+  name: gateway
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: minecraft
+    port: 25565
+    protocol: TCP
+    targetPort: 25565
+  selector:
+    app: gateway
+  type: ClusterIP

@@ -19,7 +19,7 @@ spec:
         - name: harbor-registry
       containers:
         - name: mamoru-central-server
-          image: harbor.kigawa.net/private/mamoru-central-server:main-placeholder
+          image: harbor.kigawa.net/private/mamoru-central-server:main-c4ea758919dbe3efc8b642cc32301301d74ada00
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -40,6 +40,23 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          env:
+            - name: DB_HOST
+              value: mamoru-mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: mamoru
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
           resources:
             requests:
               cpu: "250m"

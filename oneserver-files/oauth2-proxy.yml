@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: oneserver-files-oauth2-proxy-secret
+  namespace: kigawa-net-oneserver-files
+type: Opaque
+stringData:
+  # bearer-only モード(--skip-jwt-bearer-tokens)では実際のOAuthログインフローを
+  # 使わないため、client-id/client-secret/cookie-secretはoauth2-proxyの起動要件を
+  # 満たすためだけのダミー値。秘匿情報ではない。
+  # cookie-secretはAES鍵として使われるため厳密に16/24/32バイトである必要がある
+  # (oauth2-proxyはこれ以外の長さだと起動時にCrashLoopBackOffする)。
+  client-id: oneserver-files
+  client-secret: unused
+  cookie-secret: "af0e0253518f4310d0f2b0e61badb826"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oneserver-files-oauth2-proxy
+  namespace: kigawa-net-oneserver-files
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oneserver-files-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oneserver-files-oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:latest
+          args:
+            - --provider=oidc
+            # クラスタ自身のService Account issuer(world-exporter/world-image-builder用)。
+            # K8sのdiscoveryドキュメントはOIDC仕様上必須のauthorization_endpointを
+            # 意図的に欠いている(JWT発行専用issuerでフルOAuthプロバイダではないため)。
+            # このためoauth2-proxyのdiscoveryベースのプロバイダ初期化が失敗し、
+            # 「失敗時は<issuer>/.well-known/jwks.jsonを推測してフォールバック」という
+            # 挙動に入るが、K8sは実際には/openid/v1/jwksにしかJWKSを置いていないため
+            # 常に403/404になり検証が不可能だった(RBAC/CA/TLSの設定とは無関係)。
+            # skip-oidc-discoveryでdiscoveryを完全に回避し、正しいJWKS URLを直接指定する。
+            - --skip-oidc-discovery=true
+            - --oidc-issuer-url=https://kubernetes.default.svc.cluster.local
+            - --oidc-jwks-url=https://kubernetes.default.svc.cluster.local/openid/v1/jwks
+            # skip-oidc-discovery使用時は必須項目だが、Bearer専用モード
+            # (skip-jwt-bearer-tokens=true)のため実際には呼ばれない
+            - --login-url=https://kubernetes.default.svc.cluster.local/unused-login
+            - --redeem-url=https://kubernetes.default.svc.cluster.local/unused-redeem
+            - --upstream=http://oneserver-file-server:8080
+            - --http-address=0.0.0.0:4180
+            - --email-domain=*
+            - --skip-provider-button=true
+            - --pass-authorization-header=true
+            - --pass-access-token=true
+            # Bearer JWTでの機械間認証のみを許可し、ブラウザOAuthフローは使わない
+            - --skip-jwt-bearer-tokens=true
+            # 上記oidc-issuer-url(k8s SA token)のaudienceとして受け付ける値
+            - --oidc-extra-audience=https://files.kigawa.net
+            # GitHub Actions(RpgCore CI)のOIDCトークンを検証。discoveryドキュメントが
+            # OIDC仕様に準拠しているため、extra-jwt-issuersのdiscoveryベース検証で
+            # 問題なく動く(kubernetesのケースとは異なる)
+            - --extra-jwt-issuers=https://token.actions.githubusercontent.com=https://files.kigawa.net
+            # kubernetes.default.svc.cluster.localの証明書はクラスタ内部CA発行のため、
+            # デフォルト信頼ストアでは検証できない。Pod自動マウントのSAトークン用CA証明書
+            # を明示的に信頼する。
+            - --provider-ca-file=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+            # provider-ca-file指定時、use-system-trust-store=falseだとそのCAのみ信頼され
+            # 公開CAストアが無効化されtoken.actions.githubusercontent.comの検証が壊れる
+            # ため明示的にtrueにする。
+            - --use-system-trust-store=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: client-id
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: client-secret
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oneserver-files-oauth2-proxy-secret
+                  key: cookie-secret
+          ports:
+            - containerPort: 4180
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oneserver-files-oauth2-proxy
+  namespace: kigawa-net-oneserver-files
+spec:
+  selector:
+    app: oneserver-files-oauth2-proxy
+  ports:
+    - name: http
+      port: 4180
+      targetPort: 4180

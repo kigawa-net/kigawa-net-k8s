@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mamoru-mysql-headless
+  namespace: kigawa-net-mamoru-main
+spec:
+  clusterIP: None
+  selector:
+    app: mamoru-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mamoru-mysql
+  namespace: kigawa-net-mamoru-main
+spec:
+  selector:
+    app: mamoru-mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mamoru-mysql
+  namespace: kigawa-net-mamoru-main
+  labels:
+    app: mamoru-mysql
+spec:
+  serviceName: mamoru-mysql-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mamoru-mysql
+  template:
+    metadata:
+      labels:
+        app: mamoru-mysql
+    spec:
+      initContainers:
+        - name: wipe-dirty-datadir
+          image: ubuntu
+          command:
+            - bash
+            - -c
+            - |
+              # rook-ceph thin provisioning may return sparse blocks from previous volumes.
+              # ibdata1 can appear non-empty (fallocate) but read as all-zeros (unwritten blocks).
+              # [ -s file ] only checks logical size > 0, so use content-based check instead.
+              if [ -f /var/lib/mysql/ibdata1 ]; then
+                HEX=$(od -An -N 4 -t x1 /var/lib/mysql/ibdata1 2>/dev/null | tr -d ' \n')
+                if [ -z "$HEX" ] || [ "$HEX" = "00000000" ]; then
+                  echo "ibdata1 header is zero (sparse/dirty block). Wiping data directory..."
+                  find /var/lib/mysql -mindepth 1 -delete
+                  echo "Wipe complete."
+                else
+                  echo "ibdata1 header OK (${HEX}). Keeping existing data."
+                fi
+              else
+                echo "No ibdata1 found. Fresh data directory."
+              fi
+          volumeMounts:
+            - name: mysql-vol
+              mountPath: /var/lib/mysql
+      containers:
+        - name: mysql
+          image: mariadb:11.4
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
+            - name: MARIADB_DATABASE
+              value: mamoru
+            - name: MARIADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: user
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mamoru-db-secret
+                  key: pass
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-vol
+              mountPath: /var/lib/mysql
+          startupProbe:
+            exec:
+              command:
+                - mariadb-admin
+                - ping
+                - -h
+                - localhost
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - mariadb-admin
+                - ping
+                - -h
+                - localhost
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - mariadb-admin
+                - ping
+                - -h
+                - localhost
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-vol
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi

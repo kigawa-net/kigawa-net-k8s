@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: arc-listener-rbac-annotator
+  namespace: arc-runners
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: arc-listener-rbac-annotator
+  namespace: arc-runners
+rules:
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list", "patch"]
+  # annotation更新でもRBACの権限昇格防止検査が走る。listener Roleが持つ権限
+  # (ephemeralrunners等のpatch)をこのSAは持たないため、escalate/bindが必要。
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["escalate", "bind"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: arc-listener-rbac-annotator
+  namespace: arc-runners
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: arc-listener-rbac-annotator
+subjects:
+  - kind: ServiceAccount
+    name: arc-listener-rbac-annotator
+    namespace: arc-runners
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: arc-listener-rbac-annotator
+  namespace: arc-runners
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: arc-listener-rbac-annotator
+          restartPolicy: OnFailure
+          containers:
+            - name: annotator
+              image: rancher/kubectl:v1.31.14
+              command:
+                - kubectl
+                - annotate
+                - role,rolebinding
+                - -n
+                - arc-runners
+                - -l
+                - app.kubernetes.io/component=runner-scale-set-listener
+                - argocd.argoproj.io/compare-options=IgnoreExtraneous
+                - --overwrite

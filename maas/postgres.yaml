@@ -36,15 +36,21 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+          # Ceph RBD(I/O が遅い)上で動くため、probe のタイムアウトを既定の 1 秒にすると、一時的な遅延で
+          # liveness が失敗し、PostgreSQL が再起動される(2026-10-10 までに 54 回、infra#207)。
+          # 起動の確認を待てる時間と、liveness の許容を、広げる。
           startupProbe:
             exec:
               command: ["pg_isready", "-U", "maas", "-d", "maas"]
-            failureThreshold: 30
+            failureThreshold: 60
             periodSeconds: 5
+            timeoutSeconds: 5
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "maas", "-d", "maas"]
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
   volumeClaimTemplates:
     - metadata:
         name: data

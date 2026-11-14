@@ -1,0 +1,21 @@
+extends: default
+
+rules:
+  line-length: disable
+  document-start: disable
+  new-line-at-end-of-file: disable
+  empty-lines: disable
+  truthy:
+    allowed-values: ["true", "false", "on", "off"]
+  comments:
+    min-spaces-from-content: 1
+  braces:
+    max-spaces-inside: 1
+  brackets:
+    max-spaces-inside: 1
+  indentation:
+    indent-sequences: consistent
+
+ignore: |
+  .claude/
+  .idea/

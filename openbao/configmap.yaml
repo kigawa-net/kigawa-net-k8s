@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openbao-config
+  namespace: kigawa-net-openbao
+data:
+  openbao.hcl: |
+    # bao-01(K8s)。bao-02/03 は hardware/modules/openbao-node(systemd)で、設定の意図は同じ。
+    ui         = false
+    log_format = "json"
+
+    # api_addr は証明書の名前。cluster_addr は MetalLB の VIP(bao-02/03 から、WireGuard + BGP で届く)
+    api_addr     = "https://bao01.kigawa.net:8200"
+    cluster_addr = "https://10.0.0.245:8201"
+
+    storage "raft" {
+      path    = "/openbao/data"
+      node_id = "bao-01"
+
+      # ピアの証明書は公開 CA(Let's Encrypt)なので、OS の信頼ストアで検証する。
+      # bao-02/03 の FQDN は、Pod の hostAliases でオーバーレイの IP に向ける
+      retry_join {
+        leader_api_addr = "https://bao-02.kigawa.net:8200"
+      }
+      retry_join {
+        leader_api_addr = "https://bao-03.kigawa.net:8200"
+      }
+    }
+
+    listener "tcp" {
+      address         = "0.0.0.0:8200"
+      cluster_address = "0.0.0.0:8201"
+      tls_cert_file   = "/openbao/tls/tls.crt"
+      tls_key_file    = "/openbao/tls/tls.key"
+      tls_min_version = "tls13"
+    }
+
+    telemetry {
+      unauthenticated_metrics_access = false
+    }
+
+    # 監査デバイス(宣言的)。bao-02/03 と description・options まで完全に同じにする
+    # (違うと「audit device ... has different descriptions」で standby が起動できない)。
+    # 元: infra の hardware/modules/openbao-node/files/openbao.hcl.tpl
+    # 定義は Raft で複製され、standby は自分の環境で開こうとする。ノードごとに違うと、
+    # standby が「failed to setup audit table」で失敗する(2026-11)。
+    audit "file" "file" {
+      description = "監査ログ(/var/log/openbao/audit.log)。logrotate が日次で回し、SIGHUP で開き直す"
+      options {
+        file_path = "/var/log/openbao/audit.log"
+        mode      = "0600"
+      }
+    }
+    audit "syslog" "syslog" {
+      description = "監査ログ(syslog。ジャーナルに入る)。ファイルが書けなくなったときの、もう 1 つの経路"
+      options {
+        tag      = "openbao-audit"
+        facility = "AUTH"
+      }
+    }

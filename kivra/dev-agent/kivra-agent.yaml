@@ -1,0 +1,88 @@
+# kivra-agent 本体を in-cluster で動かす Deployment(Job を作る側)。ADR 0010 追補 7。
+# **replicas: 0 のまま入れる。KIVRA_AGENT_BACKEND は設定しない**(=docker)。k8s バックエンドは、コードがまだ設定エラーで拒否する。
+# 有効化(KIVRA_AGENT_BACKEND=k8s と K8s の設定の配線、replicas: 1)は、実クラスタでの検証の後の PR 5c で行う(docs/README.md)。
+# この Deployment が in-cluster で動けること(SA、RBAC、Job の namespace への経路)を先に用意するための枠。
+# 1 台だけ動かす(Recreate)。agent は二重起動を検出して終了コード 3 で終わる(restartPolicy は Always だが再起動ループになるので、RollingUpdate にしない)。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kivra-agent
+  namespace: kigawa-net-kivra-dev
+  labels:
+    app: kivra-agent
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kivra-agent
+  template:
+    metadata:
+      labels:
+        app: kivra-agent
+    spec:
+      serviceAccountName: kivra-agent
+      automountServiceAccountToken: true # HttpKubeApi.inCluster が SA の token と CA を使う
+      imagePullSecrets:
+        - name: harbor-registry
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # kivra-agent/Dockerfile の USER 10001:10001
+        runAsGroup: 10001
+        fsGroup: 10001 # Secret のファイル(0440)をグループで読む
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kivra-agent
+          image: harbor.kigawa.net/library/kivra-agent:main-91b993e44b295e13812c5e2f3b84dcf3f2ed68d3 # TODO: Harbor に push 済みのタグか確認して固定する
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # KIVRA_AGENT_BACKEND は意図的に設定しない(既定の docker。k8s はコードが拒否する)。
+            - name: KIVRA_AGENT_KIVRA_URL
+              value: "https://kivra-dev.kigawa.net" # 公開の ingress 経由(/api/agent/ は kivra-agent-ingress)。kivra-netpol は本体の Pod への直接の経路を許さない
+            - name: KIVRA_AGENT_TOKEN_URL
+              value: "https://user.kigawa.net/realms/kigawa-net/protocol/openid-connect/token"
+            - name: KIVRA_AGENT_CLIENT_ID
+              value: "" # TODO: 有効化の前に Keycloak の client ID を書く(空のままだと起動は設定エラーで拒否される)
+            - name: KIVRA_AGENT_CLIENT_SECRET_FILE
+              value: "/var/run/kivra-agent/client-secret"
+            - name: KIVRA_AGENT_WORK_DIR
+              value: "/work"
+            - name: KIVRA_AGENT_STOP_FILE
+              value: "/work/STOP"
+            - name: KIVRA_AGENT_EXECUTOR
+              value: "stub" # claim した attempt を NEEDS_HUMAN で返すだけ。real にするのは検証の後
+            - name: JAVA_OPTS
+              value: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:+UseContainerSupport"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          volumeMounts:
+            - name: client-secret
+              mountPath: /var/run/kivra-agent
+              readOnly: true
+            - name: work
+              mountPath: /work
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: client-secret
+          secret:
+            secretName: kivra-agent-client
+            defaultMode: 0440
+        - name: work
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

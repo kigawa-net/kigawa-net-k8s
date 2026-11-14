@@ -16,6 +16,18 @@ spec:
     - name: in-cluster
       server: https://kubernetes.default.svc
       namespace: one
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-rpgcore
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-rpgcore-stg
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-rpgcore-dev
+    - name: in-cluster
+      server: https://kubernetes.default.svc
+      namespace: onemc-build
 
   sourceRepos:
     - https://github.com/OneServerMC/*

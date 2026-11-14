@@ -1,3 +1,5 @@
+# MAAS の Region のイメージだけをビルドする。Rack は k8s に載せず、control-plane のホスト(k8s2 / k8s4)に
+# deb で直接インストールする(kigawa-net/infra#207)ため、Rack のイメージはビルドしない。
 name: maas-build
 on:
   push:
@@ -16,19 +18,6 @@ jobs:
       manifestFile: maas/region.yaml
       repository: kigawa-net/kigawa-net-k8s
       dockerFile: maas/docker/Dockerfile_region
-      yamlPath: '.spec.template.spec.containers[0].image'
-    secrets:
-      HARBOR_PASS: ${{ secrets.HARBOR_PASS }}
-      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
-
-  build-rack:
-    uses: ./.github/workflows/release.yml
-    with:
-      name: maas-rack
-      harborProject: library
-      manifestFile: maas/rack.yaml
-      repository: kigawa-net/kigawa-net-k8s
-      dockerFile: maas/docker/Dockerfile_rack
       yamlPath: '.spec.template.spec.containers[0].image'
     secrets:
       HARBOR_PASS: ${{ secrets.HARBOR_PASS }}

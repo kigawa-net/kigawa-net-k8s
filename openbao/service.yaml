@@ -1,0 +1,37 @@
+# 8200(API)と 8201(Raft)を VIP 10.0.0.245(MetalLB の L2)で公開する。
+# 10.0.0.0/24 は Inuyama から BGP で広告済みなので、ionos 経由で bao-02/03 に届く。
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao
+  namespace: kigawa-net-openbao
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 10.0.0.245
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    app: openbao
+  ports:
+    - name: api
+      port: 8200
+      targetPort: 8200
+    - name: cluster
+      port: 8201
+      targetPort: 8201
+---
+# StatefulSet 用(Pod の安定した名前)
+apiVersion: v1
+kind: Service
+metadata:
+  name: openbao-headless
+  namespace: kigawa-net-openbao
+spec:
+  clusterIP: None
+  selector:
+    app: openbao
+  ports:
+    - name: api
+      port: 8200
+    - name: cluster
+      port: 8201

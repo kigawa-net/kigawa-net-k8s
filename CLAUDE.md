@@ -60,9 +60,42 @@ GitHub Actions Runner Controller。OneServerMC org 向けのセルフホスト�
 - **Secret**: `arc/github-secret-bws.yml` — GitHub App 認証 (app_id / installation_id / private_key)
 - 新しい namespace に追加する場合は `bitwarden-sync-crn.yaml` の `TARGET_NAMESPACES` にも追記
 
-### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`)
+### OneServerMC (`apps/one-project.yml`, `apps/rpgcore-dev-app.yml`, `apps/rpgcore-stg-app.yml`, `apps/oneserver-*-app.yml`)
 OneServerMC 向け AppProject `one`。namespace `onemc-*` と `https://github.com/OneServerMC/*` を許可。
-- **RpgCore dev**: `k8s/overlays/dev` を `onemc-rpgcore` にデプロイ
+マニフェストは全て専用リポジトリ `OneServerMC/infra` に集約されている(旧: `OneServerMC/RpgCore` の `k8s/`)。
+RpgCoreのCIはdev→stg→prodの順にイメージ(commit SHAのdigest)を昇格する構成:
+PRマージ(developへのpush)でdevに自動デプロイ、masterへのpushでstgに自動デプロイ、
+手動workflow_dispatchでstgと同じdigestをprodへ昇格(ビルドは1回だけ)。
+- **RpgCore dev/stg**(プラグイン単体の検証環境): `overlays/{dev,stg}` をそれぞれ
+  `onemc-rpgcore-dev` / `onemc-rpgcore-stg` にデプロイ(OneServer dev/stgと同じ
+  namespaceに同居)。prod相当は`overlays/prod`(RpgCore専用のArgoCD Applicationは
+  未整備、必要になったら追加)
+- **OneServer dev/stg/prod**(ゲームサーバ本体): `one/overlays/{dev,stg,prod}` をそれぞれ `onemc-rpgcore-dev` / `onemc-rpgcore-stg` / `onemc-rpgcore` にデプロイ
+- **OneServer build**(ビルドパイプライン): `build` を `onemc-build` にデプロイ
+
+### OneServer Files (`oneserver-files/`, `apps/oneserver-files-app.yml`)
+OneServerMCのビルドパイプライン用アセット(プラグインJAR・ワールドtgz)を配置する認証付き
+ファイルサーバー。namespace `kigawa-net-oneserver-files`、project `kigawa-net`。
+- **file-server**: `halverneus/static-file-server`。PVC `/data` 配下に `plugin/`・`world/` を配置。GET/PUT両対応。
+- **oauth2-proxy**: `argocd-mcp/oauth2-proxy.yml` と同じ構成をBearer専用モードで流用。
+  `--skip-jwt-bearer-tokens` + `--extra-jwt-issuers` で以下2つのJWT issuerを検証(実際のOAuthログインフローは使わない):
+  - GitHub Actions: `https://token.actions.githubusercontent.com`(RpgCoreのCIから、audience=`https://files.kigawa.net`)
+  - クラスタ自身のService Account issuer(`https://kubernetes.default.svc.cluster.local`。world-exporter/world-image-builderから)
+- Ingress: `files.kigawa.net`
+
+### project-fusha (`apps/project-fusha-project.yml`, `apps/fusha-task-*-app.yml`)
+project-fusha org 向け AppProject `project-fusha`。namespace `fusha-task-*` と
+`https://github.com/project-fusha/*` を許可（`one`/OneServerMCと同じ「別orgが既存
+クラスタに相乗りする」パターン）。project-fusha自体はGitHub/Cloudflare/1Password等を
+kigawa個人インフラから分離する方針だが、k8sクラスタ自体はユーザーの判断で意図的に
+このクラスタへ相乗りしている（詳細な経緯は`project-fusha/platform`リポジトリの
+CLAUDE.md参照）。
+- マニフェストは専用リポジトリ `project-fusha/platform` に集約（`OneServerMC/infra`+
+  `OneServerMC/platform`と違い、overlay/baseとも同一リポジトリ内。サービスが
+  fusha-task 1つのみのため）
+- **fusha-task dev/stg**: `fusha-task/overlays/{dev,stg}` をそれぞれ `fusha-task-dev` /
+  `fusha-task-stg` にデプロイ。MariaDB（StatefulSet）も同じnamespace内に同居させている
+- prod環境は未着手（専用k8sクラスタ用意待ち）
 
 ### Bitwarden / Secret Provider (`kigawa-system/secret-provider/`, `apps/bitwarden-sm-operator-app.yml`)
 Bitwarden Secrets Manager operator syncs secrets into each namespace via `BitwardenSecret` CRDs. Organization ID: `a2b57f3d-6e2b-4467-b499-b31e00bfd804`. Each namespace requires a `bitwarden-sec` secret containing the auth token.
@@ -125,4 +158,9 @@ argocd app get kigawa-net-keruta-dev-app
 | default | Diver-MC Minecraft |
 | `arc-systems` | ARC controller |
 | `arc-runners` | ARC self-hosted runners (OneServerMC) |
-| `onemc-rpgcore` | RpgCore dev (Minecraft Paper plugin) |
+| `onemc-rpgcore` | OneServer prod (ゲームサーバ本体) |
+| `onemc-rpgcore-dev` | RpgCore dev (プラグイン単体) / OneServer dev (ゲームサーバ) |
+| `onemc-rpgcore-stg` | OneServer stg (ゲームサーバ) |
+| `onemc-build` | OneServer build (ビルドパイプライン) |
+| `fusha-task-dev` | project-fusha fusha-task backend development |
+| `fusha-task-stg` | project-fusha fusha-task backend staging |

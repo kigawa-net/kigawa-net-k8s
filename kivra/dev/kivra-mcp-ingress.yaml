@@ -1,0 +1,39 @@
+# MCP サーバー(kivra の /mcp、ADR 0013 / kivra#181)用の経路。
+# /mcp と /.well-known/oauth-protected-resource だけを、oauth2-proxy を通さず kivra に直接渡す。
+# MCP クライアントは Cookie を送らず Authorization: Bearer で認証するので、oauth2-proxy の背後には置けない。
+# Authorization ヘッダーはそのまま通す。kivra(MCP の検査)が署名・iss・aud(MCP 用の audience)・exp・scope を検証する。
+# この経路では kivra の JWT 検証が唯一の関門になる。
+# kivra-agent-ingress と同じ作法(同じホスト、HAProxy、kivra-svc へ直接)。タイムアウトの annotation は既存の kivra の ingress に無いので足さない(ステートレスで SSE は使わない)。
+#
+# 無効のときの挙動: kivra は KIVRA_MCP_ENABLED が未設定の間 /mcp を登録しないので、この Ingress が先に出ても、/mcp は kivra の 404 を返すだけになる。
+# /.well-known/oauth-protected-resource も、無効のときは kivra が 404 を返す(oauth2-proxy には届かない)。
+# /mcp 以外(UI、API など)は kivra-ingress(oauth2-proxy 経由)のまま。
+#
+# パスの優先順位: kivra-ingress(path: /、oauth2-proxy)より、この Prefix の経路が優先されることを、マニフェストだけでは確認できていない(未確認)。
+# 同じ構成の kivra-agent-ingress(/api/agent/)が使われているので同様に動く想定だが、dev で確かめる(post-merge の curl の結果を見る。404 なら kivra、302 なら oauth2-proxy に届いている)。
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kivra-mcp-ingress
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: kivra-dev.kigawa.net
+      http:
+        paths:
+          # Prefix の /mcp は /mcp と /mcp/... に一致する(/mcpx には一致しない)。
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: kivra-svc
+                port:
+                  number: 8080
+          # RFC 9728 の protected resource metadata。Prefix なので、/.well-known/oauth-protected-resource/mcp の形も一致する。
+          - path: /.well-known/oauth-protected-resource
+            pathType: Prefix
+            backend:
+              service:
+                name: kivra-svc
+                port:
+                  number: 8080

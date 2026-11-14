@@ -1,0 +1,45 @@
+# CoreDNS (kube-system) の既存ConfigMapをGitOps管理下に置く。
+#
+# kigawa.net/onemc.world向けの問い合わせを、社内で運用しているKnot DNS
+# (hardware/zones配下、k8s1/k8s2/k8s4上でホストされているauthority)の
+# DNS VIP(10.0.0.53)に転送するブロックを追加している。
+#
+# これが無いと、Pod内から"k8s1.kigawa.net"等のホスト名を引いた際に
+# デフォルトの`forward . /etc/resolv.conf`経由でパブリックDNS
+# (Cloudflare等)に問い合わせてしまい、内部向けAレコード
+# (kigawa-net/infra hardware/zones/kigawa.net.zone)が見えない。
+#
+# 既存の`.:53`ブロックはkubeadmが作成したデフォルト設定のまま維持し、
+# 新しいサーバーブロックを追加するだけに留めている。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+           lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+           pods insecure
+           fallthrough in-addr.arpa ip6.arpa
+           ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+           max_concurrent 1000
+        }
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+    kigawa.net:53 onemc.world:53 {
+        errors
+        cache 30
+        forward . 10.0.0.53
+    }

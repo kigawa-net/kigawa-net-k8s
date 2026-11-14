@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ktse
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: ktse

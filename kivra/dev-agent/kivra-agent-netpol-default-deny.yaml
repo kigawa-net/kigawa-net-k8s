@@ -1,0 +1,15 @@
+# Job の namespace の既定: 全 Pod の ingress と egress を全て拒否する(NetworkPolicy は加算なので、他の kivra-agent-netpol-* が許可を足す)。
+# 許可が無い Pod は、DNS も含めて何にも届かない。
+# 強制されるのは、NetworkPolicy を実装する CNI(Calico/canal)の上の Pod だけ。prod は切替の途中(2026-11-11 時点で k8s1/k8s2 が Flannel)で、
+# Flannel のノードの Pod には効かない。Job の Pod とプロキシを canal-cni=enabled のノードに限定する(プロキシは affinity、Job は kivra-agent
+# の K8sJobBuilder の nodeSelector の変更が必要=PR 5c)までは、k8s バックエンドを有効にしない。
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kivra-agent-netpol-default-deny
+  namespace: kigawa-net-kivra-dev-agent
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

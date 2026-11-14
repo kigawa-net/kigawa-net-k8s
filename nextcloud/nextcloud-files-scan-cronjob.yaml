@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nextcloud-files-scan
+  namespace: kigawa-net-nextcloud
+spec:
+  # Re-enabled: the CephFS mount (cephfs-user-pv.yaml) is now scoped to rootPath:
+  # /user instead of the whole shared filesystem, so a scan of this one mount is
+  # bounded (~2.3k files, a few seconds once warm) instead of walking the entire
+  # cluster's cephfs. activeDeadlineSeconds below still guards against a hang.
+  suspend: false
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: nextcloud-files-scan-sa
+          restartPolicy: Never
+          automountServiceAccountToken: true
+          containers:
+            - name: files-scan
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+
+                  POD=$(kubectl get pod \
+                    -n kigawa-net-nextcloud \
+                    -l app.kubernetes.io/name=nextcloud,app.kubernetes.io/component=app \
+                    --field-selector=status.phase=Running \
+                    -o jsonpath='{.items[0].metadata.name}')
+
+                  if [ -z "$POD" ]; then
+                    echo "No running Nextcloud app pod found" >&2
+                    exit 1
+                  fi
+
+                  echo "Scanning filesystem via pod: $POD"
+                  kubectl exec -n kigawa-net-nextcloud "$POD" -- \
+                    php occ files:scan --path="9a95d5c1-5bd1-4fca-a4d8-d54e170bd9be/files/CephFS Root"
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65534
+                seccompProfile:
+                  type: RuntimeDefault

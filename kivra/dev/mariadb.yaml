@@ -1,0 +1,134 @@
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: kivra-db
+spec:
+  rootPasswordSecretKeyRef:
+    name: kivra-db
+    key: root-pass
+  image: mariadb:11
+  port: 3306
+  updateStrategy:
+    autoUpdateDataPlane: true
+  # rook-ceph-rbd の fsync が極端に遅い(4KB の同期書き込みが 1 回あたり約 2.4 秒。2026-10-13 に実測)ため、
+  # コミットごとの fsync をやめて 1 秒ごとにまとめる。dev の DB(再作成できるデータ)のみ。電源断で直近 1 秒を失いうる。
+  # 本番/永続性が必要な環境には使わない。Ceph が安定したら、この設定は外す。
+  myCnf: |
+    [mariadb]
+    innodb_flush_log_at_trx_commit=2
+    sync_binlog=0
+  startupProbe:
+    # rook-ceph-rbd が遅い/不安定(HEALTH_WARN、OSD の再起動多数)なため、初回の初期化(ibdata1 と redo log の作成、fsync)が
+    # 10 分を超えることがある。許容を超えると強制終了され、ibdata1 がゼロのまま壊れて CrashLoopBackOff になる。1 時間まで待つ。
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    failureThreshold: 360
+  storage:
+    size: 1Gi
+    storageClassName: rook-ceph-rbd
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      # 512Mi では、新しい PVC への初回の初期化が中断され、ibdata1 が壊れた状態で CrashLoopBackOff になった(OOM の可能性)。
+      memory: "1Gi"
+      cpu: "500m"
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: kivra
+spec:
+  mariaDbRef:
+    name: kivra-db
+  name: kivra
+  characterSet: utf8mb4
+  collate: utf8mb4_unicode_ci
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: kivra
+spec:
+  mariaDbRef:
+    name: kivra-db
+  passwordSecretKeyRef:
+    name: kivra-db
+    key: pass
+  maxUserConnections: 20
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: kivra
+spec:
+  mariaDbRef:
+    name: kivra-db
+  # アプリ用。DDL・DROP・GRANT は付けない(マイグレーションは kivra-migrator が行う)
+  privileges:
+    - "SELECT"
+    - "INSERT"
+    - "UPDATE"
+    - "DELETE"
+  database: kivra
+  table: "*"
+  username: kivra
+  grantOption: false
+---
+# Flyway の migration 専用(kivra.* のみ)。アプリ(kivra)とは別の資格情報
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: kivra-migrator
+spec:
+  mariaDbRef:
+    name: kivra-db
+  passwordSecretKeyRef:
+    name: kivra-db-migrator
+    key: pass
+  maxUserConnections: 5
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: kivra-migrator
+spec:
+  mariaDbRef:
+    name: kivra-db
+  privileges:
+    - "ALL PRIVILEGES"
+  database: kivra
+  table: "*"
+  username: kivra-migrator
+  grantOption: false
+---
+# バックアップ(mariadb-dump)とリストア試験の読み取り専用。書き込み・DDL は付けない
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: kivra-backup
+spec:
+  mariaDbRef:
+    name: kivra-db
+  passwordSecretKeyRef:
+    name: kivra-db-backup
+    key: pass
+  maxUserConnections: 2
+---
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: kivra-backup
+spec:
+  mariaDbRef:
+    name: kivra-db
+  privileges:
+    - "SELECT"
+    - "SHOW VIEW"
+    - "TRIGGER"
+    - "EVENT"
+  database: kivra
+  table: "*"
+  username: kivra-backup
+  grantOption: false

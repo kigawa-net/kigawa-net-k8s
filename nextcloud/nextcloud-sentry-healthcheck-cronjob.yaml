@@ -30,6 +30,12 @@ spec:
                     secretKeyRef:
                       name: nextcloud-sentry-sec
                       key: dsn
+                - name: DISCORD_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: nextcloud-discord-webhook
+                      key: url
+                      optional: true
               command:
                 - python
                 - -c
@@ -49,6 +55,7 @@ spec:
                   HEALTH_URL = os.environ["NEXTCLOUD_HEALTH_URL"]
                   TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT_SECONDS", "15"))
                   SENTRY_DSN = os.environ["SENTRY_DSN"]
+                  DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 
                   def utc_now():
@@ -175,6 +182,27 @@ spec:
                           return response.status
 
 
+                  def send_discord_alert(details):
+                      lines = [
+                          f"🔴 **Nextcloud health check failed** ({HEALTH_URL})",
+                          f"error: {details.get('error', 'unknown')}",
+                      ]
+                      checks = details.get("checks")
+                      if checks:
+                          failed = [name for name, ok_ in checks.items() if not ok_]
+                          if failed:
+                              lines.append(f"failed checks: {', '.join(failed)}")
+                      content = "\n".join(lines)[:1900]
+                      req = request.Request(
+                          DISCORD_WEBHOOK_URL,
+                          data=json.dumps({"content": content}).encode("utf-8"),
+                          headers={"Content-Type": "application/json"},
+                          method="POST",
+                      )
+                      with request.urlopen(req, timeout=TIMEOUT) as response:
+                          return response.status
+
+
                   ok, details = check_nextcloud()
                   if ok:
                       print(
@@ -188,6 +216,13 @@ spec:
                       details["sentry_status_code"] = sentry_status
                   except Exception as exc:
                       details["sentry_error"] = str(exc)
+
+                  if DISCORD_WEBHOOK_URL:
+                      try:
+                          discord_status = send_discord_alert(details)
+                          details["discord_status_code"] = discord_status
+                      except Exception as exc:
+                          details["discord_error"] = str(exc)
 
                   print(
                       "Nextcloud health check failed",

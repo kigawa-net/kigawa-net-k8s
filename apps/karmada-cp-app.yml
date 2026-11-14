@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: karmada-cp
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # Karmada Operator(apps/karmada-operator-app.yml)に、Karmada control plane の作成を宣言する CR。
+    # external etcd(apps/karmada-etcd-app.yml、VIP 10.0.0.243)に接続する。
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: karmada-cp
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: karmada-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Operator の CRD(karmadas.operator.karmada.io)が、初回の同期で、まだ無い場合に備える
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

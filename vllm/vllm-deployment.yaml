@@ -10,6 +10,8 @@ spec:
   selector:
     matchLabels:
       app: vllm
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -17,50 +19,87 @@ spec:
     spec:
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.7.2
-          command: ["/bin/sh", "-c"]
+          # vLLM から llama.cpp(CUDA)に載せ替えた。Deployment / Service / ラベルの名前は、
+          # LiteLLM・Ingress が参照しているため vllm のまま変えない
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b12199
           args:
-            - |
-              exec python -m vllm.entrypoints.openai.api_server \
-                --model Qwen/Qwen2.5-14B-Instruct-AWQ \
-                --served-model-name production-llm \
-                --tensor-parallel-size 3 \
-                --max-model-len 8192 \
-                --gpu-memory-utilization 0.9 \
-                --dtype auto \
-                --port 8000 \
-                --host 0.0.0.0
+            # Qwen3.6-35B-A3B(MoE、有効 3B)。UD-IQ4_NL_XL は 18.2GiB で、RTX 3060 x2(計 24GB)に載る。
+            # vLLM の 4bit 版は 22.7GiB 以上で載らない。初回はここからダウンロードして PVC にキャッシュする
+            - -hf
+            - unsloth/Qwen3.6-35B-A3B-GGUF:UD-IQ4_NL_XL
+            - --no-mmproj
+            # LiteLLM が参照するモデル名
+            - --alias
+            - production-llm
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            # 全層を GPU に載せ、2 枚へ層ごとに均等分割(2 枚目は PCIe x4 のため、層分割にする)
+            - -ngl
+            - "99"
+            - --split-mode
+            - layer
+            - --tensor-split
+            - "1,1"
+            - -fa
+            - "on"
+            # 192k トークンの KV を 3 スロットで共有(--kv-unified)。KV は 1 トークンあたり約 11KB(q8_0)。
+            # スロットは前回のプロンプトを保持するため、スロット数 x 1 件の最大長(OpenCode の上限 57,344)
+            # 以上のプールが要る。131072 x 4 スロットでは足りず、Context size has been exceeded になった
+            - -c
+            - "196608"
+            - -np
+            - "2"
+            - --kv-unified
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            - --jinja
+            # 思考は既定で無効(--chat-template-kwargs での指定は非推奨のため --reasoning を使う)
+            - --reasoning
+            - "off"
+            - --cache-reuse
+            - "256"
+            - --no-webui
+            - --metrics
           ports:
             - containerPort: 8000
               name: http
           env:
-            - name: VLLM_API_KEY
+            # API キーは vLLM と同じ Secret(LiteLLM が同じ値で呼ぶ)
+            - name: LLAMA_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: RAY_ADDRESS
-              value: "ray://vllm-cluster-head-svc:10001"
+            - name: LLAMA_CACHE
+              value: /root/.cache/huggingface/llama.cpp
           resources:
             requests:
+              nvidia.com/gpu: "2"
               cpu: "2"
-              memory: "8Gi"
+              memory: "6Gi"
+              ephemeral-storage: "1Gi"
             limits:
-              cpu: "4"
-              memory: "16Gi"
+              nvidia.com/gpu: "2"
+              cpu: "6"
+              memory: "18Gi"
+              ephemeral-storage: "10Gi"
           volumeMounts:
             - mountPath: /root/.cache/huggingface
               name: hf-cache
           startupProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
-            failureThreshold: 60
+            failureThreshold: 120
             periodSeconds: 30
             timeoutSeconds: 10
           livenessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
@@ -68,12 +107,25 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /v1/health
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+      runtimeClassName: nvidia
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["k8s-worker5"]
       volumes:
         - name: hf-cache
           persistentVolumeClaim:
