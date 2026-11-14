@@ -4,7 +4,7 @@ metadata:
   name: kigawa-net-el4s-5-main
   namespace: argocd
 spec:
-  project: kigawa-net
+  project: default
 
   source:
     repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
