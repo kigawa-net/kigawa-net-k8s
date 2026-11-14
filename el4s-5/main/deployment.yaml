@@ -20,7 +20,7 @@ spec:
       containers:
         - name: el4s-5
           image: harbor.kigawa.net/private/el4s-5-server:main-latest
-          imagePullPolicy: IfNotNotPresent
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               protocol: TCP
@@ -65,18 +65,3 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
       restartPolicy: Always
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: el4s-5
-  namespace: kigawa-net-el4s-5
-spec:
-  selector:
-    app: el4s-5
-  ports:
-    - port: 3000
-      targetPort: 3000
-      protocol: TCP
-      name: websocket
-  type: ClusterIP
