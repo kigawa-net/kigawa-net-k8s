@@ -43,7 +43,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kivra-agent-proxy
-          image: harbor.kigawa.net/library/kivra-agent-proxy:main-3af44e15d9151194e128822be5641b4afcff8204 # TODO: Harbor に push 済みのタグか確認して固定する
+          image: harbor.kigawa.net/library/kivra-agent-proxy:main-91b993e44b295e13812c5e2f3b84dcf3f2ed68d3 # TODO: Harbor に push 済みのタグか確認して固定する
           imagePullPolicy: IfNotPresent
           ports:
             - name: proxy
