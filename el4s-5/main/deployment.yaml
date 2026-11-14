@@ -28,7 +28,7 @@ spec:
             - name: PORT
               value: "3000"
             - name: MAX_PLAYERS
-              value: "5"
+              value: "60"
             - name: MIN_PLAYERS
               value: "1"
             - name: TOTAL_ROUNDS
