@@ -56,7 +56,22 @@ spec:
     # プロキシの Keycloak 取得専用(例外)。クラスタの CoreDNS の split-horizon で、user.kigawa.net が社内 ingress LB の 10.0.0.240 に解決されるため。
     # 上の rule の except(10.0.0.0/8)に当たるので、この 1 つの IP の 443 だけを別の rule で開ける。
     # プロキシ側は KIVRA_PROXY_KEYCLOAK_ALLOWED_IP で、Keycloak ホストがこの IP に解決された場合だけ通す。CONNECT には効かない(許可リストに user.kigawa.net は無い)。
-    # この rule を入れるのは、kivra の KIVRA_PROXY_KEYCLOAK_ALLOWED_IP 対応のイメージが出た後。
+    # 注意: 10.0.0.240 は LoadBalancer(system/inuyama-ingress、externalTrafficPolicy: Cluster)の IP。クラスタ内の Pod からの通信は kube-proxy が
+    # haproxy の Pod(172.16.x.x)の targetPort(https = 8443)へ DNAT してから NetworkPolicy が評価されるので、10.0.0.240/32:443 の rule だけでは通らない
+    # (2026-11-14 に実測。同じ Pod から 10.0.0.240:443 は timeout、policy の無い namespace からは 200)。
+    # そのため、宛先の haproxy の Pod を selector で指定して、DNAT 後の 8443 を開ける。
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: haproxy
+              app.kubernetes.io/name: kubernetes-ingress
+      ports:
+        - protocol: TCP
+          port: 8443
+    # LB の IP のままの経路(DNAT されない場合)の保険。
     - to:
         - ipBlock:
             cidr: 10.0.0.240/32
