@@ -49,7 +49,7 @@ spec:
               value: "kigawa-net-kivra-dev-agent"
             # Job の Pod のイメージ(許可は 1 件)。CI(cd.yml の build-agent)が push する kivra-agent-runtime。タグは agent と同じコミットに合わせる。
             - name: KIVRA_AGENT_K8S_IMAGE
-              value: "harbor.kigawa.net/library/kivra-agent-runtime:main-e03d28b4e023a30ed8b22cab1b51ef80f1b1724b"
+              value: "harbor.kigawa.net/library/kivra-agent-runtime:main-c5495bbcc4c254ce2de1c234d77aad70c27c093f"
             # Job の Pod の外向きの唯一の出口(egress プロキシ)。
             - name: KIVRA_AGENT_K8S_PROXY_URL
               value: "http://kivra-agent-proxy-svc.kigawa-net-kivra-dev-agent.svc:8080"
