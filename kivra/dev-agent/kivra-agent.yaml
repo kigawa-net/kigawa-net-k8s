@@ -32,6 +32,30 @@ spec:
         fsGroup: 10001 # Secret のファイル(0440)をグループで読む
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # agent は client secret のファイルが 0600(group・other に読めない)であることを要求する。Secret のボリュームは fsGroup のためグループ読み取りが
+        # 付く(0440)ので、emptyDir に 0600 のコピーを作ってから、本体へはそちらを渡す。
+        - name: copy-client-secret
+          image: curlimages/curl:8.10.1
+          command: ["sh", "-c", "cp /secret-src/client-secret /secret/client-secret && chmod 0600 /secret/client-secret"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: client-secret
+              mountPath: /secret-src
+              readOnly: true
+            - name: client-secret-rw
+              mountPath: /secret
       containers:
         - name: kivra-agent
           image: harbor.kigawa.net/library/kivra-agent:main-c5495bbcc4c254ce2de1c234d77aad70c27c093f
@@ -80,7 +104,7 @@ spec:
               cpu: "1"
               memory: 512Mi
           volumeMounts:
-            - name: client-secret
+            - name: client-secret-rw
               mountPath: /var/run/kivra-agent
               readOnly: true
             - name: work
@@ -92,6 +116,10 @@ spec:
           secret:
             secretName: kivra-agent-client
             defaultMode: 0440
+        - name: client-secret-rw
+          emptyDir:
+            medium: Memory # 秘密をディスクに書かない
+            sizeLimit: 1Mi
         - name: work
           emptyDir:
             sizeLimit: 1Gi
