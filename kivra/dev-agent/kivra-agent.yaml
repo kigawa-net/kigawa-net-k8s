@@ -1,7 +1,6 @@
 # kivra-agent 本体を in-cluster で動かす Deployment(Job を作る側)。ADR 0010 追補 7。
-# **replicas: 0 のまま入れる。KIVRA_AGENT_BACKEND は設定しない**(=docker)。k8s バックエンドは、コードがまだ設定エラーで拒否する。
-# 有効化(KIVRA_AGENT_BACKEND=k8s と K8s の設定の配線、replicas: 1)は、実クラスタでの検証の後の PR 5c で行う(docs/README.md)。
-# この Deployment が in-cluster で動けること(SA、RBAC、Job の namespace への経路)を先に用意するための枠。
+# k8s バックエンド(KIVRA_AGENT_BACKEND=k8s)で、claim した attempt を Run ごとの Job として実行する(PR 5c = kivra#539 で有効化できるようになった)。
+# 止めるとき(キルスイッチ): replicas を 0 に戻す。または /work/STOP を作る。kivra 側の KIVRA_AGENT_API_ENABLED を外してもよい。
 # 1 台だけ動かす(Recreate)。agent は二重起動を検出して終了コード 3 で終わる(restartPolicy は Always だが再起動ループになるので、RollingUpdate にしない)。
 apiVersion: apps/v1
 kind: Deployment
@@ -11,7 +10,7 @@ metadata:
   labels:
     app: kivra-agent
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -35,7 +34,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kivra-agent
-          image: harbor.kigawa.net/library/kivra-agent:main-e03d28b4e023a30ed8b22cab1b51ef80f1b1724b # TODO: Harbor に push 済みのタグか確認して固定する
+          image: harbor.kigawa.net/library/kivra-agent:main-e03d28b4e023a30ed8b22cab1b51ef80f1b1724b
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -43,13 +42,26 @@ spec:
             capabilities:
               drop: ["ALL"]
           env:
-            # KIVRA_AGENT_BACKEND は意図的に設定しない(既定の docker。k8s はコードが拒否する)。
+            - name: KIVRA_AGENT_BACKEND
+              value: "k8s"
+            # Job を作る namespace(PodSecurity restricted、default-deny + プロキシだけの egress。agent の RBAC はこの namespace の Role だけ)。
+            - name: KIVRA_AGENT_K8S_NAMESPACE
+              value: "kigawa-net-kivra-dev-agent"
+            # Job の Pod のイメージ(許可は 1 件)。CI(cd.yml の build-agent)が push する kivra-agent-runtime。タグは agent と同じコミットに合わせる。
+            - name: KIVRA_AGENT_K8S_IMAGE
+              value: "harbor.kigawa.net/library/kivra-agent-runtime:main-e03d28b4e023a30ed8b22cab1b51ef80f1b1724b"
+            # Job の Pod の外向きの唯一の出口(egress プロキシ)。
+            - name: KIVRA_AGENT_K8S_PROXY_URL
+              value: "http://kivra-agent-proxy-svc.kigawa-net-kivra-dev-agent.svc:8080"
+            # Pod が公開 GitHub から取得するリポジトリ(owner/repo)。
+            - name: KIVRA_AGENT_REPO
+              value: "kigawa-net/kivra"
             - name: KIVRA_AGENT_KIVRA_URL
               value: "https://kivra-dev.kigawa.net" # 公開の ingress 経由(/api/agent/ は kivra-agent-ingress)。kivra-netpol は本体の Pod への直接の経路を許さない
             - name: KIVRA_AGENT_TOKEN_URL
               value: "https://user.kigawa.net/realms/kigawa-net/protocol/openid-connect/token"
             - name: KIVRA_AGENT_CLIENT_ID
-              value: "" # TODO: 有効化の前に Keycloak の client ID を書く(空のままだと起動は設定エラーで拒否される)
+              value: "kivra-agent" # kivra 側の KIVRA_AGENT_AZP と同じ。ロール kivra-agent:agent。プロキシと同じ client(分けるかは ADR 追補 7 §6 の未決)
             - name: KIVRA_AGENT_CLIENT_SECRET_FILE
               value: "/var/run/kivra-agent/client-secret"
             - name: KIVRA_AGENT_WORK_DIR
@@ -57,7 +69,7 @@ spec:
             - name: KIVRA_AGENT_STOP_FILE
               value: "/work/STOP"
             - name: KIVRA_AGENT_EXECUTOR
-              value: "stub" # claim した attempt を NEEDS_HUMAN で返すだけ。real にするのは検証の後
+              value: "real"
             - name: JAVA_OPTS
               value: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:+UseContainerSupport"
           resources:
