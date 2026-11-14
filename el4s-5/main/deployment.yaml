@@ -45,7 +45,7 @@ spec:
               value: "0.2"
             # LLM 設定 (litellm 経由)
             - name: OPENAI_BASE_URL
-              value: "http://litellm-service.kigawa-net-llm-proxy.svc:4000"
+              value: "http://litellm-service.kigawa-net-llm-proxy.svc"
             - name: OPENAI_API_KEY
               value: "sk-el4s-Q3oyJakNztbfluQsXCLi6AjJp-cCQj55"
             - name: OPENAI_MODEL
