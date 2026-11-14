@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: el4s-5-main
+  namespace: argocd
+spec:
+  project: kigawa-net
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: el4s-5/main
+  destination:
+    namespace: kigawa-net-el4s-5
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
