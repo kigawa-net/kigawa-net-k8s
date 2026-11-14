@@ -13,6 +13,8 @@ data:
   KIVRA_PROXY_KEYCLOAK_TOKEN_URL: "https://user.kigawa.net/realms/kigawa-net/protocol/openid-connect/token"
   KIVRA_PROXY_KEYCLOAK_CLIENT_ID: "kivra-agent"
   KIVRA_PROXY_KEYCLOAK_CLIENT_SECRET_FILE: "/run/secrets/keycloak_client_secret"
+  # split-horizon DNS で user.kigawa.net が社内 LB(10.0.0.240)に解決されるための例外。WIF の Keycloak 取得だけに効く(CONNECT には効かない)。
+  KIVRA_PROXY_KEYCLOAK_ALLOWED_IP: "10.0.0.240"
   KIVRA_PROXY_ANTHROPIC_TOKEN_URL: "https://api.anthropic.com/v1/oauth/token"
   KIVRA_PROXY_WIF_FEDERATION_RULE_ID: "fdrl_01FacAS74rvTgALAAffyQDAT"
   KIVRA_PROXY_WIF_ORGANIZATION_ID: "e1c1d300-e0a4-440c-badb-98548fdf42dc"

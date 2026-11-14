@@ -53,3 +53,13 @@ spec:
       ports:
         - protocol: TCP
           port: 443
+    # プロキシの Keycloak 取得専用(例外)。クラスタの CoreDNS の split-horizon で、user.kigawa.net が社内 ingress LB の 10.0.0.240 に解決されるため。
+    # 上の rule の except(10.0.0.0/8)に当たるので、この 1 つの IP の 443 だけを別の rule で開ける。
+    # プロキシ側は KIVRA_PROXY_KEYCLOAK_ALLOWED_IP で、Keycloak ホストがこの IP に解決された場合だけ通す。CONNECT には効かない(許可リストに user.kigawa.net は無い)。
+    # この rule を入れるのは、kivra の KIVRA_PROXY_KEYCLOAK_ALLOWED_IP 対応のイメージが出た後。
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.240/32
+      ports:
+        - protocol: TCP
+          port: 443
