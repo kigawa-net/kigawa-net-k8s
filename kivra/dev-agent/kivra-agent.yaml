@@ -35,9 +35,11 @@ spec:
       initContainers:
         # agent は client secret のファイルが 0600(group・other に読めない)であることを要求する。Secret のボリュームは fsGroup のためグループ読み取りが
         # 付く(0440)ので、emptyDir に 0600 のコピーを作ってから、本体へはそちらを渡す。
+        # 同じ理由で、work root(agent は 0700・group と other のアクセス無しを要求する)も、emptyDir(2777、root 所有)の中の
+        # サブディレクトリ /work/agent を 0700 で作ってそれにする。
         - name: copy-client-secret
           image: curlimages/curl:8.10.1
-          command: ["sh", "-c", "cp /secret-src/client-secret /secret/client-secret && chmod 0600 /secret/client-secret"]
+          command: ["sh", "-c", "cp /secret-src/client-secret /secret/client-secret && chmod 0600 /secret/client-secret && mkdir -m 0700 /work/agent"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -56,6 +58,8 @@ spec:
               readOnly: true
             - name: client-secret-rw
               mountPath: /secret
+            - name: work
+              mountPath: /work
       containers:
         - name: kivra-agent
           image: harbor.kigawa.net/library/kivra-agent:main-c5495bbcc4c254ce2de1c234d77aad70c27c093f
@@ -89,7 +93,7 @@ spec:
             - name: KIVRA_AGENT_CLIENT_SECRET_FILE
               value: "/var/run/kivra-agent/client-secret"
             - name: KIVRA_AGENT_WORK_DIR
-              value: "/work"
+              value: "/work/agent" # initContainer が 0700 で作る(emptyDir の /work 自体は 2777)
             - name: KIVRA_AGENT_STOP_FILE
               value: "/work/STOP"
             - name: KIVRA_AGENT_EXECUTOR
