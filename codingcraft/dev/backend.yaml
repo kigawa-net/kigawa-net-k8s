@@ -39,9 +39,7 @@ spec:
             - name: WEBSOCKET_BACKEND_KEY
               value: "test"
           readinessProbe:
-            httpGet:
-              path: /
-              port: 8787
+            tcpSocket: 8787
             initialDelaySeconds: 5
             periodSeconds: 5
           volumeMounts:
