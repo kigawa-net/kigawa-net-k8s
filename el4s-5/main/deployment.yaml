@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: el4s-5
+  labels:
+    app: el4s-5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: el4s-5
+  template:
+    metadata:
+      name: el4s-5
+      labels:
+        app: el4s-5
+    spec:
+      imagePullSecrets:
+        - name: harbor-registry
+      containers:
+        - name: el4s-5
+          image: harbor.kigawa.net/private/el4s-5-server:main-latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3000"
+            - name: MAX_PLAYERS
+              value: "5"
+            - name: MIN_PLAYERS
+              value: "1"
+            - name: TOTAL_ROUNDS
+              value: "5"
+            - name: TIMER_SECONDS
+              value: "15"
+            - name: RESULT_SECONDS
+              value: "5"
+            - name: ROUND_WAIT_SECONDS
+              value: "5"
+            - name: GAME_END_SECONDS
+              value: "10"
+            - name: TRAP_RATIO
+              value: "0.2"
+          startupProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      restartPolicy: Always
