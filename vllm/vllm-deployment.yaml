@@ -30,9 +30,9 @@ spec:
             - --tensor-parallel-size
             - "2"
             - --max-model-len
-            - "32768"
+            - "50000"
             - --max-num-batched-tokens
-            - "32768"
+            - "50000"
             - --gpu-memory-utilization
             - "0.92"
             - --max-num-seqs
