@@ -1,6 +1,5 @@
 # egress プロキシ(agent-runtime/proxy)。k8s の Job の Pod の外向き通信の唯一の出口で、Anthropic への認証(WIF)も持つ。
-# **replicas: 0 のまま入れる**(ArgoCD が適用しても Pod は 1 つも起動しない)。有効化は docs/README.md の手順 5 で、
-# 実クラスタでの検証(手順 6)の前に replicas を 1 にする。
+# replicas は 1(README の手順 5。実クラスタでの検証(手順 6)の前に起動した)。
 # image のタグは、kivra の CD(.github/workflows/cd.yml の matrix `kivra-agent-proxy`)が push する `<ブランチ>-<sha>` / `pr-<N>-<sha>`。
 # 本体の kivra.yaml と違い、deploy-dev の自動更新の対象ではない(containers[0].image を yq で書き換えるのは kivra.yaml だけ)ので、手で固定する。
 # ノード: NetworkPolicy が効くのは canal-cni=enabled のノードの Pod だけ(prod の CNI の切替が途中。flannel の Pod と canal の Pod は
@@ -13,7 +12,7 @@ metadata:
   labels:
     app: kivra-agent-proxy
 spec:
-  replicas: 0 # 有効化するとき 1 にする。プロキシは状態を持たないが、WIF のトークンのキャッシュは Pod ごと(1 で足りる)
+  replicas: 1 # プロキシは状態を持たないが、WIF のトークンのキャッシュは Pod ごと(1 で足りる)
   selector:
     matchLabels:
       app: kivra-agent-proxy
@@ -43,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kivra-agent-proxy
-          image: harbor.kigawa.net/library/kivra-agent-proxy:main-9e86b6adf66b605855b822a7639b37f9042ef02c # TODO: Harbor に push 済みのタグか確認して固定する
+          image: harbor.kigawa.net/library/kivra-agent-proxy:main-9e86b6adf66b605855b822a7639b37f9042ef02c
           imagePullPolicy: IfNotPresent
           ports:
             - name: proxy
