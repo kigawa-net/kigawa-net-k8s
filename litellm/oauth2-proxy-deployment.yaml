@@ -10,6 +10,9 @@ spec:
       app: litellm-oauth2-proxy
   template:
     metadata:
+      annotations:
+        # ConfigMap(litellm-oauth2-proxy-config)を変えたとき、Pod を再起動させるために上げる
+        config-version: "2"
       labels:
         app: litellm-oauth2-proxy
     spec:

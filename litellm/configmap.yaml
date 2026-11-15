@@ -15,8 +15,8 @@ data:
           # 全要求を、そのまま llama.cpp に渡す。llama.cpp は、全スロット(-np)がふさがっていると、
           # 要求を、**到着順(FIFO)**に待たせて、1 つずつ処理する(手元の llama.cpp で、4 同時の要求が、
           # 到着順に完了することを確認済み)。実行中の数は、-np で決まるので、GPU・メモリへの負荷は、増えない。
-          # 待ちの上限は、request_timeout(600 秒)と、ingress の timeout-server(600 秒)、リレーと OpenCode の
-          # headerTimeout(600 秒)。それを超える待ちは、タイムアウトになる(クライアントが切れると、待ち行列からも外れる)
+          # 待ちの上限は、request_timeout(1800 秒)と、ingress の timeout-server(1800 秒)、リレーと OpenCode の
+          # headerTimeout(1800 秒)。それを超える待ちは、タイムアウトになる(クライアントが切れると、待ち行列からも外れる)
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
@@ -36,9 +36,9 @@ data:
 
     litellm_settings:
       drop_params: true
-      # 上流(llama.cpp)は、全スロットがふさがっていると要求を順番待ちにする。長い履歴の処理を含め、
-      # 300 秒では足りないことがあるため 600 秒にする
-      request_timeout: 600
+      # 上流(llama.cpp)は、全スロットがふさがっていると要求を順番待ちにする。遅い応答(思考ありの長い生成。1 件で平均約 2 分、最大約 6 分)の順番待ちが重なると、
+      # 600 秒では足りないため 1800 秒にする。待ちが長いときは、ingress・oauth2-proxy・リレー・OpenCode も、同じ値にすること
+      request_timeout: 1800
 
     router_settings:
       # 上流の Pod を入れ替えた直後は、旧 Pod への接続を保持していて、最初の 1〜2 リクエストが
