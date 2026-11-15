@@ -22,7 +22,7 @@ spec:
           image: vllm/vllm-openai:v0.33.0
           args:
             - --model
-            - TelperionAI/Qwen3.8-27B-INT4-AWQ-GPTQ
+            - Qwen/Qwen3-14B-AWQ
             - --host
             - 0.0.0.0
             - --port
@@ -30,7 +30,7 @@ spec:
             - --tensor-parallel-size
             - "2"
             - --max-model-len
-            - "16384"
+            - "32768"
             - --max-num-batched-tokens
             - "8192"
             - --gpu-memory-utilization
@@ -43,13 +43,10 @@ spec:
             - production-llm
             - --enable-auto-tool-choice
             - --tool-call-parser
-            - qwen3_coder
+            - hermes
             - --trust-remote-code
             - --enable-prefix-caching
             - --disable-custom-all-reduce
-            - --cpu-offload-gb
-            - "2"
-            - --enforce-eager
             - --reasoning-parser
             - qwen3
           ports:
@@ -82,7 +79,7 @@ spec:
             limits:
               nvidia.com/gpu: "2"
               cpu: "6"
-              memory: "24Gi"
+              memory: "20Gi"
               ephemeral-storage: "10Gi"
           startupProbe:
             httpGet:
@@ -115,7 +112,7 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 4Gi
+            sizeLimit: 8Gi
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
