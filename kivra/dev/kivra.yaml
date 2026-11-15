@@ -124,6 +124,10 @@ spec:
               value: "2026-11-12"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
+            # テナント全体の 1 日(JST 暦日)の上限。月次に加えて両方が効く(どちらかを超えたら予約を拒否)。必要な image: kivra#541 以降。
+            # 止める: この env を外して再デプロイする(日次の上限なし)。
+            - name: KIVRA_BUDGET_TENANT_DAILY_LIMIT_JPY
+              value: "2000"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
             # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
             - name: KIVRA_AGENT_API_ENABLED
@@ -246,7 +250,7 @@ spec:
             - name: KIVRA_SELFDEV_MEMORY_ENABLED
               value: "true"
             # order(継続開発の指示。ADR 0015 段階 1)。ルートの order 1 件と、停止の要求・承認だけ。
-            # 子の作成は不可(KIVRA_SELFDEV_ORDER_MAX_DEPTH 未設定 = 0)、自動停止(KIVRA_SELFDEV_ORDER_AUTO_STOP_ENABLED)と
+            # 子の作成は KIVRA_SELFDEV_ORDER_MAX_DEPTH(下)で有効化、自動停止(KIVRA_SELFDEV_ORDER_AUTO_STOP_ENABLED)と
             # 費用の集計(KIVRA_SELFDEV_ORDER_SPEND_ENABLED)は未設定 = 無効。起動時に ACTIVE の order があれば全て PAUSED(STARTUP_HOLD)にする。
             # 承認者の owner key は公開リポジトリに書かず、クラスタ内の Secret(kivra-order-approver)から読む。
             # AI の主体(KIVRA_SELFDEV_AI_PRINCIPAL)は未設定(別途 Keycloak ユーザーを用意してから足す)。
@@ -267,6 +271,14 @@ spec:
             # 変えても既存の order の max_cycles は変わらない(作成時に決まる)。戻すには外すか 1 にして再デプロイする。
             - name: KIVRA_SELFDEV_ORDER_MAX_CYCLES_CAP
               value: "10"
+            # 子 order の作成(チャットの order_create_child を含む。ADR 0023 追補 6)。深さ 1 = ルートの直下だけ。0 で子を作れない(ロールバック)。
+            # 注意: 子の周の order 単位の費用(spent_jpy)は集計されない(runbook §7.6.2c)。全体の費用は月次・日次の予算が制限する。
+            - name: KIVRA_SELFDEV_ORDER_MAX_DEPTH
+              value: "1"
+            # チャットが repo_tree / repo_read_file で読めるパス(カンマ区切り、`/` 終わりはディレクトリ)。必要な image: kivra#549 以降。古い image は
+            # この env を読まず、KIVRA_SELFDEV_CONTEXT_PREFIXES(既定 README.md,docs/)になる。止める: この env を外す。
+            - name: KIVRA_CHAT_REPO_PREFIXES
+              value: "README.md,docs/,build.gradle.kts,settings.gradle.kts,kivra-app/src/,kivra-core/src/,kivra-compose-ui/src/,kivra-model-gateway/src/,kivra-developer/src/,kivra-agent/src/,kivra-memory/src/,kivra-github/src/,kivra-policy/src/,kivra-scheduler/src/,kivra-exkes/src/,kivra-observability/src/,kivra-ui-api/src/,kivra-web/src/"
             - name: KIVRA_SELFDEV_ROOT_APPROVER
               valueFrom:
                 secretKeyRef:
