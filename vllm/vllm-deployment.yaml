@@ -30,7 +30,7 @@ spec:
             - --tensor-parallel-size
             - "2"
             - --max-model-len
-            - "60000"
+            - "32768"
             - --max-num-batched-tokens
             - "8192"
             - --gpu-memory-utilization
@@ -47,6 +47,9 @@ spec:
             - --trust-remote-code
             - --enable-prefix-caching
             - --disable-custom-all-reduce
+            - --cpu-offload-gb
+            - "4"
+            - --enforce-eager
             - --reasoning-parser
             - qwen3
           ports:
