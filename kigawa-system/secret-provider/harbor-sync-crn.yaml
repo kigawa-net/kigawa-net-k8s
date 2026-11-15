@@ -57,6 +57,7 @@ spec:
                     kigawa-net-kivra-dev-agent
                     mcp-discord
                     mcp-growi
+                    velink
                 - name: DYNAMIC_NAMESPACE_PATTERNS
                   value: |
                     ^platform-lipl-dev-pr-[0-9]+$
