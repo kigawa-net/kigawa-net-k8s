@@ -31,7 +31,15 @@ jobs:
       - name: ランナーの DNS を公開リゾルバにする
         # 2026-11-11 08:26Z 以降、ランナー既定の DNS(Azure 168.63.129.16)で azure.archive.ubuntu.com などの Ubuntu のミラーが
         # 名前解決できず、apt が失敗した(github.com は引けた)。apt の前に公開リゾルバへ切り替える。
-        run: sudo resolvectl dns eth0 1.1.1.1 8.8.8.8
+        run: |
+          # GitHub-hosted runner の NIC 名は eth0 固定ではない。
+          default_iface=$(ip -o -4 route show default | awk '{for (i=1; i<=NF; i++) if ($i=="dev") {print $(i+1); exit}}')
+          if [ -z "$default_iface" ]; then
+            echo "::error::デフォルト IPv4 NIC を検出できませんでした"
+            exit 1
+          fi
+          sudo resolvectl dns "$default_iface" 1.1.1.1 8.8.8.8
+          sudo resolvectl flush-caches
 
       - name: Install bws CLI
         env:
