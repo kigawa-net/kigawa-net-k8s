@@ -10,10 +10,13 @@ data:
         litellm_params:
           model: openai/production-llm
           api_base: http://vllm-openai-service.kigawa-net-llm.svc.cluster.local/v1
-          # llama.cpp のスロット数(-np 1)に合わせる。超過分は LiteLLM 側で順番待ちにして、
-          # モデルサーバーの過負荷(メモリ逼迫・OOMKilled)を避ける。
-          # ワーカープロセスごとに数えるため、Deployment は --num_workers 1 にしてある
-          max_parallel_requests: 1
+          # 並列数の制限(max_parallel_requests)は、つけない。つけると、超えた要求は 429 で拒否され、
+          # 再試行(約 7.5 秒間隔)で待つことになり、到着順にならない(順番が入れ替わり、待ちが長くなる人が出る)。
+          # 全要求を、そのまま llama.cpp に渡す。llama.cpp は、全スロット(-np)がふさがっていると、
+          # 要求を、**到着順(FIFO)**に待たせて、1 つずつ処理する(手元の llama.cpp で、4 同時の要求が、
+          # 到着順に完了することを確認済み)。実行中の数は、-np で決まるので、GPU・メモリへの負荷は、増えない。
+          # 待ちの上限は、request_timeout(600 秒)と、ingress の timeout-server(600 秒)、リレーと OpenCode の
+          # headerTimeout(600 秒)。それを超える待ちは、タイムアウトになる(クライアントが切れると、待ち行列からも外れる)
           api_key: os.environ/VLLM_API_KEY
       - model_name: gpt-4o
         litellm_params:
@@ -46,10 +49,9 @@ data:
       retry_policy:
         TimeoutErrorRetries: 0
         InternalServerErrorRetries: 2
-        # max_parallel_requests(production-llm は 1)を超えた要求は 429 で拒否されるため、
-        # 再試行して順番待ちにする(約 7.5 秒間隔で、最大 70 回 = 約 9 分)。
-        # 待ち時間は ingress(litellm-api-ingress)の timeout-server 600s と、
-        # OpenCode の headerTimeout 600 秒を超えないようにしてある
+        # production-llm の順番待ちは、llama.cpp のキューが担う(上の model_list の説明)ので、ここでの再試行は不要。
+        # ただし、仮想キー単位の制限(max_parallel_requests、rpm_limit)に当たった 429 のために、再試行を残す
+        # (約 7.5 秒間隔で、最大 70 回 = 約 9 分)。キーの制限は、セッション数より十分大きくしておくこと
         RateLimitErrorRetries: 70
         BadRequestErrorRetries: 0
         AuthenticationErrorRetries: 0
