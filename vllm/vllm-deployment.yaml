@@ -30,7 +30,7 @@ spec:
             - --tensor-parallel-size
             - "2"
             - --max-model-len
-            - "32768"
+            - "16384"
             - --max-num-batched-tokens
             - "8192"
             - --gpu-memory-utilization
@@ -48,7 +48,7 @@ spec:
             - --enable-prefix-caching
             - --disable-custom-all-reduce
             - --cpu-offload-gb
-            - "4"
+            - "2"
             - --enforce-eager
             - --reasoning-parser
             - qwen3
@@ -82,7 +82,7 @@ spec:
             limits:
               nvidia.com/gpu: "2"
               cpu: "6"
-              memory: "20Gi"
+              memory: "24Gi"
               ephemeral-storage: "10Gi"
           startupProbe:
             httpGet:
@@ -115,7 +115,7 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 16Gi
+            sizeLimit: 4Gi
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
