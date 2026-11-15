@@ -62,6 +62,18 @@ spec:
             - "off"
             - --cache-reuse
             - "256"
+            # プロンプト処理(prefill)の物理バッチを 512(既定)から 1024 に。プロンプトの中央値が約 2.7 万トークンで、
+            # prefill が 1 件の約半分を占める(約 870 tok/s)。VRAM の空きは合計約 5.8GB(GPU0 3.4GB、GPU1 2.4GB)
+            - -ub
+            - "1024"
+            # MTP(Multi-Token Prediction)による投機的デコード。モデルの GGUF に MTP の層(blk.64.nextn.*)が入っているが、
+            # これまでは使われていなかった(起動ログ: "model has unused tensor blk.64.nextn.eh_proj.weight -- ignoring")。
+            # 別の draft モデルは不要。確認(検証)を通ったトークンだけを採用するので、出力の品質は変わらない。
+            # 受け入れ率が低いと、利益が小さくなるだけ。品質への影響を疑うときは、この 2 行を外す
+            - --spec-type
+            - draft-mtp
+            - --spec-draft-n-max
+            - "2"
             - --no-webui
             - --metrics
           ports:
