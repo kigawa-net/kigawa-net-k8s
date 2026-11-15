@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kigawa-net-velink-app
+  namespace: argocd
+spec:
+  project: kigawa-net
+  source:
+    repoURL: https://github.com/kigawa-net/kigawa-net-k8s.git
+    targetRevision: HEAD
+    path: velink
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kigawa-net-velink
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

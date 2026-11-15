@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: velink
+  name: kigawa-net-velink
   labels:
     app.kubernetes.io/name: velink
     app.kubernetes.io/part-of: velink
