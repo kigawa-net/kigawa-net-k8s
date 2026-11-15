@@ -128,6 +128,10 @@ spec:
             # 止める: この env を外して再デプロイする(日次の上限なし)。
             - name: KIVRA_BUDGET_TENANT_DAILY_LIMIT_JPY
               value: "2000"
+            # 費用不明(UNPRICED)の予約を、猶予後に予約額(上限額)で自動確定して解放する(ADR 0003 追補)。必要な image: kivra#551 以降。
+            # 止める: この env を外して再デプロイする(手動解放に戻る)。
+            - name: KIVRA_BUDGET_UNPRICED_AUTO_RELEASE_ENABLED
+              value: "true"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
             # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
             - name: KIVRA_AGENT_API_ENABLED
