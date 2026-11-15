@@ -15,7 +15,7 @@ spec:
       labels:
         app: litellm
       annotations:
-        config-version: "8"
+        config-version: "10"
     spec:
       containers:
         - name: litellm

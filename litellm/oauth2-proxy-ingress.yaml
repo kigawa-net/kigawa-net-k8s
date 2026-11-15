@@ -5,8 +5,8 @@ metadata:
   namespace: kigawa-net-llm-proxy
   annotations:
     haproxy.org/timeout-connect: "10s"
-    haproxy.org/timeout-server: "600s"
-    haproxy.org/timeout-tunnel: "600s"
+    haproxy.org/timeout-server: "1800s"
+    haproxy.org/timeout-tunnel: "1800s"
 spec:
   ingressClassName: haproxy
   rules:
