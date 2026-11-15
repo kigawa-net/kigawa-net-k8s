@@ -19,68 +19,75 @@ spec:
     spec:
       containers:
         - name: vllm
-          image: vllm/vllm-openai:v0.33.0
+          # vLLM から llama.cpp(CUDA)に載せ替えた。Deployment / Service / ラベルの名前は、
+          # LiteLLM・Ingress が参照しているため vllm のまま変えない
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b12199
           args:
-            - --model
-            - Qwen/Qwen3-14B-AWQ
+            # Qwen3.8-27B(dense)。UD-Q4_K_M で RTX 3060 x2(計 24GB)に載せる。
+            # 初回はここからダウンロードして PVC にキャッシュする
+            - -hf
+            - unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_M
+            - --no-mmproj
+            # LiteLLM が参照するモデル名
+            - --alias
+            - production-llm
             - --host
             - 0.0.0.0
             - --port
             - "8000"
-            - --tensor-parallel-size
-            - "2"
-            - --max-model-len
-            - "32768"
-            - --max-num-batched-tokens
-            - "8192"
-            - --gpu-memory-utilization
-            - "0.92"
-            - --max-num-seqs
+            # 全層を GPU に載せ、2 枚へ層ごとに均等分割(2 枚目は PCIe x4 のため、層分割にする)
+            - -ngl
+            - "99"
+            - --split-mode
+            - layer
+            - --tensor-split
+            - "1,1"
+            - -fa
+            - "on"
+            # 64k トークンの KV を 1 スロットで使う(KV は q8_0 で量子化)
+            - -c
+            - "65536"
+            - -np
             - "1"
-            - --kv-cache-dtype
-            - fp8
-            - --served-model-name
-            - production-llm
-            - --enable-auto-tool-choice
-            - --tool-call-parser
-            - hermes
-            - --trust-remote-code
-            - --enable-prefix-caching
-            - --disable-custom-all-reduce
-            - --reasoning-parser
-            - qwen3
+            - --kv-unified
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            - --jinja
+            # 思考出力を有効にする
+            - --reasoning
+            - "on"
+            - --cache-reuse
+            - "256"
+            - --no-webui
+            - --metrics
           ports:
             - containerPort: 8000
               name: http
           env:
-            # API キーは LiteLLM と共有する Secret から取得する
-            - name: VLLM_API_KEY
+            # API キーは vLLM と同じ Secret(LiteLLM が同じ値で呼ぶ)
+            - name: LLAMA_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: vllm
                   key: api-key
-            - name: NCCL_P2P_DISABLE
-              value: "1"
-            - name: NCCL_IB_DISABLE
-              value: "1"
-            - name: HF_HOME
-              value: /root/.cache/huggingface
-          volumeMounts:
-            - name: hf-cache
-              mountPath: /root/.cache/huggingface
-            - name: dshm
-              mountPath: /dev/shm
+            - name: LLAMA_CACHE
+              value: /root/.cache/huggingface/llama.cpp
           resources:
             requests:
               nvidia.com/gpu: "2"
               cpu: "2"
-              memory: "8Gi"
+              memory: "6Gi"
               ephemeral-storage: "1Gi"
             limits:
               nvidia.com/gpu: "2"
               cpu: "6"
-              memory: "20Gi"
+              memory: "18Gi"
               ephemeral-storage: "10Gi"
+          volumeMounts:
+            - mountPath: /root/.cache/huggingface
+              name: hf-cache
           startupProbe:
             httpGet:
               path: /health
@@ -105,14 +112,6 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
       runtimeClassName: nvidia
-      volumes:
-        - name: hf-cache
-          persistentVolumeClaim:
-            claimName: hf-cache-pvc
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: 8Gi
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
@@ -125,3 +124,7 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values: ["k8s-worker5"]
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache-pvc
