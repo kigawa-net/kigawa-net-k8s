@@ -121,7 +121,7 @@ spec:
             - name: KIVRA_FX_USD_JPY
               value: "164"
             - name: KIVRA_FX_AS_OF
-              value: "2026-11-12"
+              value: "2026-11-16"
             - name: KIVRA_BUDGET_MONTHLY_LIMIT_JPY
               value: "10000"
             # テナント全体の 1 日(JST 暦日)の上限。月次に加えて両方が効く(どちらかを超えたら予約を拒否)。必要な image: kivra#541 以降。
