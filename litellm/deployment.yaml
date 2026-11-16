@@ -17,10 +17,10 @@ spec:
       annotations:
         config-version: "10"
     spec:
-      # 順番待ちを含む長い要求(最大 30 分。request_timeout 1800 秒)が、再起動の間も、終わるまで待たれるようにする。
+      # 順番待ちを含む長い要求(最大 6 時間。request_timeout 21600 秒)が、再起動の間も、終わるまで待たれるようにする。
       # 既定の 30 秒だと、再起動のたびに、処理中の要求が切られ、クライアントに 502 が返る(2026-11-15 に発生)。
       # uvicorn は、終了の合図(SIGTERM)のあと、新しい接続を受けず、処理中の要求が終わるまで待つ
-      terminationGracePeriodSeconds: 1800
+      terminationGracePeriodSeconds: 21600
       containers:
         - name: litellm
           image: ghcr.io/berriai/litellm:main-stable

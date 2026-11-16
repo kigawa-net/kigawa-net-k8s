@@ -12,13 +12,13 @@ spec:
     metadata:
       annotations:
         # ConfigMap(litellm-oauth2-proxy-config)を変えたとき、Pod を再起動させるために上げる
-        config-version: "2"
+        config-version: "3"
       labels:
         app: litellm-oauth2-proxy
     spec:
-      # 長い要求(最大 30 分)が、再起動の間も、終わるまで待たれるようにする(既定の 30 秒だと、処理中の要求が切られ、502 になる)。
+      # 長い要求(最大 6 時間)が、再起動の間も、終わるまで待たれるようにする(既定の 30 秒だと、処理中の要求が切られ、502 になる)。
       # oauth2-proxy は、終了の合図のあと、処理中の要求を、時間制限なしで待つ(srv.Shutdown)
-      terminationGracePeriodSeconds: 1800
+      terminationGracePeriodSeconds: 21600
       containers:
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
