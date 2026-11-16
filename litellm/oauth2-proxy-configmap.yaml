@@ -14,8 +14,8 @@ data:
         - id: litellm
           path: /
           uri: http://litellm-service.kigawa-net-llm-proxy.svc.cluster.local:80
-          # 順番待ち + 生成が長いため、上流(LiteLLM)の応答を、最大 30 分まで待つ(既定は短い)
-          timeout: 1800s
+          # 順番待ち + 生成が長いため、上流(LiteLLM)の応答を、最大 6 時間まで待つ(既定は短い)
+          timeout: 21600s
     providers:
       - id: keycloak-develop
         provider: oidc
