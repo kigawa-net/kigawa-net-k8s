@@ -29,6 +29,9 @@ rules:
     resources: [leases]
     resourceNames: [velink-remote-leader]
     verbs: [get, update]
+  - apiGroups: [coordination.k8s.io]
+    resources: [leases]
+    verbs: [create]
 ---
 # RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -61,6 +64,7 @@ data:
     import threading
     import time
     import urllib.request
+    from urllib.error import HTTPError
     import uuid
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from pathlib import Path
@@ -70,8 +74,9 @@ data:
     if ':' in host:
         host = '[' + host + ']'
     base = 'https://' + host + ':' + os.environ['KUBERNETES_SERVICE_PORT_HTTPS']
-    url = (base + '/apis/coordination.k8s.io/v1/namespaces/'
-           + os.environ['POD_NAMESPACE'] + '/leases/velink-remote-leader')
+    collection_url = (base + '/apis/coordination.k8s.io/v1/namespaces/'
+                      + os.environ['POD_NAMESPACE'] + '/leases')
+    url = collection_url + '/velink-remote-leader'
     context = ssl.create_default_context(cafile=str(token_dir / 'ca.crt'))
     identity = os.environ['POD_UID'] + '/' + str(uuid.uuid4())
     lease_seconds, renew_deadline, retry_seconds = 15, 10, 2
@@ -88,11 +93,12 @@ data:
         def log_message(self, *args):
             pass
 
-    def request(method, body=None):
+    def request(method, body=None, request_url=url):
+        # Read the projected token for each request to support token rotation.
         headers = {'Authorization': 'Bearer ' + (token_dir / 'token').read_text().strip(),
                    'Content-Type': 'application/json'}
         data = None if body is None else json.dumps(body).encode()
-        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        req = urllib.request.Request(request_url, data=data, headers=headers, method=method)
         with urllib.request.urlopen(req, context=context, timeout=2) as response:
             return json.load(response)
 
@@ -101,13 +107,26 @@ data:
     observed, observed_since = None, time.monotonic()
     while True:
         try:
-            lease = request('GET')
+            try:
+                lease = request('GET')
+            except HTTPError as error:
+                if error.code != 404:
+                    raise
+                stamp = datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
+                lease = request('POST', {
+                    'apiVersion': 'coordination.k8s.io/v1',
+                    'kind': 'Lease',
+                    'metadata': {'name': 'velink-remote-leader', 'namespace': os.environ['POD_NAMESPACE']},
+                    'spec': {'holderIdentity': identity, 'leaseDurationSeconds': 15,
+                             'renewTime': stamp, 'acquireTime': stamp, 'leaseTransitions': 1},
+                }, collection_url)
             spec = lease.get('spec', {})
             record = json.dumps(spec, sort_keys=True)
             now = time.monotonic()
             if record != observed:
                 observed, observed_since = record, now
             holder = spec.get('holderIdentity')
+            # Observe an unchanged lease for its full duration; no shared clock required.
             expired = now - observed_since >= spec.get('leaseDurationSeconds', lease_seconds)
             if not holder or holder == identity or expired:
                 stamp = datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00', 'Z')
@@ -118,6 +137,7 @@ data:
                             renewTime=stamp)
                 lease['spec'] = spec
                 started = time.monotonic()
+                # Preserve resourceVersion: competing updates fail with HTTP 409.
                 updated = request('PUT', lease)
                 observed = json.dumps(updated['spec'], sort_keys=True)
                 observed_since = time.monotonic()
@@ -125,6 +145,7 @@ data:
             else:
                 ready_until = 0.0
         except Exception as error:
+            # Fail closed on API errors, conflict, deletion or loss of permissions.
             ready_until = 0.0
             print('leader election:', error, flush=True)
         last_loop = time.monotonic()
