@@ -177,7 +177,7 @@ spec:
   containers:
     - name: desktop
       image: harbor.kigawa.net/private/velink:main-b43474e
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       ports:
         - name: websocket
           containerPort: 8080
