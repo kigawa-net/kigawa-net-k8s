@@ -132,6 +132,10 @@ spec:
             # 止める: この env を外して再デプロイする(手動解放に戻る)。
             - name: KIVRA_BUDGET_UNPRICED_AUTO_RELEASE_ENABLED
               value: "true"
+            # 実行の lease 切れ(CODING_ORPHANED)で UNKNOWN の自己開発 Run を、猶予後に自動で CANCELLED にする(ADR 0009 追補)。必要な image: kivra#559 以降。
+            # PR の束縛・PATCH_READY 以降の経過・動いている attempt/lease があるものは対象外。止める: この env を外して再デプロイする(手動解放に戻る)。
+            - name: KIVRA_SELFDEV_ORPHAN_AUTO_RELEASE_ENABLED
+              value: "true"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
             # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
             - name: KIVRA_AGENT_API_ENABLED
