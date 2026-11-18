@@ -29,25 +29,13 @@ spec:
       containers:
         - name: vllm
           image: harbor.kigawa.net/library/vllm-ray:v0.23.0-ray2.37.0
-          command:
-            - vllm
-            - serve
-            - Qwen/Qwen3.8-27B-FP8
-            - --served-model-name
-            - production-llm
-            - --tensor-parallel-size
-            - "3"
-            - --distributed-executor-backend
-            - ray
-            - --max-model-len
-            - "16384"
-            - --enforce-eager
-            - --trust-remote-code
-            - --port
-            - "8000"
+          command: ["sh", "-c"]
+          args:
+            - |
+              ray start --address=vllm-cluster-head-svc.kigawa-net-llm.svc.cluster.local:6379 --num-cpus=1 --num-gpus=0 --disable-usage-stats && exec vllm serve Qwen/Qwen3.8-27B-FP8 --served-model-name production-llm --tensor-parallel-size 3 --distributed-executor-backend ray --max-model-len 16384 --enforce-eager --trust-remote-code --port 8000
           env:
             - name: RAY_ADDRESS
-              value: ray://vllm-cluster-head-svc.kigawa-net-llm.svc.cluster.local:10001
+              value: "auto"
             - name: NCCL_IB_DISABLE
               value: "1"
             - name: NCCL_SOCKET_IFNAME
