@@ -1,0 +1,50 @@
+name: llama-cpp-rpc-build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'llama-cpp-rpc/image/**'
+      - '.github/workflows/llama-cpp-rpc-build.yml'
+  workflow_dispatch:
+
+env:
+  IMAGE: harbor.kigawa.net/library/llama-cpp-rpc:b12199-cuda12.4
+
+jobs:
+  build-llama-cpp-rpc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Harbor
+        uses: docker/login-action@v4
+        with:
+          registry: harbor.kigawa.net
+          username: robot$kigawa-net
+          password: ${{ secrets.HARBOR_PASS }}
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: llama-cpp-rpc/image
+          file: llama-cpp-rpc/image/Dockerfile
+          load: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image
+        run: |
+          docker run --rm -e LD_LIBRARY_PATH=/opt/cuda-stubs --entrypoint bash "$IMAGE" -lc '
+            set -e
+            rpc-server --help
+            llama-server --help
+          '
+
+      - name: Push image to Harbor
+        run: docker push "$IMAGE"
