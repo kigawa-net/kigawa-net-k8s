@@ -10,15 +10,10 @@ spec:
     serviceType: ClusterIP
     rayStartParams:
       num-cpus: "2"
-      num-gpus: "2"
+      num-gpus: "0"
       dashboard-host: "0.0.0.0"
     template:
       spec:
-        runtimeClassName: nvidia
-        tolerations:
-          - key: nvidia.com/gpu
-            operator: Exists
-            effect: NoSchedule
         affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -26,7 +21,7 @@ spec:
                 - matchExpressions:
                     - key: kubernetes.io/hostname
                       operator: In
-                      values: ["k8s-worker5"]
+                      values: ["k8s-worker3"]
         containers:
           - name: ray-head
             image: vllm/vllm-openai:v0.23.0
@@ -35,8 +30,8 @@ spec:
                 cpu: "2"
                 memory: 8Gi
               limits:
-                cpu: "8"
-                memory: 32Gi
+                cpu: "4"
+                memory: 16Gi
             env:
               - name: NCCL_IB_DISABLE
                 value: "1"
@@ -57,7 +52,50 @@ spec:
             persistentVolumeClaim:
               claimName: hf-cache-pvc
   workerGroupSpecs:
-    - groupName: gpu-worker
+    - groupName: gpu-worker5
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 1
+      rayStartParams:
+        num-gpus: "2"
+      template:
+        spec:
+          runtimeClassName: nvidia
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["k8s-worker5"]
+          containers:
+            - name: ray-worker
+              image: vllm/vllm-openai:v0.23.0
+              resources:
+                requests:
+                  cpu: "2"
+                  memory: 4Gi
+                limits:
+                  cpu: "4"
+                  memory: 8Gi
+              env:
+                - name: NCCL_IB_DISABLE
+                  value: "1"
+                - name: NCCL_SOCKET_IFNAME
+                  value: eth0
+              volumeMounts:
+                - mountPath: /root/.cache/huggingface
+                  name: hf-cache
+          volumes:
+            - name: hf-cache
+              persistentVolumeClaim:
+                claimName: hf-cache-pvc
+    - groupName: gpu-worker3
       replicas: 1
       minReplicas: 1
       maxReplicas: 1
@@ -84,10 +122,10 @@ spec:
               resources:
                 requests:
                   cpu: "2"
-                  memory: 8Gi
+                  memory: 4Gi
                 limits:
-                  cpu: "8"
-                  memory: 32Gi
+                  cpu: "4"
+                  memory: 8Gi
               env:
                 - name: NCCL_IB_DISABLE
                   value: "1"
