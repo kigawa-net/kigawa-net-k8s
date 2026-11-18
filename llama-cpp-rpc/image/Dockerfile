@@ -16,19 +16,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /src
 RUN git clone --depth 1 --branch ${LLAMA_CPP_REF} https://github.com/ggml-org/llama.cpp.git .
 
+# Skip the prebuilt web UI download for this RPC image.
 # libcuda.so is only needed at link time; use the toolkit stub (real one comes from the host driver).
 RUN cmake -B build \
       -DGGML_CUDA=ON \
       -DGGML_RPC=ON \
       -DGGML_NATIVE=OFF \
       -DBUILD_SHARED_LIBS=OFF \
-      -DLLAMA_CURL=OFF \
+      -DLLAMA_USE_PREBUILT_UI=OFF \
       -DLLAMA_BUILD_TESTS=OFF \
       -DLLAMA_BUILD_EXAMPLES=OFF \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCHS}" \
       -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath-link,/usr/local/cuda/lib64/stubs -L/usr/local/cuda/lib64/stubs" \
-    && cmake --build build --config Release -j"$(nproc)" --target llama-server rpc-server
+    && cmake --build build --config Release -j"$(nproc)" --target llama-server ggml-rpc-server
 
 FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBUNTU_VERSION}
 
@@ -36,7 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /src/build/bin/llama-server /usr/local/bin/llama-server
-COPY --from=build /src/build/bin/rpc-server /usr/local/bin/rpc-server
+# Keep the rpc-server command name used by the smoke test and deployment.
+COPY --from=build /src/build/bin/ggml-rpc-server /usr/local/bin/rpc-server
 # Stub libcuda, used only for GPU-less smoke tests (--help) via LD_LIBRARY_PATH.
 # Not on the default library path, so the host driver's libcuda is used at runtime.
 COPY --from=build /usr/local/cuda/lib64/stubs/libcuda.so /opt/cuda-stubs/libcuda.so.1
