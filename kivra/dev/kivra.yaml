@@ -136,6 +136,10 @@ spec:
             # PR の束縛・PATCH_READY 以降の経過・動いている attempt/lease があるものは対象外。止める: この env を外して再デプロイする(手動解放に戻る)。
             - name: KIVRA_SELFDEV_ORPHAN_AUTO_RELEASE_ENABLED
               value: "true"
+            # レビュー待ちの期限(KIVRA_SELFDEV_PR_REVIEW_TIMEOUT_DAYS、既定 7 日)を過ぎた、bot が作って束縛された PR を、固定のコメントを付けて閉じてから Run を取り消す(ADR 0008 追補)。必要な image: kivra#565 以降。
+            # 人が作った PR・merge 済み・束縛なしは閉じない。ブランチは消さない。止める: この env を外して再デプロイする(PR は開いたまま取り消す従来の動き)。
+            - name: KIVRA_SELFDEV_PR_ABANDON_CLOSE_ENABLED
+              value: "true"
             # ローカルエージェント用 API(/api/agent/v1/*)の認可の設定。
             # KIVRA_AGENT_API_ENABLED: 有効化した(エージェント本体 PR 5〜10 が完了し、live-smoke が通った 2026-10-17)。止めるときはこの変数を外して再デプロイする(キルスイッチ)。有効でも KIVRA_SELFDEV_RUNTIME が api の間は attempt が作られないので、エージェントは何も claim しない。
             - name: KIVRA_AGENT_API_ENABLED
