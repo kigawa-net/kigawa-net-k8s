@@ -44,11 +44,11 @@ data:
       # 上流の Pod を入れ替えた直後は、旧 Pod への接続を保持していて、最初の 1〜2 リクエストが
       # Connection error(InternalServerError)で失敗する。接続エラーだけを再試行する。
       # タイムアウトを再試行すると、順番待ちの負荷が倍になるため 0 にする
-      num_retries: 2
-      retry_after: 3
+      num_retries: 30
+      retry_after: 10
       retry_policy:
         TimeoutErrorRetries: 0
-        InternalServerErrorRetries: 2
+        InternalServerErrorRetries: 30
         # production-llm の順番待ちは、llama.cpp のキューが担う(上の model_list の説明)ので、ここでの再試行は不要。
         # ただし、仮想キー単位の制限(max_parallel_requests、rpm_limit)に当たった 429 のために、再試行を残す
         # (約 7.5 秒間隔で、最大 70 回 = 約 9 分)。キーの制限は、セッション数より十分大きくしておくこと
