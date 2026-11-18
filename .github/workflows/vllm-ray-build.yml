@@ -40,7 +40,7 @@ jobs:
           docker run --rm --entrypoint bash harbor.kigawa.net/library/vllm-ray:v0.23.0-ray2.37.0 -lc '
             set -e
             ray --version
-            python -c "import ray; print(ray.__version__)"
+            python3 -c "import ray; print(ray.__version__)"
             vllm --version
           '
 
