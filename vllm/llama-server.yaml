@@ -34,6 +34,19 @@ spec:
                     operator: In
                     values: ["k8s-worker5"]
       initContainers:
+        # rpc-server(worker3)が未起動/再作成中の間は llama-server を起動させない。
+        # 起動時に RPC へ繋げないとモデルロードが失敗して再起動ループになり、
+        # 復旧が長引くため。Pod 作成時(rollout/ノード再起動等)のみ有効で、
+        # 稼働中の RPC 切断(llama-server が abort して再起動する挙動)は防げない。
+        - name: wait-rpc-server
+          image: busybox:1.36
+          command: ["sh", "-c"]
+          args:
+            - |
+              until nc -z -w 3 llama-rpc-server.kigawa-net-llm.svc.cluster.local 50052; do
+                echo "waiting for llama-rpc-server:50052"; sleep 5
+              done
+              echo "rpc-server reachable"
         # イメージの llama-server は HTTPS 非対応(-hf 不可、検証済み)なので、GGUF は
         # HF から curl で PVC へ取得する。既に取得済みなら何もしない(再開可 -C -)。
         - name: fetch-model
