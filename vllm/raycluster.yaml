@@ -12,6 +12,7 @@ spec:
       num-cpus: "2"
       num-gpus: "0"
       dashboard-host: "0.0.0.0"
+      ray-client-server-port: "10001"
     template:
       spec:
         affinity:
@@ -44,6 +45,18 @@ spec:
                 name: dashboard
               - containerPort: 10001
                 name: client
+            readinessProbe:
+              exec:
+                command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close();s=socket.create_connection(('127.0.0.1',8265),2);s.close()"]
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              failureThreshold: 12
+            livenessProbe:
+              exec:
+                command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close();s=socket.create_connection(('127.0.0.1',8265),2);s.close()"]
+              initialDelaySeconds: 60
+              periodSeconds: 10
+              failureThreshold: 30
             volumeMounts:
               - mountPath: /root/.cache/huggingface
                 name: hf-cache
@@ -88,6 +101,18 @@ spec:
                   value: "1"
                 - name: NCCL_SOCKET_IFNAME
                   value: eth0
+              readinessProbe:
+                exec:
+                  command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close()"]
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                failureThreshold: 12
+              livenessProbe:
+                exec:
+                  command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close()"]
+                initialDelaySeconds: 60
+                periodSeconds: 10
+                failureThreshold: 30
               volumeMounts:
                 - mountPath: /root/.cache/huggingface
                   name: hf-cache
@@ -131,6 +156,18 @@ spec:
                   value: "1"
                 - name: NCCL_SOCKET_IFNAME
                   value: eth0
+              readinessProbe:
+                exec:
+                  command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close()"]
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                failureThreshold: 12
+              livenessProbe:
+                exec:
+                  command: ["python3","-c","import socket;s=socket.create_connection(('127.0.0.1',52365),2);s.close()"]
+                initialDelaySeconds: 60
+                periodSeconds: 10
+                failureThreshold: 30
               volumeMounts:
                 - mountPath: /root/.cache/huggingface
                   name: hf-cache
