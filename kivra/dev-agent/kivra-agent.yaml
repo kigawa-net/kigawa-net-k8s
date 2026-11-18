@@ -98,6 +98,8 @@ spec:
               value: "/work/STOP"
             - name: KIVRA_AGENT_EXECUTOR
               value: "real"
+            - name: KIVRA_AGENT_NEW_ERROR_CODES
+              value: "1" # EMPTY_PATCH などを CLI_NONZERO に丸めず、専用の失敗理由で送る(kivra 側は受理済み)。止める: この env を外す
             - name: JAVA_OPTS
               value: "-Xms128m -Xmx384m -XX:+UseG1GC -XX:+UseContainerSupport"
           resources:
