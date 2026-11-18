@@ -45,11 +45,11 @@ spec:
           resources:
             requests:
               cpu: "1"
-              memory: 2Gi
+              memory: 8Gi
               nvidia.com/gpu: "1"
             limits:
               cpu: "4"
-              memory: 8Gi
+              memory: 24Gi
               nvidia.com/gpu: "1"
           readinessProbe:
             tcpSocket:
