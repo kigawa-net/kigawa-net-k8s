@@ -51,14 +51,6 @@ spec:
               cpu: "4"
               memory: 8Gi
               nvidia.com/gpu: "1"
-          # RPC 転送中は新規接続がタイムアウトするため、再起動を伴わない readiness のみ使う。
-          readinessProbe:
-            tcpSocket:
-              port: 50052
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 20
 ---
 apiVersion: v1
 kind: Service
