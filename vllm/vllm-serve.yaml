@@ -6,7 +6,9 @@ metadata:
   labels:
     app: vllm
 spec:
-  replicas: 1
+  # llama.cpp RPC Phase 1 検証のため一時的に 0(worker5 の GPU x2 を llama-server に明け渡す)。
+  # ロールバック時は 1 に戻す(このPRを revert する)。
+  replicas: 0
   strategy:
     type: Recreate
   selector:

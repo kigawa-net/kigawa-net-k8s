@@ -1,0 +1,156 @@
+# llama.cpp RPC Phase 1 検証(一時): worker5 の GPU x2 + llama-rpc-server(worker3 の GPU x1)で
+# Qwen3.8-27B (UD-Q4_K_M) を 3GPU に層分割して配信する。
+# ラベル app: vllm / containerPort 8000 / --alias production-llm により、既存の Service
+# vllm-openai-service(80 -> 8000)・Ingress・LiteLLM(production-llm)を変更せずに引き継ぐ。
+# vllm-serve は replicas: 0 にしてあるので、同じラベルの Pod は llama-server のみになる。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-server
+  namespace: kigawa-net-llm
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm
+      component: llama-server
+  template:
+    metadata:
+      labels:
+        app: vllm
+        component: llama-server
+    spec:
+      runtimeClassName: nvidia
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["k8s-worker5"]
+      initContainers:
+        # イメージの llama-server は HTTPS 非対応(-hf 不可、検証済み)なので、GGUF は
+        # HF から curl で PVC へ取得する。既に取得済みなら何もしない(再開可 -C -)。
+        - name: fetch-model
+          image: curlimages/curl:8.11.1
+          securityContext:
+            runAsUser: 0
+          env:
+            - name: HF_REPO
+              value: unsloth/Qwen3.8-27B-GGUF
+            - name: QUANT
+              value: UD-Q4_K_M
+            - name: DEST
+              value: /models/Qwen3.8-27B-UD-Q4_K_M.gguf
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              if [ -s "$DEST" ] && [ ! -e "$DEST.part" ]; then echo "model exists: $DEST"; exit 0; fi
+              FILE=$(curl -fsSL "https://huggingface.co/api/models/$HF_REPO" | grep -o "\"rfilename\":\"[^\"]*$QUANT[^\"]*\.gguf\"" | head -n1 | cut -d'"' -f4)
+              [ -n "$FILE" ] || { echo "no GGUF matching $QUANT in $HF_REPO"; exit 1; }
+              echo "downloading $FILE"
+              curl -fL -C - --retry 5 -o "$DEST.part" "https://huggingface.co/$HF_REPO/resolve/main/$FILE"
+              mv "$DEST.part" "$DEST"
+          volumeMounts:
+            - mountPath: /models
+              name: hf-cache
+              subPath: llama.cpp-models
+      containers:
+        - name: llama-server
+          image: harbor.kigawa.net/library/llama-cpp-rpc:b12199-cuda12.4
+          command: ["llama-server"]
+          args:
+            - -m
+            - /models/Qwen3.8-27B-UD-Q4_K_M.gguf
+            # LiteLLM が参照するモデル名
+            - --alias
+            - production-llm
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            # デバイス順: CUDA0, CUDA1(worker5)、RPC0(worker3)。層ごとに 3 等分
+            - --rpc
+            - llama-rpc-server.kigawa-net-llm.svc.cluster.local:50052
+            - -ngl
+            - "99"
+            - --split-mode
+            - layer
+            - --tensor-split
+            - "1,1,1"
+            - -fa
+            - "on"
+            # 旧 llama.cpp 構成と同じ: 64k を 1 スロット、KV は q8_0
+            - -c
+            - "65536"
+            - -np
+            - "1"
+            - --kv-unified
+            - -ctk
+            - q8_0
+            - -ctv
+            - q8_0
+            - --jinja
+            - --reasoning
+            - "off"
+            - --cache-reuse
+            - "256"
+            - -ub
+            - "512"
+            - --no-webui
+            - --metrics
+          env:
+            # API キーは vLLM と同じ Secret(LiteLLM が同じ値で呼ぶ)
+            - name: LLAMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vllm
+                  key: api-key
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+              nvidia.com/gpu: "2"
+            limits:
+              cpu: "6"
+              memory: 16Gi
+              nvidia.com/gpu: "2"
+          volumeMounts:
+            - mountPath: /models
+              name: hf-cache
+              subPath: llama.cpp-models
+          # /health は api-key 不要。モデル読込(16GB を cephfs から + RPC 転送)に時間がかかる
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache-pvc
