@@ -24,7 +24,7 @@ spec:
                       values: ["k8s-worker3"]
         containers:
           - name: ray-head
-            image: vllm/vllm-openai:v0.23.0
+            image: harbor.kigawa.net/library/vllm-ray:v0.23.0-ray2.37.0
             resources:
               requests:
                 cpu: "2"
@@ -75,7 +75,7 @@ spec:
                         values: ["k8s-worker5"]
           containers:
             - name: ray-worker
-              image: vllm/vllm-openai:v0.23.0
+              image: harbor.kigawa.net/library/vllm-ray:v0.23.0-ray2.37.0
               resources:
                 requests:
                   cpu: "2"
@@ -118,7 +118,7 @@ spec:
                         values: ["k8s-worker3"]
           containers:
             - name: ray-worker
-              image: vllm/vllm-openai:v0.23.0
+              image: harbor.kigawa.net/library/vllm-ray:v0.23.0-ray2.37.0
               resources:
                 requests:
                   cpu: "2"
