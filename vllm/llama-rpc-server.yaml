@@ -1,5 +1,9 @@
 # llama.cpp RPC Phase 1 検証(一時): worker3 の GPU x1 を RPC バックエンドとして公開する。
 # 検証後はこのファイルごと revert して削除すること。
+# 運用注意: この Deployment を再作成/更新(Recreate)すると llama-server 側の RPC 接続が切れ、
+# llama-server が abort して再起動しモデル再ロードが走る(production-llm が数分以上停止)。
+# 変更は停止許容の時間帯に行うこと。readinessProbe(tcpSocket等)は rpc-server への接続/切断
+# 自体が副作用を持ち得るため付けていない。llama-server 側は initContainer で RPC 起動を待つ。
 # 注意: rpc-server は認証・暗号化なし。ClusterIP のみで公開し、Ingress は作らない。
 apiVersion: apps/v1
 kind: Deployment
