@@ -9,4 +9,4 @@ spec:
   storageClassName: rook-cephfs
   resources:
     requests:
-      storage: 128Gi
+      storage: 256Gi
