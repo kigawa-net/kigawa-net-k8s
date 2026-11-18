@@ -41,7 +41,7 @@ jobs:
             set -e
             ray --version
             python3 -c "import ray; print(ray.__version__)"
-            vllm --version
+            python3 -c "import vllm; print(vllm.__version__)"
           '
 
       - name: Push image to Harbor
