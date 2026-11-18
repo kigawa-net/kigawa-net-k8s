@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-serve
+  namespace: kigawa-net-llm
+  labels:
+    app: vllm
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      runtimeClassName: nvidia
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["k8s-worker3"]
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.23.0
+          command:
+            - vllm
+            - serve
+            - Qwen/Qwen3.8-27B-FP8
+            - --served-model-name
+            - production-llm
+            - --tensor-parallel-size
+            - "3"
+            - --distributed-executor-backend
+            - ray
+            - --max-model-len
+            - "16384"
+            - --enforce-eager
+            - --trust-remote-code
+            - --port
+            - "8000"
+          env:
+            - name: RAY_ADDRESS
+              value: ray://vllm-cluster-head-svc.kigawa-net-llm.svc.cluster.local:10001
+            - name: NCCL_IB_DISABLE
+              value: "1"
+            - name: NCCL_SOCKET_IFNAME
+              value: eth0
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          volumeMounts:
+            - mountPath: /root/.cache/huggingface
+              name: hf-cache
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 240
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache-pvc

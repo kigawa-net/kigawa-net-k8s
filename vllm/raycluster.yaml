@@ -4,14 +4,14 @@ metadata:
   name: vllm-cluster
   namespace: kigawa-net-llm
 spec:
-  suspend: true
+  suspend: false
   rayVersion: "2.37.0"
   headGroupSpec:
     serviceType: ClusterIP
     rayStartParams:
-      dashboard-host: "0.0.0.0"
-      num-cpus: "0"
+      num-cpus: "2"
       num-gpus: "0"
+      dashboard-host: "0.0.0.0"
     template:
       spec:
         affinity:
@@ -24,14 +24,19 @@ spec:
                       values: ["k8s-worker3"]
         containers:
           - name: ray-head
-            image: rayproject/ray:2.37.0-py311
+            image: vllm/vllm-openai:v0.23.0
             resources:
               requests:
                 cpu: "2"
-                memory: "4Gi"
+                memory: 8Gi
               limits:
                 cpu: "4"
-                memory: "8Gi"
+                memory: 16Gi
+            env:
+              - name: NCCL_IB_DISABLE
+                value: "1"
+              - name: NCCL_SOCKET_IFNAME
+                value: eth0
             ports:
               - containerPort: 6379
                 name: gcs
@@ -39,15 +44,66 @@ spec:
                 name: dashboard
               - containerPort: 10001
                 name: client
+            volumeMounts:
+              - mountPath: /root/.cache/huggingface
+                name: hf-cache
+        volumes:
+          - name: hf-cache
+            persistentVolumeClaim:
+              claimName: hf-cache-pvc
   workerGroupSpecs:
-    - groupName: gpu-worker
-      replicas: 0
-      minReplicas: 0
+    - groupName: gpu-worker5
+      replicas: 1
+      minReplicas: 1
+      maxReplicas: 1
+      rayStartParams:
+        num-gpus: "2"
+      template:
+        spec:
+          runtimeClassName: nvidia
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values: ["k8s-worker5"]
+          containers:
+            - name: ray-worker
+              image: vllm/vllm-openai:v0.23.0
+              resources:
+                requests:
+                  cpu: "2"
+                  memory: 4Gi
+                limits:
+                  cpu: "4"
+                  memory: 8Gi
+              env:
+                - name: NCCL_IB_DISABLE
+                  value: "1"
+                - name: NCCL_SOCKET_IFNAME
+                  value: eth0
+              volumeMounts:
+                - mountPath: /root/.cache/huggingface
+                  name: hf-cache
+          volumes:
+            - name: hf-cache
+              persistentVolumeClaim:
+                claimName: hf-cache-pvc
+    - groupName: gpu-worker3
+      replicas: 1
+      minReplicas: 1
       maxReplicas: 1
       rayStartParams:
         num-gpus: "1"
       template:
         spec:
+          runtimeClassName: nvidia
           tolerations:
             - key: nvidia.com/gpu
               operator: Exists
@@ -65,18 +121,16 @@ spec:
               image: vllm/vllm-openai:v0.23.0
               resources:
                 requests:
-                  nvidia.com/gpu: "1"
-                  cpu: "1"
-                  memory: "4Gi"
+                  cpu: "2"
+                  memory: 4Gi
                 limits:
-                  nvidia.com/gpu: "1"
                   cpu: "4"
-                  memory: "16Gi"
+                  memory: 8Gi
               env:
                 - name: NCCL_IB_DISABLE
                   value: "1"
                 - name: NCCL_SOCKET_IFNAME
-                  value: "eth0"
+                  value: eth0
               volumeMounts:
                 - mountPath: /root/.cache/huggingface
                   name: hf-cache
