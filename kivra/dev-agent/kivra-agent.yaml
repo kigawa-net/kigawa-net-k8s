@@ -62,7 +62,7 @@ spec:
               mountPath: /work
       containers:
         - name: kivra-agent
-          image: harbor.kigawa.net/library/kivra-agent:main-48fbc441036678bb841854850025a4257c393a95
+          image: harbor.kigawa.net/library/kivra-agent:main-260be893278e86f63b91d360bdc3fa05ae9e804b
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
