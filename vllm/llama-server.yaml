@@ -112,8 +112,6 @@ spec:
             - --jinja
             - --reasoning
             - "off"
-            - --cache-reuse
-            - "256"
             - -b
             - "2048"
             - -ub

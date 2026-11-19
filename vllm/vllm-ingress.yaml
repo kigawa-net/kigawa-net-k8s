@@ -8,8 +8,8 @@ metadata:
     haproxy.org/health-check-uri: "/health"
     haproxy.org/health-check-interval: "10s"
     haproxy.org/timeout-connect: "10s"
-    haproxy.org/timeout-server: "300s"
-    haproxy.org/timeout-tunnel: "300s"
+    haproxy.org/timeout-server: "21600s"
+    haproxy.org/timeout-tunnel: "21600s"
     haproxy.org/rate-limit: "100"
     haproxy.org/rate-limit-period: "1s"
 spec:
