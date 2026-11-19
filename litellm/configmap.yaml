@@ -24,6 +24,7 @@ data:
           # 順番待ち中は llama.cpp から最初のバイトが来ないので、上の待ちの上限と同じ値にする
           timeout: 21600
           stream_timeout: 21600
+          num_retries: 0
       - model_name: gpt-4o
         litellm_params:
           model: gpt-4o
@@ -62,3 +63,7 @@ data:
         BadRequestErrorRetries: 0
         AuthenticationErrorRetries: 0
         ContentPolicyViolationErrorRetries: 0
+      # production-llm では、全体のエラー別ポリシーによる再送も止める。
+      model_group_retry_policy:
+        production-llm:
+          DefaultRetries: 0
