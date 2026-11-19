@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: kivra-agent-proxy
-          image: harbor.kigawa.net/library/kivra-agent-proxy:main-1e6676d24bb6f9e14e2647679577d51243470a67
+          image: harbor.kigawa.net/library/kivra-agent-proxy:main-48fbc441036678bb841854850025a4257c393a95
           imagePullPolicy: IfNotPresent
           ports:
             - name: proxy
