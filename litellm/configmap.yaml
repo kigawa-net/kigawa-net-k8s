@@ -18,6 +18,12 @@ data:
           # 待ちの上限は、request_timeout(21600 秒)と、ingress の timeout-server(21600 秒)。リレーと OpenCode の
           # headerTimeout も同じ値に揃えること。それを超える待ちは、タイムアウトになる(クライアントが切れると、待ち行列からも外れる)
           api_key: os.environ/VLLM_API_KEY
+          # litellm_settings.request_timeout はデプロイメント単位の timeout に反映されず、ログ上は
+          # "Deployment Info: request_timeout: None / timeout: None / stream_timeout: None" になっている。
+          # その状態で「Timeout on reading data from socket」(APITimeoutError)が多発しているため、ここで明示する。
+          # 順番待ち中は llama.cpp から最初のバイトが来ないので、上の待ちの上限と同じ値にする
+          timeout: 21600
+          stream_timeout: 21600
       - model_name: gpt-4o
         litellm_params:
           model: gpt-4o
