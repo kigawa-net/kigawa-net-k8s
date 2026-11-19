@@ -115,7 +115,7 @@ spec:
             - -b
             - "2048"
             - -ub
-            - "2048"
+            - "1024"
             - --no-webui
             - --metrics
           env:
