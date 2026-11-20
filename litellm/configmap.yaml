@@ -24,7 +24,8 @@ data:
           # 順番待ち中は llama.cpp から最初のバイトが来ないので、上の待ちの上限と同じ値にする
           timeout: 21600
           stream_timeout: 21600
-          num_retries: 0
+          # 上流 SDK 内の即時再試行を止め、間隔を空ける再試行は Router に任せる。
+          max_retries: 0
       - model_name: gpt-4o
         litellm_params:
           model: gpt-4o
@@ -48,8 +49,7 @@ data:
       request_timeout: 21600
 
     router_settings:
-      # 上流の Pod を入れ替えた直後は、旧 Pod への接続を保持していて、最初の 1〜2 リクエストが
-      # Connection error(InternalServerError)で失敗する。接続エラーだけを再試行する。
+      # 共通の再試行設定。production-llm の設定は下のモデルグループポリシーを参照する。
       # タイムアウトを再試行すると、順番待ちの負荷が倍になるため 0 にする
       num_retries: 30
       retry_after: 10
@@ -63,7 +63,18 @@ data:
         BadRequestErrorRetries: 0
         AuthenticationErrorRetries: 0
         ContentPolicyViolationErrorRetries: 0
-      # production-llm では、全体のエラー別ポリシーによる再送も止める。
+      # LiteLLM 1.110.0 では、初回エラーに対してモデルグループ固有のポリシーが共通設定に優先する。
+      # OpenAI 互換上流への接続エラーは InternalServerError に分類される。
+      # retry_after: 10 では、Retry-After がない場合に約8〜8.75秒ずつ待つため、75回で約10分を見込む。
+      # 再試行の途中でエラー種別が変わっても、初回エラーで決まった回数が適用される場合がある。
       model_group_retry_policy:
         production-llm:
           DefaultRetries: 0
+          InternalServerErrorRetries: 75
+          ServiceUnavailableErrorRetries: 75
+          TimeoutErrorRetries: 0
+          RateLimitErrorRetries: 0
+          BadRequestErrorRetries: 0
+          AuthenticationErrorRetries: 0
+          ContentPolicyViolationErrorRetries: 0
+          NotFoundErrorRetries: 0
