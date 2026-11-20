@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: llama-monitoring-rules
+  namespace: kigawa-net-llm
+  labels:
+    release: prometheus-helm
+spec:
+  groups:
+    - name: llama-monitoring
+      rules:
+        - alert: VllmOpenaiServiceUnavailable
+          # 同じ停止で2件通知しないよう、両方の式から系列ラベルを落としてまとめる。
+          expr: |
+            max(probe_success{namespace="kigawa-net-llm",job="vllm-openai-health",service="vllm-openai-service"}) == 0
+            or
+            max(kube_endpoint_address_available{namespace="kigawa-net-llm",job="kube-state-metrics",endpoint="vllm-openai-service"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+            namespace: kigawa-net-llm
+            service: vllm-openai-service
+          annotations:
+            summary: vllm-openai-service が利用できません
+            description: >-
+              クラスタ内の /health が失敗、または Ready な Endpoints アドレスが 0 件の状態が 5 分以上続いています。
+              kubectl -n kigawa-net-llm get endpointslice -l kubernetes.io/service-name=vllm-openai-service
+              でバックエンドを確認し、llama-server と llama-rpc-server の Pod 状態とログを確認してください。
+        - alert: LlamaContainerRestarting
+          expr: |
+            max by (namespace, pod, container) (
+              increase(kube_pod_container_status_restarts_total{
+                namespace="kigawa-net-llm",
+                job="kube-state-metrics",
+                pod=~"llama-(rpc-)?server-.+",
+                container=~"llama-server|rpc-server"
+              }[15m])
+            ) >= 2
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.container }} の再起動が繰り返されています"
+            description: >-
+              {{ $labels.namespace }} の Pod {{ $labels.pod }} で {{ $labels.container }} の
+              直近 15 分の再起動カウンター増分が 2 以上の状態が 2 分以上続いています。
+              Pod のイベントと該当コンテナの直前のログ (kubectl logs --previous) を確認してください。
