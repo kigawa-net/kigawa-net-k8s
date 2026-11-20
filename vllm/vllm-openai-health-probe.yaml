@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: vllm-openai-health
+  namespace: kigawa-net-llm
+  labels:
+    release: prometheus-helm
+spec:
+  jobName: vllm-openai-health
+  interval: 30s
+  scrapeTimeout: 10s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter.prometheus.svc.cluster.local:9115
+    path: /probe
+  targets:
+    staticConfig:
+      static:
+        - http://vllm-openai-service.kigawa-net-llm.svc.cluster.local/health
+      labels:
+        endpoint: cluster
+        service: vllm-openai-service
